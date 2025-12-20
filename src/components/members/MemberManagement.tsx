@@ -112,21 +112,15 @@ export function MemberManagement() {
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-semibold text-foreground">成员管理</h2>
-          <p className="text-sm text-muted-foreground">管理组织成员及其访问权限</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <Button variant="outline" size="sm" className="gap-2">
-            <Download className="w-4 h-4" />
-            导出
-          </Button>
-          <Button size="sm" className="gap-2" onClick={() => setShowAddDialog(true)}>
-            <Plus className="w-4 h-4" />
-            添加成员
-          </Button>
-        </div>
+      <div className="flex items-center justify-end gap-3">
+        <Button variant="outline" size="sm" className="gap-2">
+          <Download className="w-4 h-4" />
+          导出
+        </Button>
+        <Button size="sm" className="gap-2" onClick={() => setShowAddDialog(true)}>
+          <Plus className="w-4 h-4" />
+          添加成员
+        </Button>
       </div>
 
       {/* Filters */}

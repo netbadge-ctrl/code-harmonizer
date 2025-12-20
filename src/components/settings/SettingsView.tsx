@@ -22,10 +22,6 @@ export function SettingsView() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div>
-        <h2 className="text-lg font-semibold text-foreground">系统设置</h2>
-        <p className="text-sm text-muted-foreground">管理组织信息和系统配置</p>
-      </div>
 
       {/* Organization Info */}
       <div className="enterprise-card p-6 space-y-4">
