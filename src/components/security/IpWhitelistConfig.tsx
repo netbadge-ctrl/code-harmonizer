@@ -356,15 +356,15 @@ export function IpWhitelistConfig() {
 
       {/* Rules List */}
       <div className="enterprise-card overflow-hidden">
-        <table className="data-table w-full">
+        <table className="data-table w-full table-fixed">
           <thead>
             <tr>
-              <th className="w-[200px]">IP / 网段</th>
-              <th className="w-[80px]">类型</th>
-              <th className="min-w-[150px]">描述</th>
-              <th className="w-[140px]">状态</th>
-              <th className="w-[110px]">添加时间</th>
-              <th className="w-[100px] text-right pr-4">操作</th>
+              <th style={{ width: '18%' }}>IP / 网段</th>
+              <th style={{ width: '10%' }}>类型</th>
+              <th style={{ width: '25%' }}>描述</th>
+              <th style={{ width: '22%' }}>状态</th>
+              <th style={{ width: '12%' }}>添加时间</th>
+              <th style={{ width: '13%' }} className="text-right pr-4">操作</th>
             </tr>
           </thead>
           <tbody>
@@ -373,45 +373,45 @@ export function IpWhitelistConfig() {
               
               return (
                 <tr key={rule.id}>
-                  <td className="w-[200px]">
+                  <td>
                     <div className="flex items-center gap-2">
                       {rule.type === 'single' ? (
                         <Server className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                       ) : (
                         <Globe className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                       )}
-                      <code className="text-sm font-mono text-foreground bg-muted px-2 py-0.5 rounded">
+                      <code className="text-sm font-mono text-foreground bg-muted px-2 py-0.5 rounded truncate">
                         {rule.value}
                       </code>
                     </div>
                   </td>
-                  <td className="w-[80px]">
+                  <td>
                     <span className={cn(
-                      "status-badge",
+                      "status-badge whitespace-nowrap",
                       rule.type === 'single' ? "bg-primary/10 text-primary" : "bg-success/10 text-success"
                     )}>
                       {rule.type === 'single' ? '单个 IP' : 'CIDR'}
                     </span>
                   </td>
-                  <td className="min-w-[150px]">
-                    <span className="text-sm text-foreground">{rule.description}</span>
+                  <td>
+                    <span className="text-sm text-foreground truncate block">{rule.description}</span>
                   </td>
-                  <td className="w-[140px]">
+                  <td>
                     {containingRule ? (
                       <div className="flex items-center gap-1.5 text-warning">
                         <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
-                        <span className="text-xs">被 {containingRule} 包含</span>
+                        <span className="text-xs truncate">被 {containingRule} 包含</span>
                       </div>
                     ) : (
                       <span className="status-badge status-badge-success">正常</span>
                     )}
                   </td>
-                  <td className="w-[110px]">
-                    <span className="text-sm text-muted-foreground">
+                  <td>
+                    <span className="text-sm text-muted-foreground whitespace-nowrap">
                       {new Date(rule.createdAt).toLocaleDateString('zh-CN')}
                     </span>
                   </td>
-                  <td className="w-[100px]">
+                  <td>
                     <div className="flex justify-end gap-1 pr-1">
                       <Button 
                         variant="ghost" 
