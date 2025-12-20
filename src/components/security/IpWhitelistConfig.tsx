@@ -364,7 +364,7 @@ export function IpWhitelistConfig() {
               <th style={{ width: '25%' }}>描述</th>
               <th style={{ width: '22%' }}>状态</th>
               <th style={{ width: '12%' }}>添加时间</th>
-              <th style={{ width: '13%' }} className="text-right pr-4">操作</th>
+              <th style={{ width: '13%' }} className="text-center">操作</th>
             </tr>
           </thead>
           <tbody>
@@ -412,7 +412,7 @@ export function IpWhitelistConfig() {
                     </span>
                   </td>
                   <td>
-                    <div className="flex justify-end gap-1 pr-1">
+                    <div className="flex justify-center gap-1">
                       <Button 
                         variant="ghost" 
                         size="icon"
