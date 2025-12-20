@@ -8,7 +8,6 @@ import { UsageDashboard } from '@/components/usage/UsageDashboard';
 import { ModelManagement } from '@/components/models/ModelManagement';
 import { IpWhitelistConfig } from '@/components/security/IpWhitelistConfig';
 import { SettingsView } from '@/components/settings/SettingsView';
-import { OnboardingFlow } from '@/components/onboarding/OnboardingFlow';
 import { cn } from '@/lib/utils';
 
 const viewConfig: Record<string, { title: string; description: string }> = {
@@ -21,14 +20,9 @@ const viewConfig: Record<string, { title: string; description: string }> = {
   settings: { title: '系统设置', description: '组织信息和系统配置' },
 };
 
-const Index = () => {
+export function Console() {
   const [currentView, setCurrentView] = useState('dashboard');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [showOnboarding, setShowOnboarding] = useState(false); // Set to true to see onboarding
-
-  if (showOnboarding) {
-    return <OnboardingFlow onComplete={() => setShowOnboarding(false)} />;
-  }
 
   const renderView = () => {
     switch (currentView) {
@@ -76,6 +70,6 @@ const Index = () => {
       </main>
     </div>
   );
-};
+}
 
-export default Index;
+export default Console;
