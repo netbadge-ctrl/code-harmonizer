@@ -1,87 +1,171 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
-  Building2, 
   Key, 
   Bell, 
   Shield,
-  ExternalLink,
   Copy,
-  RefreshCw
+  RefreshCw,
+  Download,
+  ChevronDown,
+  Check,
+  AlertTriangle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { toast } from '@/hooks/use-toast';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+
+type IdentitySource = 'wps365' | 'wecom' | 'feishu' | 'dingtalk';
+
+const identitySources: { value: IdentitySource; label: string; icon: string }[] = [
+  { value: 'wps365', label: 'WPS协作', icon: '📄' },
+  { value: 'wecom', label: '企业微信', icon: '💬' },
+  { value: 'feishu', label: '飞书', icon: '🐦' },
+  { value: 'dingtalk', label: '钉钉', icon: '📌' },
+];
 
 export function SettingsView() {
-  const handleCopyApiKey = () => {
-    navigator.clipboard.writeText('sk-xxxx-xxxx-xxxx-xxxx');
-    toast({ title: 'API Key 已复制' });
+  const [selectedSource, setSelectedSource] = useState<IdentitySource>('wps365');
+  const [appId, setAppId] = useState('corp_xxxxxxxxxxxx');
+  const [appKey, setAppKey] = useState('sk-xxxx-xxxx-xxxx-xxxx');
+  const [redirectUri, setRedirectUri] = useState('https://api.ksgc.ai/auth/callback');
+  const [showCliDialog, setShowCliDialog] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [originalSource, setOriginalSource] = useState<IdentitySource>('wps365');
+
+  const handleCopyAppId = () => {
+    navigator.clipboard.writeText(appId);
+    toast({ title: 'App ID 已复制' });
   };
+
+  const handleCopyAppKey = () => {
+    navigator.clipboard.writeText(appKey);
+    toast({ title: 'App Key 已复制' });
+  };
+
+  const handleCopyRedirectUri = () => {
+    navigator.clipboard.writeText(redirectUri);
+    toast({ title: '回调地址已复制' });
+  };
+
+  const handleSourceChange = (value: IdentitySource) => {
+    setSelectedSource(value);
+    setHasUnsavedChanges(true);
+  };
+
+  const handleConfigChange = () => {
+    setHasUnsavedChanges(true);
+  };
+
+  const handleSaveConfig = () => {
+    if (hasUnsavedChanges) {
+      setShowCliDialog(true);
+    }
+  };
+
+  const handleConfirmSave = () => {
+    setShowCliDialog(false);
+    setHasUnsavedChanges(false);
+    setOriginalSource(selectedSource);
+    toast({ title: '配置已保存', description: '请重新下载CLI以应用新配置' });
+  };
+
+  const handleDownloadCli = () => {
+    toast({ title: '开始下载 CLI', description: '请稍候...' });
+    // 模拟下载
+    setTimeout(() => {
+      toast({ title: 'CLI 下载完成' });
+    }, 1000);
+  };
+
+  const currentSourceLabel = identitySources.find(s => s.value === selectedSource)?.label || '';
 
   return (
     <div className="space-y-6 animate-fade-in">
 
-      {/* Organization Info */}
-      <div className="enterprise-card p-6 space-y-4">
-        <div className="flex items-center gap-3 pb-4 border-b border-border">
-          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-            <Building2 className="w-5 h-5 text-primary" />
-          </div>
-          <div>
-            <h3 className="font-semibold text-foreground">组织信息</h3>
-            <p className="text-sm text-muted-foreground">基本信息设置</p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label>组织名称</Label>
-            <Input defaultValue="示例科技有限公司" />
-          </div>
-          <div className="space-y-2">
-            <Label>组织域名</Label>
-            <Input defaultValue="example.com" />
-          </div>
-          <div className="space-y-2">
-            <Label>管理员邮箱</Label>
-            <Input defaultValue="admin@example.com" type="email" />
-          </div>
-          <div className="space-y-2">
-            <Label>联系电话</Label>
-            <Input defaultValue="+86 10 8888 8888" />
-          </div>
-        </div>
-
-        <div className="pt-4 flex justify-end">
-          <Button>保存更改</Button>
-        </div>
-      </div>
-
-      {/* API Configuration */}
+      {/* Identity Source Configuration */}
       <div className="enterprise-card p-6 space-y-4">
         <div className="flex items-center gap-3 pb-4 border-b border-border">
           <div className="w-10 h-10 rounded-lg bg-warning/10 flex items-center justify-center">
             <Key className="w-5 h-5 text-warning" />
           </div>
           <div>
-            <h3 className="font-semibold text-foreground">API 配置</h3>
-            <p className="text-sm text-muted-foreground">管理 API 密钥和访问凭证</p>
+            <h3 className="font-semibold text-foreground">企业登录身份源配置</h3>
+            <p className="text-sm text-muted-foreground">配置企业单点登录认证源</p>
           </div>
         </div>
 
         <div className="space-y-4">
+          {/* Identity Source Selector */}
           <div className="space-y-2">
-            <Label>API Key</Label>
+            <Label>认证源类型</Label>
+            <Select value={selectedSource} onValueChange={handleSourceChange}>
+              <SelectTrigger className="w-full md:w-[280px]">
+                <SelectValue placeholder="选择认证源" />
+              </SelectTrigger>
+              <SelectContent>
+                {identitySources.map((source) => (
+                  <SelectItem key={source.value} value={source.value}>
+                    <span className="flex items-center gap-2">
+                      <span>{source.icon}</span>
+                      <span>{source.label}</span>
+                    </span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              当前使用 {currentSourceLabel} 作为企业登录认证源
+            </p>
+          </div>
+
+          {/* App ID */}
+          <div className="space-y-2">
+            <Label>App ID</Label>
             <div className="flex gap-2">
               <Input 
-                value="sk-xxxx-xxxx-xxxx-xxxx" 
-                type="password"
-                readOnly
+                value={appId}
+                onChange={(e) => { setAppId(e.target.value); handleConfigChange(); }}
                 className="font-mono"
+                placeholder="请输入 App ID"
               />
-              <Button variant="outline" size="icon" onClick={handleCopyApiKey}>
+              <Button variant="outline" size="icon" onClick={handleCopyAppId}>
+                <Copy className="w-4 h-4" />
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              从 {currentSourceLabel} 开放平台获取的应用 ID
+            </p>
+          </div>
+
+          {/* App Key */}
+          <div className="space-y-2">
+            <Label>App Key</Label>
+            <div className="flex gap-2">
+              <Input 
+                value={appKey}
+                onChange={(e) => { setAppKey(e.target.value); handleConfigChange(); }}
+                type="password"
+                className="font-mono"
+                placeholder="请输入 App Key"
+              />
+              <Button variant="outline" size="icon" onClick={handleCopyAppKey}>
                 <Copy className="w-4 h-4" />
               </Button>
               <Button variant="outline" size="icon">
@@ -89,22 +173,47 @@ export function SettingsView() {
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">
-              请妥善保管您的 API Key，不要泄露给他人
+              请妥善保管您的 App Key，不要泄露给他人
             </p>
           </div>
 
+          {/* Redirect URI */}
           <div className="space-y-2">
-            <Label>API 端点</Label>
+            <Label>Redirect URI (回调地址)</Label>
             <div className="flex gap-2">
               <Input 
-                value="https://api.ksgc.ai/v1" 
-                readOnly
+                value={redirectUri}
+                onChange={(e) => { setRedirectUri(e.target.value); handleConfigChange(); }}
                 className="font-mono"
+                placeholder="请输入回调地址"
               />
-              <Button variant="outline" size="icon">
-                <ExternalLink className="w-4 h-4" />
+              <Button variant="outline" size="icon" onClick={handleCopyRedirectUri}>
+                <Copy className="w-4 h-4" />
               </Button>
             </div>
+            <p className="text-xs text-muted-foreground">
+              请将此地址配置到 {currentSourceLabel} 开放平台的授权回调地址中
+            </p>
+          </div>
+        </div>
+
+        <div className="pt-4 flex justify-between items-center border-t border-border">
+          <div className="flex items-center gap-2">
+            {hasUnsavedChanges && (
+              <span className="flex items-center gap-1 text-xs text-warning">
+                <AlertTriangle className="w-3 h-3" />
+                有未保存的更改
+              </span>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={handleDownloadCli}>
+              <Download className="w-4 h-4 mr-2" />
+              下载 CLI
+            </Button>
+            <Button onClick={handleSaveConfig} disabled={!hasUnsavedChanges}>
+              保存配置
+            </Button>
           </div>
         </div>
       </div>
@@ -167,6 +276,35 @@ export function SettingsView() {
           ))}
         </div>
       </div>
+
+      {/* CLI Download Dialog */}
+      <Dialog open={showCliDialog} onOpenChange={setShowCliDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>配置已更改</DialogTitle>
+            <DialogDescription>
+              您修改了企业登录身份源配置。保存后，需要重新下载 CLI 工具以应用新配置。
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <div className="flex items-center gap-3 p-4 bg-warning/10 rounded-lg border border-warning/20">
+              <AlertTriangle className="w-5 h-5 text-warning flex-shrink-0" />
+              <p className="text-sm text-foreground">
+                修改认证源配置后，CLI 工具需要重新下载并部署，否则员工将无法正常登录。
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCliDialog(false)}>
+              取消
+            </Button>
+            <Button onClick={handleConfirmSave}>
+              <Check className="w-4 h-4 mr-2" />
+              确认保存
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
