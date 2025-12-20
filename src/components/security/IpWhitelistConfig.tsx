@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   Plus, 
   Trash2, 
@@ -6,7 +6,9 @@ import {
   AlertTriangle, 
   Globe,
   Server,
-  RefreshCw
+  RefreshCw,
+  Pencil,
+  AlertCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,41 +24,109 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+
+// Helper to parse IP to number
+function ipToNum(ip: string): number {
+  const parts = ip.split('.').map(Number);
+  let num = 0;
+  for (let i = 0; i < 4; i++) {
+    num = (num << 8) + parts[i];
+  }
+  return num >>> 0; // Convert to unsigned
+}
 
 // Helper to check if an IP is within a CIDR range
 function ipInCidr(ip: string, cidr: string): boolean {
   const [range, bits] = cidr.split('/');
   if (!bits) return ip === cidr;
   
-  const ipParts = ip.split('.').map(Number);
-  const rangeParts = range.split('.').map(Number);
+  const ipNum = ipToNum(ip);
+  const rangeNum = ipToNum(range);
   const mask = parseInt(bits, 10);
+  const maskNum = (~((1 << (32 - mask)) - 1)) >>> 0;
   
-  let ipNum = 0;
-  let rangeNum = 0;
+  return (ipNum & maskNum) === (rangeNum & maskNum);
+}
+
+// Helper to check if a CIDR range is contained within another CIDR range
+function cidrInCidr(smallerCidr: string, largerCidr: string): boolean {
+  const [smallRange, smallBits] = smallerCidr.split('/');
+  const [largeRange, largeBits] = largerCidr.split('/');
   
-  for (let i = 0; i < 4; i++) {
-    ipNum = (ipNum << 8) + ipParts[i];
-    rangeNum = (rangeNum << 8) + rangeParts[i];
+  if (!largeBits) return false;
+  if (!smallBits) {
+    // It's a single IP, check if it's in the larger CIDR
+    return ipInCidr(smallRange, largerCidr);
   }
   
-  const maskNum = ~((1 << (32 - mask)) - 1);
-  return (ipNum & maskNum) === (rangeNum & maskNum);
+  const smallMask = parseInt(smallBits, 10);
+  const largeMask = parseInt(largeBits, 10);
+  
+  // Smaller CIDR must have a larger or equal mask number to be contained
+  if (smallMask < largeMask) return false;
+  
+  // Check if the network addresses match when applying the larger mask
+  const smallNum = ipToNum(smallRange);
+  const largeNum = ipToNum(largeRange);
+  const maskNum = (~((1 << (32 - largeMask)) - 1)) >>> 0;
+  
+  return (smallNum & maskNum) === (largeNum & maskNum);
 }
 
 export function IpWhitelistConfig() {
   const [rules, setRules] = useState<IpRule[]>(mockIpRules);
   const [showAddDialog, setShowAddDialog] = useState(false);
-  const [newRule, setNewRule] = useState({ value: '', type: 'single' as 'single' | 'cidr', description: '' });
-  const [isAdding, setIsAdding] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [editingRule, setEditingRule] = useState<IpRule | null>(null);
+  const [deletingRule, setDeletingRule] = useState<IpRule | null>(null);
+  const [formData, setFormData] = useState({ value: '', type: 'single' as 'single' | 'cidr', description: '' });
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [redundancyWarning, setRedundancyWarning] = useState<string | null>(null);
 
-  const checkRedundancy = (value: string, type: 'single' | 'cidr') => {
+  // Calculate which rules are contained within other rules
+  const containedRules = useMemo(() => {
+    const contained: Record<string, string> = {}; // ruleId -> containing rule value
+    
+    for (const rule of rules) {
+      for (const otherRule of rules) {
+        if (rule.id === otherRule.id) continue;
+        if (otherRule.type !== 'cidr') continue;
+        
+        let isContained = false;
+        if (rule.type === 'single') {
+          isContained = ipInCidr(rule.value, otherRule.value);
+        } else if (rule.type === 'cidr') {
+          isContained = cidrInCidr(rule.value, otherRule.value);
+        }
+        
+        if (isContained) {
+          contained[rule.id] = otherRule.value;
+          break;
+        }
+      }
+    }
+    
+    return contained;
+  }, [rules]);
+
+  const checkRedundancy = (value: string, type: 'single' | 'cidr', excludeId?: string) => {
+    const filteredRules = excludeId ? rules.filter(r => r.id !== excludeId) : rules;
+    
     if (type === 'single') {
-      // Check if this IP is covered by any existing CIDR
-      for (const rule of rules) {
+      for (const rule of filteredRules) {
         if (rule.type === 'cidr' && ipInCidr(value, rule.value)) {
           return `该 IP 已被网段 ${rule.value} 包含`;
         }
@@ -64,18 +134,51 @@ export function IpWhitelistConfig() {
           return '该 IP 已存在于白名单中';
         }
       }
+    } else {
+      for (const rule of filteredRules) {
+        if (rule.type === 'cidr' && rule.value === value) {
+          return '该网段已存在于白名单中';
+        }
+      }
     }
     return null;
   };
 
   const handleValueChange = (value: string) => {
-    setNewRule(prev => ({ ...prev, value }));
-    const warning = checkRedundancy(value, newRule.type);
+    setFormData(prev => ({ ...prev, value }));
+    const warning = checkRedundancy(value, formData.type, editingRule?.id);
     setRedundancyWarning(warning);
   };
 
+  const resetForm = () => {
+    setFormData({ value: '', type: 'single', description: '' });
+    setRedundancyWarning(null);
+    setEditingRule(null);
+  };
+
+  const handleOpenAdd = () => {
+    resetForm();
+    setShowAddDialog(true);
+  };
+
+  const handleOpenEdit = (rule: IpRule) => {
+    setEditingRule(rule);
+    setFormData({
+      value: rule.value,
+      type: rule.type,
+      description: rule.description,
+    });
+    setRedundancyWarning(null);
+    setShowEditDialog(true);
+  };
+
+  const handleOpenDelete = (rule: IpRule) => {
+    setDeletingRule(rule);
+    setShowDeleteDialog(true);
+  };
+
   const handleAddRule = async () => {
-    if (!newRule.value) {
+    if (!formData.value) {
       toast({ title: '请输入 IP 地址或网段', variant: 'destructive' });
       return;
     }
@@ -85,23 +188,22 @@ export function IpWhitelistConfig() {
       return;
     }
 
-    setIsAdding(true);
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    setIsSubmitting(true);
+    await new Promise(resolve => setTimeout(resolve, 800));
 
     const rule: IpRule = {
       id: Date.now().toString(),
-      value: newRule.value,
-      type: newRule.type,
-      description: newRule.description || (newRule.type === 'single' ? '单个 IP' : 'CIDR 网段'),
+      value: formData.value,
+      type: formData.type,
+      description: formData.description || (formData.type === 'single' ? '单个 IP' : 'CIDR 网段'),
       createdAt: new Date().toISOString(),
       createdBy: '张明',
     };
 
     setRules(prev => [rule, ...prev]);
     setShowAddDialog(false);
-    setNewRule({ value: '', type: 'single', description: '' });
-    setRedundancyWarning(null);
-    setIsAdding(false);
+    resetForm();
+    setIsSubmitting(false);
 
     toast({
       title: 'IP 规则已添加',
@@ -109,12 +211,46 @@ export function IpWhitelistConfig() {
     });
   };
 
-  const handleDeleteRule = (rule: IpRule) => {
-    setRules(prev => prev.filter(r => r.id !== rule.id));
+  const handleEditRule = async () => {
+    if (!editingRule || !formData.value) {
+      toast({ title: '请输入 IP 地址或网段', variant: 'destructive' });
+      return;
+    }
+
+    if (redundancyWarning) {
+      toast({ title: '规则冗余', description: redundancyWarning, variant: 'destructive' });
+      return;
+    }
+
+    setIsSubmitting(true);
+    await new Promise(resolve => setTimeout(resolve, 800));
+
+    setRules(prev => prev.map(r => 
+      r.id === editingRule.id 
+        ? { ...r, value: formData.value, type: formData.type, description: formData.description || r.description }
+        : r
+    ));
+    setShowEditDialog(false);
+    resetForm();
+    setIsSubmitting(false);
+
+    toast({
+      title: 'IP 规则已更新',
+      description: `规则已成功修改`,
+    });
+  };
+
+  const handleDeleteRule = async () => {
+    if (!deletingRule) return;
+    
+    setRules(prev => prev.filter(r => r.id !== deletingRule.id));
+    setShowDeleteDialog(false);
+    
     toast({
       title: 'IP 规则已删除',
-      description: `${rule.value} 已从白名单移除`,
+      description: `${deletingRule.value} 已从白名单移除`,
     });
+    setDeletingRule(null);
   };
 
   return (
@@ -125,7 +261,7 @@ export function IpWhitelistConfig() {
           <h2 className="text-lg font-semibold text-foreground">安全配置</h2>
           <p className="text-sm text-muted-foreground">管理 IP 白名单规则，保护 API 访问安全</p>
         </div>
-        <Button size="sm" className="gap-2" onClick={() => setShowAddDialog(true)}>
+        <Button size="sm" className="gap-2" onClick={handleOpenAdd}>
           <Plus className="w-4 h-4" />
           添加规则
         </Button>
@@ -149,62 +285,80 @@ export function IpWhitelistConfig() {
         <table className="data-table w-full">
           <thead>
             <tr>
-              <th className="w-[200px]">IP / 网段</th>
+              <th className="w-[220px]">IP / 网段</th>
               <th className="w-[100px]">类型</th>
-              <th className="min-w-[150px]">描述</th>
+              <th className="min-w-[180px]">描述</th>
               <th className="w-[120px]">添加时间</th>
-              <th className="w-[100px]">操作人</th>
-              <th className="w-[80px] text-right pr-4">操作</th>
+              <th className="w-[100px] text-right pr-4">操作</th>
             </tr>
           </thead>
           <tbody>
-            {rules.map((rule) => (
-              <tr key={rule.id} className="group">
-                <td className="w-[200px]">
-                  <div className="flex items-center gap-2">
-                    {rule.type === 'single' ? (
-                      <Server className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                    ) : (
-                      <Globe className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+            {rules.map((rule) => {
+              const containingRule = containedRules[rule.id];
+              
+              return (
+                <tr key={rule.id} className="group">
+                  <td className="w-[220px]">
+                    <div className="flex items-center gap-2">
+                      {rule.type === 'single' ? (
+                        <Server className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                      ) : (
+                        <Globe className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                      )}
+                      <code className="text-sm font-mono text-foreground bg-muted px-2 py-0.5 rounded">
+                        {rule.value}
+                      </code>
+                      {containingRule && (
+                        <div className="flex items-center gap-1 text-warning" title={`已被 ${containingRule} 包含`}>
+                          <AlertCircle className="w-3.5 h-3.5" />
+                        </div>
+                      )}
+                    </div>
+                    {containingRule && (
+                      <p className="text-xs text-warning mt-1 ml-6">
+                        已被 {containingRule} 包含（冗余）
+                      </p>
                     )}
-                    <code className="text-sm font-mono text-foreground bg-muted px-2 py-0.5 rounded">
-                      {rule.value}
-                    </code>
-                  </div>
-                </td>
-                <td className="w-[100px]">
-                  <span className={cn(
-                    "status-badge",
-                    rule.type === 'single' ? "bg-primary/10 text-primary" : "bg-success/10 text-success"
-                  )}>
-                    {rule.type === 'single' ? '单个 IP' : 'CIDR'}
-                  </span>
-                </td>
-                <td className="min-w-[150px]">
-                  <span className="text-sm text-foreground">{rule.description}</span>
-                </td>
-                <td className="w-[120px]">
-                  <span className="text-sm text-muted-foreground">
-                    {new Date(rule.createdAt).toLocaleDateString('zh-CN')}
-                  </span>
-                </td>
-                <td className="w-[100px]">
-                  <span className="text-sm text-foreground">{rule.createdBy}</span>
-                </td>
-                <td className="w-[80px]">
-                  <div className="flex justify-end pr-1">
-                    <Button 
-                      variant="ghost" 
-                      size="icon"
-                      className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive hover:bg-destructive/10"
-                      onClick={() => handleDeleteRule(rule)}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </td>
-              </tr>
-            ))}
+                  </td>
+                  <td className="w-[100px]">
+                    <span className={cn(
+                      "status-badge",
+                      rule.type === 'single' ? "bg-primary/10 text-primary" : "bg-success/10 text-success"
+                    )}>
+                      {rule.type === 'single' ? '单个 IP' : 'CIDR'}
+                    </span>
+                  </td>
+                  <td className="min-w-[180px]">
+                    <span className="text-sm text-foreground">{rule.description}</span>
+                  </td>
+                  <td className="w-[120px]">
+                    <span className="text-sm text-muted-foreground">
+                      {new Date(rule.createdAt).toLocaleDateString('zh-CN')}
+                    </span>
+                  </td>
+                  <td className="w-[100px]">
+                    <div className="flex justify-end gap-1 pr-1">
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-foreground hover:bg-muted"
+                        onClick={() => handleOpenEdit(rule)}
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => handleOpenDelete(rule)}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
 
@@ -216,7 +370,7 @@ export function IpWhitelistConfig() {
               variant="outline" 
               size="sm" 
               className="mt-4"
-              onClick={() => setShowAddDialog(true)}
+              onClick={handleOpenAdd}
             >
               添加第一条规则
             </Button>
@@ -237,29 +391,29 @@ export function IpWhitelistConfig() {
             <div className="space-y-2">
               <Label>规则类型</Label>
               <RadioGroup 
-                value={newRule.type}
-                onValueChange={(value: 'single' | 'cidr') => setNewRule(prev => ({ ...prev, type: value }))}
+                value={formData.type}
+                onValueChange={(value: 'single' | 'cidr') => setFormData(prev => ({ ...prev, type: value }))}
                 className="flex gap-4"
               >
                 <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="single" id="single" />
-                  <Label htmlFor="single" className="font-normal cursor-pointer">单个 IP</Label>
+                  <RadioGroupItem value="single" id="add-single" />
+                  <Label htmlFor="add-single" className="font-normal cursor-pointer">单个 IP</Label>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="cidr" id="cidr" />
-                  <Label htmlFor="cidr" className="font-normal cursor-pointer">CIDR 网段</Label>
+                  <RadioGroupItem value="cidr" id="add-cidr" />
+                  <Label htmlFor="add-cidr" className="font-normal cursor-pointer">CIDR 网段</Label>
                 </div>
               </RadioGroup>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="ip-value">
-                {newRule.type === 'single' ? 'IP 地址' : 'CIDR 网段'}
+              <Label htmlFor="add-ip-value">
+                {formData.type === 'single' ? 'IP 地址' : 'CIDR 网段'}
               </Label>
               <Input 
-                id="ip-value"
-                placeholder={newRule.type === 'single' ? '例如: 116.228.89.156' : '例如: 203.119.24.0/24'}
-                value={newRule.value}
+                id="add-ip-value"
+                placeholder={formData.type === 'single' ? '例如: 116.228.89.156' : '例如: 203.119.24.0/24'}
+                value={formData.value}
                 onChange={(e) => handleValueChange(e.target.value)}
               />
               {redundancyWarning && (
@@ -271,12 +425,12 @@ export function IpWhitelistConfig() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="description">描述 (可选)</Label>
+              <Label htmlFor="add-description">描述 (可选)</Label>
               <Input 
-                id="description"
+                id="add-description"
                 placeholder="例如: 办公室网络"
-                value={newRule.description}
-                onChange={(e) => setNewRule(prev => ({ ...prev, description: e.target.value }))}
+                value={formData.description}
+                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
               />
             </div>
           </div>
@@ -284,8 +438,8 @@ export function IpWhitelistConfig() {
             <Button variant="outline" onClick={() => setShowAddDialog(false)}>
               取消
             </Button>
-            <Button onClick={handleAddRule} disabled={isAdding || !!redundancyWarning}>
-              {isAdding ? (
+            <Button onClick={handleAddRule} disabled={isSubmitting || !!redundancyWarning}>
+              {isSubmitting ? (
                 <>
                   <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
                   添加中...
@@ -297,6 +451,101 @@ export function IpWhitelistConfig() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Edit Rule Dialog */}
+      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>编辑 IP 白名单规则</DialogTitle>
+            <DialogDescription>
+              修改 IP 地址或网段配置
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>规则类型</Label>
+              <RadioGroup 
+                value={formData.type}
+                onValueChange={(value: 'single' | 'cidr') => setFormData(prev => ({ ...prev, type: value }))}
+                className="flex gap-4"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="single" id="edit-single" />
+                  <Label htmlFor="edit-single" className="font-normal cursor-pointer">单个 IP</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="cidr" id="edit-cidr" />
+                  <Label htmlFor="edit-cidr" className="font-normal cursor-pointer">CIDR 网段</Label>
+                </div>
+              </RadioGroup>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-ip-value">
+                {formData.type === 'single' ? 'IP 地址' : 'CIDR 网段'}
+              </Label>
+              <Input 
+                id="edit-ip-value"
+                placeholder={formData.type === 'single' ? '例如: 116.228.89.156' : '例如: 203.119.24.0/24'}
+                value={formData.value}
+                onChange={(e) => handleValueChange(e.target.value)}
+              />
+              {redundancyWarning && (
+                <div className="flex items-center gap-2 text-xs text-warning">
+                  <AlertTriangle className="w-3.5 h-3.5" />
+                  {redundancyWarning}
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-description">描述 (可选)</Label>
+              <Input 
+                id="edit-description"
+                placeholder="例如: 办公室网络"
+                value={formData.description}
+                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEditDialog(false)}>
+              取消
+            </Button>
+            <Button onClick={handleEditRule} disabled={isSubmitting || !!redundancyWarning}>
+              {isSubmitting ? (
+                <>
+                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                  保存中...
+                </>
+              ) : (
+                '保存修改'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirm Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>确认删除</AlertDialogTitle>
+            <AlertDialogDescription>
+              确定要删除 IP 规则 <code className="bg-muted px-1.5 py-0.5 rounded font-mono text-foreground">{deletingRule?.value}</code> 吗？删除后，来自该地址的请求将无法访问 API。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteRule}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              确认删除
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
