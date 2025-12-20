@@ -109,10 +109,7 @@ export function DashboardView() {
             {mockModels.slice(0, 4).map((model) => (
               <div key={model.id} className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg">{model.icon}</span>
-                    <span className="text-sm font-medium text-foreground">{model.name}</span>
-                  </div>
+                  <span className="text-sm font-medium text-foreground">{model.name}</span>
                   <span className={`status-badge ${model.enabled ? 'status-badge-success' : 'status-badge-neutral'}`}>
                     {model.enabled ? '运行中' : '已停用'}
                   </span>
