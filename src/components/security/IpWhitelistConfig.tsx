@@ -146,33 +146,33 @@ export function IpWhitelistConfig() {
 
       {/* Rules List */}
       <div className="enterprise-card overflow-hidden">
-        <table className="data-table">
+        <table className="data-table w-full">
           <thead>
             <tr>
-              <th>IP / 网段</th>
-              <th>类型</th>
-              <th>描述</th>
-              <th>添加时间</th>
-              <th>操作人</th>
-              <th className="text-right">操作</th>
+              <th className="w-[200px]">IP / 网段</th>
+              <th className="w-[100px]">类型</th>
+              <th className="min-w-[150px]">描述</th>
+              <th className="w-[120px]">添加时间</th>
+              <th className="w-[100px]">操作人</th>
+              <th className="w-[80px] text-right pr-4">操作</th>
             </tr>
           </thead>
           <tbody>
             {rules.map((rule) => (
               <tr key={rule.id} className="group">
-                <td>
+                <td className="w-[200px]">
                   <div className="flex items-center gap-2">
                     {rule.type === 'single' ? (
-                      <Server className="w-4 h-4 text-muted-foreground" />
+                      <Server className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                     ) : (
-                      <Globe className="w-4 h-4 text-muted-foreground" />
+                      <Globe className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                     )}
                     <code className="text-sm font-mono text-foreground bg-muted px-2 py-0.5 rounded">
                       {rule.value}
                     </code>
                   </div>
                 </td>
-                <td>
+                <td className="w-[100px]">
                   <span className={cn(
                     "status-badge",
                     rule.type === 'single' ? "bg-primary/10 text-primary" : "bg-success/10 text-success"
@@ -180,23 +180,23 @@ export function IpWhitelistConfig() {
                     {rule.type === 'single' ? '单个 IP' : 'CIDR'}
                   </span>
                 </td>
-                <td>
+                <td className="min-w-[150px]">
                   <span className="text-sm text-foreground">{rule.description}</span>
                 </td>
-                <td>
+                <td className="w-[120px]">
                   <span className="text-sm text-muted-foreground">
                     {new Date(rule.createdAt).toLocaleDateString('zh-CN')}
                   </span>
                 </td>
-                <td>
+                <td className="w-[100px]">
                   <span className="text-sm text-foreground">{rule.createdBy}</span>
                 </td>
-                <td>
-                  <div className="flex justify-end">
+                <td className="w-[80px]">
+                  <div className="flex justify-end pr-1">
                     <Button 
                       variant="ghost" 
                       size="icon"
-                      className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive hover:bg-destructive/10"
+                      className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive hover:bg-destructive/10"
                       onClick={() => handleDeleteRule(rule)}
                     >
                       <Trash2 className="w-4 h-4" />
@@ -258,7 +258,7 @@ export function IpWhitelistConfig() {
               </Label>
               <Input 
                 id="ip-value"
-                placeholder={newRule.type === 'single' ? '例如: 192.168.1.100' : '例如: 192.168.1.0/24'}
+                placeholder={newRule.type === 'single' ? '例如: 116.228.89.156' : '例如: 203.119.24.0/24'}
                 value={newRule.value}
                 onChange={(e) => handleValueChange(e.target.value)}
               />

@@ -211,23 +211,23 @@ export const mockModels: AIModel[] = [
 export const mockIpRules: IpRule[] = [
   {
     id: '1',
-    value: '192.168.1.0/24',
+    value: '203.119.24.0/24',
     type: 'cidr',
-    description: '办公室内网网段',
+    description: '总部办公网段',
     createdAt: '2024-01-10T10:00:00Z',
     createdBy: '张明',
   },
   {
     id: '2',
-    value: '10.0.0.100',
+    value: '116.228.89.156',
     type: 'single',
-    description: 'VPN 服务器',
+    description: 'VPN 出口 IP',
     createdAt: '2024-01-12T14:30:00Z',
     createdBy: '李华',
   },
   {
     id: '3',
-    value: '172.16.0.0/16',
+    value: '58.247.0.0/16',
     type: 'cidr',
     description: '分公司网段',
     createdAt: '2024-01-13T09:15:00Z',
