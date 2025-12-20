@@ -3,21 +3,21 @@ import { Sidebar } from '@/components/layout/Sidebar';
 import { Header } from '@/components/layout/Header';
 import { DashboardView } from '@/components/dashboard/DashboardView';
 import { MemberManagement } from '@/components/members/MemberManagement';
-import { DepartmentManagement } from '@/components/departments/DepartmentTree';
 import { UsageDashboard } from '@/components/usage/UsageDashboard';
+import { CallDetails } from '@/components/usage/CallDetails';
 import { ModelManagement } from '@/components/models/ModelManagement';
 import { IpWhitelistConfig } from '@/components/security/IpWhitelistConfig';
 import { SettingsView } from '@/components/settings/SettingsView';
 import { cn } from '@/lib/utils';
 
 const viewConfig: Record<string, { title: string; description: string }> = {
-  dashboard: { title: '控制台', description: '概览您的 AI Coding 服务状态' },
-  members: { title: '成员管理', description: '管理组织成员及访问权限' },
-  departments: { title: '组织架构', description: '查看和配置部门结构' },
-  usage: { title: '用量统计', description: '分析 AI 服务使用情况' },
+  dashboard: { title: '概览', description: '概览您的 AI Coding 服务状态' },
+  usage: { title: '用量看板', description: '分析 AI 服务使用情况' },
+  callDetails: { title: '调用明细', description: '查看 API 调用详细记录' },
   models: { title: '模型管理', description: '配置可用的 AI 模型' },
-  security: { title: '安全配置', description: '管理 IP 白名单规则' },
-  settings: { title: '系统设置', description: '组织信息和系统配置' },
+  members: { title: '组织成员管理', description: '管理组织成员及访问权限' },
+  security: { title: 'IP白名单', description: '管理 IP 白名单规则' },
+  settings: { title: '系统设置', description: '系统配置' },
 };
 
 export function Console() {
@@ -28,14 +28,14 @@ export function Console() {
     switch (currentView) {
       case 'dashboard':
         return <DashboardView />;
-      case 'members':
-        return <MemberManagement />;
-      case 'departments':
-        return <DepartmentManagement />;
       case 'usage':
         return <UsageDashboard />;
+      case 'callDetails':
+        return <CallDetails />;
       case 'models':
         return <ModelManagement />;
+      case 'members':
+        return <MemberManagement />;
       case 'security':
         return <IpWhitelistConfig />;
       case 'settings':
