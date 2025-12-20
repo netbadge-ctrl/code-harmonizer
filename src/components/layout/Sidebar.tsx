@@ -56,31 +56,31 @@ export function Sidebar({ currentView, onViewChange, collapsed, onToggleCollapse
   return (
     <aside 
       className={cn(
-        "fixed left-0 top-0 h-screen bg-card border-r border-border flex flex-col transition-all duration-300 z-50",
-        collapsed ? "w-14" : "w-56"
+        "fixed left-0 top-0 h-screen bg-sidebar border-r border-sidebar-border flex flex-col transition-all duration-300 z-50",
+        collapsed ? "w-14" : "w-48"
       )}
     >
       {/* Logo */}
-      <div className="flex items-center gap-2 px-4 h-14 border-b border-border">
-        <div className="w-7 h-7 rounded gradient-primary flex items-center justify-center flex-shrink-0">
+      <div className="flex items-center gap-2 px-3 h-12 border-b border-sidebar-border">
+        <div className="w-7 h-7 rounded-md bg-primary flex items-center justify-center flex-shrink-0">
           <Sparkles className="w-4 h-4 text-primary-foreground" />
         </div>
         {!collapsed && (
-          <div className="animate-fade-in">
-            <span className="text-sm font-semibold text-foreground">智码云</span>
-            <span className="text-xs text-muted-foreground ml-2">控制台</span>
+          <div className="animate-fade-in flex items-center gap-1">
+            <span className="text-sm font-semibold text-sidebar-foreground">智码云</span>
+            <span className="text-xs text-sidebar-muted">控制台</span>
           </div>
         )}
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 py-3 overflow-y-auto">
+      <nav className="flex-1 py-2 overflow-y-auto">
         {menuGroups.map((group) => (
           <div key={group.id} className="mb-1">
             {!collapsed && (
               <button
                 onClick={() => toggleGroup(group.id)}
-                className="w-full flex items-center justify-between px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors"
+                className="w-full flex items-center justify-between px-3 py-2 text-xs font-medium text-sidebar-muted hover:text-sidebar-foreground transition-colors"
               >
                 <span>{group.label}</span>
                 <ChevronDown className={cn(
@@ -97,15 +97,15 @@ export function Sidebar({ currentView, onViewChange, collapsed, onToggleCollapse
                     key={item.id}
                     onClick={() => onViewChange(item.id)}
                     className={cn(
-                      "w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-sm transition-colors",
+                      "w-full flex items-center gap-2 px-2 py-1.5 rounded text-sm transition-colors",
                       currentView === item.id 
-                        ? "bg-primary/10 text-primary font-medium" 
-                        : "text-foreground/70 hover:bg-muted hover:text-foreground"
+                        ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium" 
+                        : "text-sidebar-muted hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
                     )}
                     title={collapsed ? item.label : undefined}
                   >
-                    <item.icon className="w-4 h-4 flex-shrink-0" />
                     {!collapsed && <span>{item.label}</span>}
+                    {collapsed && <item.icon className="w-4 h-4 flex-shrink-0 mx-auto" />}
                   </button>
                 ))}
               </div>
@@ -115,17 +115,16 @@ export function Sidebar({ currentView, onViewChange, collapsed, onToggleCollapse
       </nav>
 
       {/* Collapse Toggle */}
-      <div className="p-3 border-t border-border">
+      <div className="p-2 border-t border-sidebar-border">
         <button
           onClick={onToggleCollapse}
-          className="w-full flex items-center justify-center gap-2 px-2 py-2 rounded-md text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+          className="w-full flex items-center justify-center p-1.5 rounded text-sidebar-muted hover:bg-sidebar-accent/50 hover:text-sidebar-foreground transition-colors"
           title={collapsed ? "展开菜单" : "收起菜单"}
         >
           <ChevronLeft className={cn(
             "w-4 h-4 transition-transform duration-300",
             collapsed && "rotate-180"
           )} />
-          {!collapsed && <span>收起</span>}
         </button>
       </div>
     </aside>
