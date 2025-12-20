@@ -1,25 +1,106 @@
-import React from 'react';
-import { Users, Zap, Activity, Clock, ArrowRight, CheckCircle2, AlertCircle, TrendingUp } from 'lucide-react';
+import React, { useState } from 'react';
+import { Users, Zap, Activity, Clock, ArrowRight, CheckCircle2, AlertCircle, TrendingUp, Building2, Copy, Check } from 'lucide-react';
 import { StatsCard } from './StatsCard';
 import { Button } from '@/components/ui/button';
 import { mockUsageStats, mockMembers, mockModels } from '@/data/mockData';
+import { toast } from '@/hooks/use-toast';
+import { Progress } from '@/components/ui/progress';
 
 export function DashboardView() {
   const activeMembers = mockMembers.filter(m => m.status === 'active').length;
   const enabledModels = mockModels.filter(m => m.enabled).length;
+  const [copied, setCopied] = useState(false);
+
+  // 模拟组织数据
+  const organization = {
+    name: 'TechFlow Inc.',
+    subscription: {
+      plan: 'professional' as const,
+      seats: 50,
+      usedSeats: 5,
+      expiresAt: '2024-12-31',
+    },
+    identitySource: 'wecom' as const,
+    orgSlug: 'techflow',
+  };
+
+  const cliCommand = `curl -fsSL https://get.ksgc.io/install.sh | bash -s -- --org=${organization.orgSlug} --auth=${organization.identitySource}`;
+
+  const handleCopyCliCommand = () => {
+    navigator.clipboard.writeText(cliCommand);
+    setCopied(true);
+    toast({ title: 'CLI 安装命令已复制' });
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const planLabels: Record<string, string> = {
+    trial: '试用版',
+    starter: '基础版',
+    professional: '专业版',
+    enterprise: '企业版',
+  };
+
+  const seatUsagePercent = (organization.subscription.usedSeats / organization.subscription.seats) * 100;
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Welcome Banner */}
-      <div className="enterprise-card p-6 bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-xl font-semibold text-foreground">欢迎回来，张明 👋</h2>
-            <p className="text-muted-foreground mt-1">您的团队今日表现出色，AI 助手已帮助完成 128 次代码协助</p>
+      {/* Organization Header */}
+      <div className="enterprise-card p-6">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          {/* Left: Organization Info */}
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+              <Building2 className="w-6 h-6 text-primary" />
+            </div>
+            <div>
+              <div className="flex items-center gap-3">
+                <h2 className="text-xl font-semibold text-foreground">{organization.name}</h2>
+                <span className="status-badge status-badge-success">
+                  {planLabels[organization.subscription.plan]}
+                </span>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                有效期至: {organization.subscription.expiresAt}
+              </p>
+            </div>
           </div>
-          <Button className="hidden md:flex gap-2">
-            查看详情 <ArrowRight className="w-4 h-4" />
-          </Button>
+
+          {/* Right: Seat Usage */}
+          <div className="flex items-center gap-6">
+            <div className="text-right">
+              <p className="text-xs text-muted-foreground mb-1">订阅席位使用情况</p>
+              <div className="flex items-center gap-3">
+                <Progress value={seatUsagePercent} className="w-32 h-2" />
+                <span className="text-sm font-medium text-foreground whitespace-nowrap">
+                  {organization.subscription.usedSeats} / {organization.subscription.seats} 人
+                </span>
+              </div>
+            </div>
+            <Button variant="outline" size="sm">
+              订阅管理 / 扩容
+            </Button>
+          </div>
+        </div>
+
+        {/* CLI Installation Command */}
+        <div className="mt-6 p-4 bg-slate-900 rounded-lg border border-slate-700">
+          <p className="text-xs text-slate-400 mb-2 flex items-center gap-2">
+            <span className="inline-block w-1.5 h-1.5 rounded-full bg-success animate-pulse"></span>
+            员工终端安装命令 (Mac/Linux)
+          </p>
+          <div className="flex items-center justify-between gap-4">
+            <code className="text-sm text-amber-400 font-mono flex-1 overflow-x-auto whitespace-nowrap">
+              {cliCommand}
+            </code>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={handleCopyCliCommand}
+              className="flex-shrink-0 text-slate-400 hover:text-white hover:bg-slate-800"
+            >
+              {copied ? <Check className="w-4 h-4 text-success" /> : <Copy className="w-4 h-4" />}
+            </Button>
+          </div>
         </div>
       </div>
 
