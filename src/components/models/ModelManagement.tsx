@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { Search, Copy, Check, Info } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
-import { toast } from '@/hooks/use-toast';
+import { Search, Info, Copy, Check, AlertTriangle } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -14,7 +14,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
 interface Model {
   id: string;
@@ -131,6 +132,7 @@ const mockModels: Model[] = [
 type FilterType = 'all' | 'text' | 'vision' | 'enabled' | 'disabled';
 
 export function ModelManagement() {
+  const { toast } = useToast();
   const [models, setModels] = useState<Model[]>(mockModels);
   const [showConfigDialog, setShowConfigDialog] = useState(false);
   const [selectedModel, setSelectedModel] = useState<Model | null>(null);
@@ -139,6 +141,13 @@ export function ModelManagement() {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeFilters, setActiveFilters] = useState<FilterType[]>(['all']);
   const [copied, setCopied] = useState(false);
+  
+  // 服务开通相关状态
+  const [isServiceActivated, setIsServiceActivated] = useState(false);
+  const [showActivationDialog, setShowActivationDialog] = useState(false);
+  const [pendingModel, setPendingModel] = useState<Model | null>(null);
+  const [agreementChecked, setAgreementChecked] = useState(false);
+  const [isActivating, setIsActivating] = useState(false);
 
   const handleCopyCommand = () => {
     navigator.clipboard.writeText('--model <model_name>');
@@ -176,14 +185,89 @@ export function ModelManagement() {
     return matchesSearch && matchesFilter;
   });
 
+  const textModelsEnabled = models.filter(m => m.type === 'text' && m.enabled).length;
+  const textModelsTotal = models.filter(m => m.type === 'text').length;
+  const visionModelsEnabled = models.filter(m => m.type === 'vision' && m.enabled).length;
+  const visionModelsTotal = models.filter(m => m.type === 'vision').length;
+
   const handleToggleModel = (model: Model) => {
-    setModels(prev => prev.map(m => 
-      m.id === model.id ? { ...m, enabled: !m.enabled } : m
-    ));
-    toast({
-      title: model.enabled ? '模型已禁用' : '模型已启用',
-      description: `${model.name} 状态已更新`,
-    });
+    // 如果是关闭模型，需要校验
+    if (model.enabled) {
+      // 计算关闭后的启用数量
+      const textEnabledAfter = model.type === 'text' 
+        ? textModelsEnabled - 1 
+        : textModelsEnabled;
+      const visionEnabledAfter = model.type === 'vision' 
+        ? visionModelsEnabled - 1 
+        : visionModelsEnabled;
+      
+      // 校验是否满足最低要求
+      if (textEnabledAfter < 1 || visionEnabledAfter < 1) {
+        toast({
+          title: '无法关闭模型',
+          description: '系统要求文本模型和视觉理解模型各至少开启一个',
+          variant: 'destructive',
+        });
+        return;
+      }
+      
+      // 可以关闭
+      setModels(prev => prev.map(m => 
+        m.id === model.id ? { ...m, enabled: false } : m
+      ));
+      toast({
+        title: '模型已禁用',
+        description: `${model.name} 状态已更新`,
+      });
+    } else {
+      // 开启模型 - 检查是否首次开启服务
+      if (!isServiceActivated) {
+        setPendingModel(model);
+        setShowActivationDialog(true);
+        return;
+      }
+      
+      // 已开通服务，直接启用
+      setModels(prev => prev.map(m => 
+        m.id === model.id ? { ...m, enabled: true } : m
+      ));
+      toast({
+        title: '模型已启用',
+        description: `${model.name} 状态已更新`,
+      });
+    }
+  };
+
+  const handleActivateService = async () => {
+    if (!agreementChecked) {
+      toast({
+        title: '请先同意服务协议',
+        description: '需要勾选同意《星流平台 API 服务协议》后才能开通',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    setIsActivating(true);
+    // 模拟开通服务
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    setIsServiceActivated(true);
+    setIsActivating(false);
+    setShowActivationDialog(false);
+    setAgreementChecked(false);
+    
+    // 开通成功后启用待开启的模型
+    if (pendingModel) {
+      setModels(prev => prev.map(m => 
+        m.id === pendingModel.id ? { ...m, enabled: true } : m
+      ));
+      toast({
+        title: '服务开通成功',
+        description: `星流平台 API 服务已开通，${pendingModel.name} 已启用`,
+      });
+      setPendingModel(null);
+    }
   };
 
   const handleOpenConfig = (model: Model) => {
@@ -211,11 +295,6 @@ export function ModelManagement() {
       description: `${selectedModel.name} 限流配置已更新`,
     });
   };
-
-  const textModelsEnabled = models.filter(m => m.type === 'text' && m.enabled).length;
-  const textModelsTotal = models.filter(m => m.type === 'text').length;
-  const visionModelsEnabled = models.filter(m => m.type === 'vision' && m.enabled).length;
-  const visionModelsTotal = models.filter(m => m.type === 'vision').length;
 
   return (
     <div className="space-y-4 animate-fade-in">
@@ -283,9 +362,9 @@ export function ModelManagement() {
               <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">模型类型</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">上下文限制</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">
-                RPM <span className="text-muted-foreground/60">↗</span>
+                每分钟请求数 <span className="text-muted-foreground/60">↗</span>
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">TPM</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">每分钟令牌数</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">模型详情</th>
               <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground">状态 / 操作</th>
             </tr>
@@ -321,7 +400,7 @@ export function ModelManagement() {
                   <span className="text-sm text-muted-foreground">{model.contextLimit}</span>
                 </td>
 
-                {/* RPM */}
+                {/* RPM - 每分钟请求数 */}
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2">
                     <div className="w-16 h-1 bg-muted rounded-full overflow-hidden">
@@ -336,7 +415,7 @@ export function ModelManagement() {
                   </div>
                 </td>
 
-                {/* TPM */}
+                {/* TPM - 每分钟令牌数 */}
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2">
                     <div className="w-16 h-1 bg-muted rounded-full overflow-hidden">
@@ -396,7 +475,7 @@ export function ModelManagement() {
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="rpm">RPM 限制 (请求/分钟)</Label>
+              <Label htmlFor="rpm">每分钟请求数限制</Label>
               <Input 
                 id="rpm"
                 type="number"
@@ -405,7 +484,7 @@ export function ModelManagement() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="tpm">TPM 限制 (Token/分钟)</Label>
+              <Label htmlFor="tpm">每分钟令牌数限制</Label>
               <Input 
                 id="tpm"
                 type="number"
@@ -420,6 +499,67 @@ export function ModelManagement() {
             </Button>
             <Button onClick={handleSaveConfig} disabled={isSaving}>
               {isSaving ? '保存中...' : '保存配置'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Service Activation Dialog */}
+      <Dialog open={showActivationDialog} onOpenChange={(open) => {
+        if (!open) {
+          setShowActivationDialog(false);
+          setPendingModel(null);
+          setAgreementChecked(false);
+        }
+      }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-warning" />
+              开通星流平台 API 服务
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              KSGC CLI 工具会调用金山云星流平台 API 服务，检测到账号暂未开通该服务，系统将自动开通星流平台 API 服务。
+            </p>
+            <div className="flex items-start gap-2 pt-2">
+              <Checkbox 
+                id="agreement" 
+                checked={agreementChecked}
+                onCheckedChange={(checked) => setAgreementChecked(checked === true)}
+              />
+              <label 
+                htmlFor="agreement" 
+                className="text-sm text-muted-foreground leading-relaxed cursor-pointer"
+              >
+                我已阅读并同意
+                <a 
+                  href="#" 
+                  className="text-primary hover:underline mx-1"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  《星流平台 API 服务协议》
+                </a>
+              </label>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setShowActivationDialog(false);
+                setPendingModel(null);
+                setAgreementChecked(false);
+              }}
+            >
+              取消
+            </Button>
+            <Button 
+              onClick={handleActivateService} 
+              disabled={!agreementChecked || isActivating}
+            >
+              {isActivating ? '开通中...' : '确认开通'}
             </Button>
           </DialogFooter>
         </DialogContent>
