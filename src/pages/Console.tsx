@@ -58,7 +58,7 @@ export function Console() {
       
       <main className={cn(
         "transition-all duration-300",
-        sidebarCollapsed ? "ml-16" : "ml-64"
+        sidebarCollapsed ? "ml-14" : "ml-48"
       )}>
         <Header 
           title={config.title}
