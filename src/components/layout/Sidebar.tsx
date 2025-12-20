@@ -2,7 +2,6 @@ import React from 'react';
 import { 
   LayoutDashboard, 
   Users, 
-  Building2, 
   BarChart3, 
   Settings, 
   Shield, 
@@ -10,8 +9,7 @@ import {
   ChevronLeft,
   ChevronDown,
   Sparkles,
-  KeyRound,
-  UserCog
+  FileText
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -24,12 +22,12 @@ interface SidebarProps {
 
 const menuGroups = [
   {
-    id: 'access',
-    label: '访问控制',
+    id: 'resource',
+    label: '资源管理',
     items: [
       { id: 'dashboard', label: '概览', icon: LayoutDashboard },
-      { id: 'members', label: '成员管理', icon: Users },
-      { id: 'departments', label: '组织架构', icon: Building2 },
+      { id: 'usage', label: '用量看板', icon: BarChart3 },
+      { id: 'callDetails', label: '调用明细', icon: FileText },
     ],
   },
   {
@@ -37,21 +35,15 @@ const menuGroups = [
     label: '服务管理',
     items: [
       { id: 'models', label: '模型管理', icon: Boxes },
-      { id: 'usage', label: '用量统计', icon: BarChart3 },
-    ],
-  },
-  {
-    id: 'security',
-    label: '安全设置',
-    items: [
-      { id: 'security', label: 'IP 白名单', icon: Shield },
+      { id: 'members', label: '组织成员管理', icon: Users },
+      { id: 'security', label: 'IP白名单', icon: Shield },
       { id: 'settings', label: '系统设置', icon: Settings },
     ],
   },
 ];
 
 export function Sidebar({ currentView, onViewChange, collapsed, onToggleCollapse }: SidebarProps) {
-  const [expandedGroups, setExpandedGroups] = React.useState<string[]>(['access', 'service', 'security']);
+  const [expandedGroups, setExpandedGroups] = React.useState<string[]>(['resource', 'service']);
 
   const toggleGroup = (groupId: string) => {
     setExpandedGroups(prev => 
