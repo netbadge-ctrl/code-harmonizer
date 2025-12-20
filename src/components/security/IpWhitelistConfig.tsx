@@ -333,14 +333,6 @@ export function IpWhitelistConfig() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Header */}
-      <div className="flex items-center justify-end">
-        <Button size="sm" className="gap-2" onClick={handleOpenAdd}>
-          <Plus className="w-4 h-4" />
-          添加规则
-        </Button>
-      </div>
-
       {/* Info Card */}
       <div className="enterprise-card p-4 bg-primary/5 border-primary/20">
         <div className="flex items-start gap-3">
@@ -354,15 +346,24 @@ export function IpWhitelistConfig() {
         </div>
       </div>
 
+      {/* Header */}
+      <div className="flex items-center justify-end">
+        <Button size="sm" className="gap-2" onClick={handleOpenAdd}>
+          <Plus className="w-4 h-4" />
+          添加规则
+        </Button>
+      </div>
+
       {/* Rules List */}
       <div className="enterprise-card overflow-hidden">
         <table className="data-table w-full">
           <thead>
             <tr>
-              <th className="w-[220px]">IP / 网段</th>
-              <th className="w-[100px]">类型</th>
-              <th className="min-w-[180px]">描述</th>
-              <th className="w-[120px]">添加时间</th>
+              <th className="w-[200px]">IP / 网段</th>
+              <th className="w-[80px]">类型</th>
+              <th className="min-w-[150px]">描述</th>
+              <th className="w-[140px]">状态</th>
+              <th className="w-[110px]">添加时间</th>
               <th className="w-[100px] text-right pr-4">操作</th>
             </tr>
           </thead>
@@ -371,8 +372,8 @@ export function IpWhitelistConfig() {
               const containingRule = containedRules[rule.id];
               
               return (
-                <tr key={rule.id} className="group">
-                  <td className="w-[220px]">
+                <tr key={rule.id}>
+                  <td className="w-[200px]">
                     <div className="flex items-center gap-2">
                       {rule.type === 'single' ? (
                         <Server className="w-4 h-4 text-muted-foreground flex-shrink-0" />
@@ -382,19 +383,9 @@ export function IpWhitelistConfig() {
                       <code className="text-sm font-mono text-foreground bg-muted px-2 py-0.5 rounded">
                         {rule.value}
                       </code>
-                      {containingRule && (
-                        <div className="flex items-center gap-1 text-warning" title={`已被 ${containingRule} 包含`}>
-                          <AlertCircle className="w-3.5 h-3.5" />
-                        </div>
-                      )}
                     </div>
-                    {containingRule && (
-                      <p className="text-xs text-warning mt-1 ml-6">
-                        已被 {containingRule} 包含（冗余）
-                      </p>
-                    )}
                   </td>
-                  <td className="w-[100px]">
+                  <td className="w-[80px]">
                     <span className={cn(
                       "status-badge",
                       rule.type === 'single' ? "bg-primary/10 text-primary" : "bg-success/10 text-success"
@@ -402,10 +393,20 @@ export function IpWhitelistConfig() {
                       {rule.type === 'single' ? '单个 IP' : 'CIDR'}
                     </span>
                   </td>
-                  <td className="min-w-[180px]">
+                  <td className="min-w-[150px]">
                     <span className="text-sm text-foreground">{rule.description}</span>
                   </td>
-                  <td className="w-[120px]">
+                  <td className="w-[140px]">
+                    {containingRule ? (
+                      <div className="flex items-center gap-1.5 text-warning">
+                        <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                        <span className="text-xs">被 {containingRule} 包含</span>
+                      </div>
+                    ) : (
+                      <span className="status-badge status-badge-success">正常</span>
+                    )}
+                  </td>
+                  <td className="w-[110px]">
                     <span className="text-sm text-muted-foreground">
                       {new Date(rule.createdAt).toLocaleDateString('zh-CN')}
                     </span>
@@ -415,7 +416,7 @@ export function IpWhitelistConfig() {
                       <Button 
                         variant="ghost" 
                         size="icon"
-                        className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-foreground hover:bg-muted"
+                        className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-muted"
                         onClick={() => handleOpenEdit(rule)}
                       >
                         <Pencil className="w-4 h-4" />
@@ -423,7 +424,7 @@ export function IpWhitelistConfig() {
                       <Button 
                         variant="ghost" 
                         size="icon"
-                        className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive hover:bg-destructive/10"
+                        className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
                         onClick={() => handleOpenDelete(rule)}
                       >
                         <Trash2 className="w-4 h-4" />
