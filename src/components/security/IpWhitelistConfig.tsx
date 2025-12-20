@@ -359,12 +359,12 @@ export function IpWhitelistConfig() {
         <table className="data-table w-full table-fixed">
           <thead>
             <tr>
-              <th style={{ width: '18%' }}>IP / 网段</th>
-              <th style={{ width: '10%' }}>类型</th>
-              <th style={{ width: '25%' }}>描述</th>
-              <th style={{ width: '22%' }}>状态</th>
-              <th style={{ width: '12%' }}>添加时间</th>
-              <th style={{ width: '13%' }} className="text-center">操作</th>
+              <th style={{ width: '220px' }}>IP / 网段</th>
+              <th style={{ width: '96px' }}>类型</th>
+              <th>描述</th>
+              <th style={{ width: '260px' }}>状态</th>
+              <th style={{ width: '120px' }}>添加时间</th>
+              <th style={{ width: '104px' }} className="text-right pr-4">操作</th>
             </tr>
           </thead>
           <tbody>
@@ -411,8 +411,8 @@ export function IpWhitelistConfig() {
                       {new Date(rule.createdAt).toLocaleDateString('zh-CN')}
                     </span>
                   </td>
-                  <td>
-                    <div className="flex justify-center gap-1">
+                  <td className="pr-4">
+                    <div className="flex justify-end gap-1">
                       <Button 
                         variant="ghost" 
                         size="icon"
