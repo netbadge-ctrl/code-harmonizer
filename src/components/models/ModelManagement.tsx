@@ -41,7 +41,7 @@ const mockModels: Model[] = [
     tpmCurrent: 25800,
     tpmLimit: 150000,
     description: '是 kimi-k2-thinking 模型的高速版，适用于需要深度推理能力和快速响应的场景。',
-    enabled: true,
+    enabled: false,
   },
   {
     id: 'qwen3-coder-480b-a35b-instruct',
@@ -53,7 +53,7 @@ const mockModels: Model[] = [
     tpmCurrent: 98000,
     tpmLimit: 120000,
     description: 'Qwen3-Coder-480B-A35B-Instruct 是 Qwen 团队近期超大规模代码模型。',
-    enabled: true,
+    enabled: false,
   },
   {
     id: 'kimi-k2-turbo-preview',
@@ -77,7 +77,7 @@ const mockModels: Model[] = [
     tpmCurrent: 5800,
     tpmLimit: 80000,
     description: 'Yi Vision V2 具有卓越的图像理解能力，支持复杂场景识别。',
-    enabled: true,
+    enabled: false,
   },
   {
     id: 'kimi-k2-ksyun',
@@ -113,7 +113,7 @@ const mockModels: Model[] = [
     tpmCurrent: 188000,
     tpmLimit: 250000,
     description: 'DeepSeek-V3.2 的核心是平衡推理能力与输出长度，适合日常对话。',
-    enabled: true,
+    enabled: false,
   },
   {
     id: 'glm-4v-plus',
@@ -413,7 +413,7 @@ export function ModelManagement() {
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">每分钟令牌数</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">模型详情</th>
-              <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground">状态 / 操作</th>
+              <th className="px-4 py-3 text-center text-xs font-medium text-muted-foreground">操作</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -482,15 +482,9 @@ export function ModelManagement() {
                   <p className="text-sm text-muted-foreground line-clamp-2">{model.description}</p>
                 </td>
 
-                {/* Status & Actions */}
+                {/* Actions */}
                 <td className="px-4 py-3">
-                  <div className="flex items-center justify-end gap-3">
-                    <span className={cn(
-                      "text-sm",
-                      model.enabled ? "text-success" : "text-muted-foreground"
-                    )}>
-                      {model.enabled ? '已启用' : '已禁止'}
-                    </span>
+                  <div className="flex items-center justify-center">
                     <Switch 
                       checked={model.enabled}
                       onCheckedChange={() => handleToggleModel(model)}
