@@ -148,6 +148,8 @@ export function ModelManagement() {
   const [pendingModel, setPendingModel] = useState<Model | null>(null);
   const [agreementChecked, setAgreementChecked] = useState(false);
   const [isActivating, setIsActivating] = useState(false);
+  const [autoEnableNewModels, setAutoEnableNewModels] = useState(true);
+  const [pendingEnableAll, setPendingEnableAll] = useState(false);
 
   const handleCopyCommand = () => {
     navigator.clipboard.writeText('--model <model_name>');
@@ -189,6 +191,9 @@ export function ModelManagement() {
   const textModelsTotal = models.filter(m => m.type === 'text').length;
   const visionModelsEnabled = models.filter(m => m.type === 'vision' && m.enabled).length;
   const visionModelsTotal = models.filter(m => m.type === 'vision').length;
+  
+  // 是否满足最低开启要求
+  const meetsMinimumRequirement = textModelsEnabled >= 1 && visionModelsEnabled >= 1;
 
   const handleToggleModel = (model: Model) => {
     // 如果是关闭模型，需要校验
@@ -258,7 +263,16 @@ export function ModelManagement() {
     setAgreementChecked(false);
     
     // 开通成功后启用待开启的模型
-    if (pendingModel) {
+    // 开通成功后处理待开启的操作
+    if (pendingEnableAll) {
+      // 全部开启
+      setModels(prev => prev.map(m => ({ ...m, enabled: true })));
+      toast({
+        title: '服务开通成功',
+        description: '星流平台 API 服务已开通，所有模型已启用',
+      });
+      setPendingEnableAll(false);
+    } else if (pendingModel) {
       setModels(prev => prev.map(m => 
         m.id === pendingModel.id ? { ...m, enabled: true } : m
       ));
@@ -268,6 +282,22 @@ export function ModelManagement() {
       });
       setPendingModel(null);
     }
+  };
+
+  const handleEnableAll = () => {
+    // 如果服务未开通，先弹出开通对话框
+    if (!isServiceActivated) {
+      setPendingEnableAll(true);
+      setShowActivationDialog(true);
+      return;
+    }
+    
+    // 已开通服务，直接启用全部
+    setModels(prev => prev.map(m => ({ ...m, enabled: true })));
+    toast({
+      title: '全部模型已启用',
+      description: '所有模型状态已更新',
+    });
   };
 
   const handleOpenConfig = (model: Model) => {
@@ -316,26 +346,28 @@ export function ModelManagement() {
         </button>
       </div>
 
-      {/* Warning Bar */}
-      <div className="flex items-center gap-2 bg-warning/10 border border-warning/20 rounded px-4 py-2.5">
-        <span className="text-sm text-foreground">
-          为了保障 KSGC 产品正常运行，系统要求
-          <span className="text-primary mx-1 font-medium">文本模型</span>
-          和
-          <span className="text-primary mx-1 font-medium">视觉理解模型</span>
-          各至少开启一个。
-        </span>
-        <div className="flex items-center gap-3 ml-auto">
-          <span className="text-sm">文本大模型</span>
-          <Badge variant={textModelsEnabled > 0 ? "default" : "destructive"} className="text-xs">
-            {textModelsEnabled > 0 ? '已启用' : '未启用'}
-          </Badge>
-          <span className="text-sm">视觉理解模型</span>
-          <Badge variant={visionModelsEnabled > 0 ? "default" : "destructive"} className="text-xs">
-            {visionModelsEnabled > 0 ? '已启用' : '未启用'}
-          </Badge>
+      {/* Warning Bar - 只在不满足最低要求时显示 */}
+      {!meetsMinimumRequirement && (
+        <div className="flex items-center gap-2 bg-warning/10 border border-warning/20 rounded px-4 py-2.5">
+          <span className="text-sm text-foreground">
+            为了保障 KSGC 产品正常运行，系统要求
+            <span className="text-primary mx-1 font-medium">文本模型</span>
+            和
+            <span className="text-primary mx-1 font-medium">视觉理解模型</span>
+            各至少开启一个。
+          </span>
+          <div className="flex items-center gap-3 ml-auto">
+            <span className="text-sm">文本大模型</span>
+            <Badge variant={textModelsEnabled > 0 ? "default" : "destructive"} className="text-xs">
+              {textModelsEnabled > 0 ? '已启用' : '未启用'}
+            </Badge>
+            <span className="text-sm">视觉理解模型</span>
+            <Badge variant={visionModelsEnabled > 0 ? "default" : "destructive"} className="text-xs">
+              {visionModelsEnabled > 0 ? '已启用' : '未启用'}
+            </Badge>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Search and Filter Bar */}
       <div className="flex items-center justify-between gap-4">
@@ -348,8 +380,23 @@ export function ModelManagement() {
             className="pl-9 h-9 bg-card border-border"
           />
         </div>
-        <div className="text-sm text-muted-foreground">
-          文本模型启用 {textModelsEnabled}/{textModelsTotal}, 视觉理解模型启用 {visionModelsEnabled}/{visionModelsTotal}
+        <div className="flex items-center gap-6">
+          <div className="flex items-center gap-2">
+            <Switch
+              id="auto-enable"
+              checked={autoEnableNewModels}
+              onCheckedChange={setAutoEnableNewModels}
+            />
+            <Label htmlFor="auto-enable" className="text-sm text-muted-foreground cursor-pointer">
+              自动开启新模型
+            </Label>
+          </div>
+          <Button variant="outline" size="sm" onClick={handleEnableAll}>
+            全部开启
+          </Button>
+          <div className="text-sm text-muted-foreground">
+            文本模型启用 {textModelsEnabled}/{textModelsTotal}, 视觉理解模型启用 {visionModelsEnabled}/{visionModelsTotal}
+          </div>
         </div>
       </div>
 
@@ -509,6 +556,7 @@ export function ModelManagement() {
         if (!open) {
           setShowActivationDialog(false);
           setPendingModel(null);
+          setPendingEnableAll(false);
           setAgreementChecked(false);
         }
       }}>
@@ -550,6 +598,7 @@ export function ModelManagement() {
               onClick={() => {
                 setShowActivationDialog(false);
                 setPendingModel(null);
+                setPendingEnableAll(false);
                 setAgreementChecked(false);
               }}
             >
