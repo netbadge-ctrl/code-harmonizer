@@ -243,23 +243,17 @@ export function DepartmentManagement() {
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-semibold text-foreground">组织架构</h2>
-          <p className="text-sm text-muted-foreground">管理部门结构及 AI 服务权限配置</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="gap-2"
-            onClick={() => setShowSyncConfirm(true)}
-            disabled={isSyncing}
-          >
-            <RefreshCw className={cn("w-4 h-4", isSyncing && "animate-spin")} />
-            {isSyncing ? '同步中...' : '立即同步'}
-          </Button>
-        </div>
+      <div className="flex items-center justify-end">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="gap-2"
+          onClick={() => setShowSyncConfirm(true)}
+          disabled={isSyncing}
+        >
+          <RefreshCw className={cn("w-4 h-4", isSyncing && "animate-spin")} />
+          {isSyncing ? '同步中...' : '立即同步'}
+        </Button>
       </div>
 
       {/* Batch Actions */}

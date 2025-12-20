@@ -85,6 +85,56 @@ function cidrInCidr(smallerCidr: string, largerCidr: string): boolean {
   return (smallNum & maskNum) === (largeNum & maskNum);
 }
 
+// Helper to check if an IP is a private/internal IP
+function isPrivateIp(ip: string): boolean {
+  const num = ipToNum(ip);
+  
+  // 10.0.0.0 - 10.255.255.255 (10.0.0.0/8)
+  const tenStart = ipToNum('10.0.0.0');
+  const tenEnd = ipToNum('10.255.255.255');
+  if (num >= tenStart && num <= tenEnd) return true;
+  
+  // 172.16.0.0 - 172.31.255.255 (172.16.0.0/12)
+  const oneSevenTwoStart = ipToNum('172.16.0.0');
+  const oneSevenTwoEnd = ipToNum('172.31.255.255');
+  if (num >= oneSevenTwoStart && num <= oneSevenTwoEnd) return true;
+  
+  // 192.168.0.0 - 192.168.255.255 (192.168.0.0/16)
+  const oneNineTwoStart = ipToNum('192.168.0.0');
+  const oneNineTwoEnd = ipToNum('192.168.255.255');
+  if (num >= oneNineTwoStart && num <= oneNineTwoEnd) return true;
+  
+  return false;
+}
+
+// Helper to check if a CIDR range contains any private IPs
+function cidrContainsPrivateIp(cidr: string): boolean {
+  const [range, bits] = cidr.split('/');
+  if (!bits) return isPrivateIp(range);
+  
+  const rangeNum = ipToNum(range);
+  const mask = parseInt(bits, 10);
+  const hostBits = 32 - mask;
+  const networkSize = Math.pow(2, hostBits);
+  
+  // Check start and end of the range
+  const startIp = rangeNum;
+  const endIp = rangeNum + networkSize - 1;
+  
+  // Check if any part of the range overlaps with private ranges
+  const privateRanges = [
+    { start: ipToNum('10.0.0.0'), end: ipToNum('10.255.255.255') },
+    { start: ipToNum('172.16.0.0'), end: ipToNum('172.31.255.255') },
+    { start: ipToNum('192.168.0.0'), end: ipToNum('192.168.255.255') },
+  ];
+  
+  for (const pr of privateRanges) {
+    if (startIp <= pr.end && endIp >= pr.start) return true;
+  }
+  
+  return false;
+}
+
 export function IpWhitelistConfig() {
   const [rules, setRules] = useState<IpRule[]>(mockIpRules);
   const [showAddDialog, setShowAddDialog] = useState(false);
@@ -183,6 +233,20 @@ export function IpWhitelistConfig() {
       return;
     }
 
+    // Validate private IP
+    const isPrivate = formData.type === 'single' 
+      ? isPrivateIp(formData.value.split('/')[0])
+      : cidrContainsPrivateIp(formData.value);
+    
+    if (isPrivate) {
+      toast({ 
+        title: '不支持内网 IP', 
+        description: '仅支持添加公网 IP 或网段，不支持 10.x.x.x、192.168.x.x、172.16-31.x.x 等内网地址',
+        variant: 'destructive' 
+      });
+      return;
+    }
+
     if (redundancyWarning) {
       toast({ title: '规则冗余', description: redundancyWarning, variant: 'destructive' });
       return;
@@ -214,6 +278,20 @@ export function IpWhitelistConfig() {
   const handleEditRule = async () => {
     if (!editingRule || !formData.value) {
       toast({ title: '请输入 IP 地址或网段', variant: 'destructive' });
+      return;
+    }
+
+    // Validate private IP
+    const isPrivate = formData.type === 'single' 
+      ? isPrivateIp(formData.value.split('/')[0])
+      : cidrContainsPrivateIp(formData.value);
+    
+    if (isPrivate) {
+      toast({ 
+        title: '不支持内网 IP', 
+        description: '仅支持添加公网 IP 或网段，不支持 10.x.x.x、192.168.x.x、172.16-31.x.x 等内网地址',
+        variant: 'destructive' 
+      });
       return;
     }
 
@@ -256,11 +334,7 @@ export function IpWhitelistConfig() {
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-semibold text-foreground">安全配置</h2>
-          <p className="text-sm text-muted-foreground">管理 IP 白名单规则，保护 API 访问安全</p>
-        </div>
+      <div className="flex items-center justify-end">
         <Button size="sm" className="gap-2" onClick={handleOpenAdd}>
           <Plus className="w-4 h-4" />
           添加规则

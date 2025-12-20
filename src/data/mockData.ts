@@ -219,9 +219,9 @@ export const mockIpRules: IpRule[] = [
   },
   {
     id: '2',
-    value: '116.228.89.156',
+    value: '203.119.24.100',
     type: 'single',
-    description: 'VPN 出口 IP',
+    description: '办公室固定IP（被总部网段包含）',
     createdAt: '2024-01-12T14:30:00Z',
     createdBy: '李华',
   },
@@ -232,6 +232,22 @@ export const mockIpRules: IpRule[] = [
     description: '分公司网段',
     createdAt: '2024-01-13T09:15:00Z',
     createdBy: '张明',
+  },
+  {
+    id: '4',
+    value: '58.247.128.0/24',
+    type: 'cidr',
+    description: '分公司子网段（被分公司网段包含）',
+    createdAt: '2024-01-14T11:00:00Z',
+    createdBy: '王芳',
+  },
+  {
+    id: '5',
+    value: '116.228.89.156',
+    type: 'single',
+    description: 'VPN 出口 IP',
+    createdAt: '2024-01-15T09:30:00Z',
+    createdBy: '李华',
   },
 ];
 

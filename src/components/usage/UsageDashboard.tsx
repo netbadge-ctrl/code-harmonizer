@@ -74,21 +74,15 @@ export function UsageDashboard() {
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h2 className="text-lg font-semibold text-foreground">用量统计</h2>
-          <p className="text-sm text-muted-foreground">分析 AI 服务使用情况和趋势</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <Button variant="outline" size="sm" className="gap-2">
-            <Calendar className="w-4 h-4" />
-            最近 7 天
-          </Button>
-          <Button variant="outline" size="sm" className="gap-2">
-            <Download className="w-4 h-4" />
-            导出报告
-          </Button>
-        </div>
+      <div className="flex items-center justify-end gap-3">
+        <Button variant="outline" size="sm" className="gap-2">
+          <Calendar className="w-4 h-4" />
+          最近 7 天
+        </Button>
+        <Button variant="outline" size="sm" className="gap-2">
+          <Download className="w-4 h-4" />
+          导出报告
+        </Button>
       </div>
 
       {/* Stats Overview */}
