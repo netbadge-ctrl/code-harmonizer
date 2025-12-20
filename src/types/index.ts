@@ -40,7 +40,6 @@ export interface AIModel {
   id: string;
   name: string;
   provider: string;
-  icon: string;
   description: string;
   enabled: boolean;
   rpmLimit: number;
