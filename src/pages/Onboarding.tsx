@@ -40,7 +40,7 @@ export function Onboarding() {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0);
   const [identitySource, setIdentitySource] = useState<'wps365' | 'wecom' | null>(null);
-  const [config, setConfig] = useState({ appId: '', appKey: '' });
+  const [config, setConfig] = useState({ appId: '', appKey: '', redirectUri: '' });
   const [showAppKey, setShowAppKey] = useState(false);
   const [copied, setCopied] = useState(false);
   const [diagnostics, setDiagnostics] = useState<DiagnosticItem[]>([
@@ -201,10 +201,6 @@ export function Onboarding() {
                       <p className="font-medium text-foreground">北京智码云科技有限公司</p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-primary/30 bg-primary/5">
-                    <CheckCircle2 className="w-4 h-4 text-primary" />
-                    <span className="text-sm font-medium text-primary">官方实名</span>
-                  </div>
                 </div>
 
                 {/* Identity Source Selection */}
@@ -272,7 +268,7 @@ export function Onboarding() {
                         placeholder="请输入应用 ID"
                         value={config.appId}
                         onChange={(e) => setConfig(prev => ({ ...prev, appId: e.target.value }))}
-                        className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500"
+                        className="bg-background"
                       />
                     </div>
                     <div className="space-y-2">
@@ -284,7 +280,7 @@ export function Onboarding() {
                           placeholder="请输入应用密钥"
                           value={config.appKey}
                           onChange={(e) => setConfig(prev => ({ ...prev, appKey: e.target.value }))}
-                          className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 pr-10"
+                          className="bg-background pr-10"
                         />
                         <button
                           type="button"
@@ -297,22 +293,13 @@ export function Onboarding() {
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="redirectUri">Redirect URI (回调地址)</Label>
-                      <div className="flex gap-2">
-                        <Input
-                          id="redirectUri"
-                          value={redirectUri}
-                          readOnly
-                          className="flex-1 bg-muted"
-                        />
-                        <Button
-                          variant="outline"
-                          onClick={handleCopyUri}
-                          className="shrink-0 gap-2"
-                        >
-                          {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                          复制
-                        </Button>
-                      </div>
+                      <Input
+                        id="redirectUri"
+                        placeholder="请输入回调地址"
+                        value={config.redirectUri || ''}
+                        onChange={(e) => setConfig(prev => ({ ...prev, redirectUri: e.target.value }))}
+                        className="bg-background"
+                      />
                     </div>
                   </div>
                 )}
