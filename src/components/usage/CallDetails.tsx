@@ -320,7 +320,7 @@ export function CallDetails() {
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
                     <Database className="w-4 h-4 text-primary" />
-                    <span className="font-medium">提示词 (Prompt)</span>
+                    <span className="font-medium">模型输入</span>
                   </div>
                   <Button
                     variant="ghost"
