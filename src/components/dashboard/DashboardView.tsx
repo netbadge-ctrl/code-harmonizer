@@ -7,7 +7,7 @@ import { Progress } from '@/components/ui/progress';
 import { SubscriptionUpgradeDialog } from '@/components/subscription/SubscriptionUpgradeDialog';
 import { Card } from '@/components/ui/card';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Area, AreaChart } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Area, AreaChart, Legend } from 'recharts';
 
 // 生成当日5分钟间隔的趋势数据
 const generateTrendData = () => {
@@ -28,6 +28,7 @@ const generateTrendData = () => {
       time: `${hour.toString().padStart(2, '0')}:${time.getMinutes().toString().padStart(2, '0')}`,
       requests: Math.floor(baseValue + randomFactor),
       tokens: Math.floor((baseValue + randomFactor) * 150 + Math.random() * 500),
+      activeUsers: Math.floor((baseValue + randomFactor) / 10 + Math.random() * 3),
     });
   }
   return data;
@@ -215,24 +216,30 @@ export function DashboardView() {
             </h3>
           </div>
           <div className="p-4">
+            {/* 图例 */}
+            <div className="flex items-center gap-6 mb-4">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-primary"></div>
+                <span className="text-xs text-muted-foreground">活跃用户</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-success"></div>
+                <span className="text-xs text-muted-foreground">Token量 (K)</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-warning"></div>
+                <span className="text-xs text-muted-foreground">调用次数</span>
+              </div>
+            </div>
             <ChartContainer 
               config={{
-                requests: { label: "请求次数", color: "hsl(var(--primary))" },
-                tokens: { label: "Token量", color: "hsl(var(--success))" },
+                activeUsers: { label: "活跃用户", color: "hsl(var(--primary))" },
+                tokens: { label: "Token量 (K)", color: "hsl(var(--success))" },
+                requests: { label: "调用次数", color: "hsl(var(--warning))" },
               }}
               className="h-[280px] w-full"
             >
-              <AreaChart data={trendData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="colorRequests" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
-                  </linearGradient>
-                  <linearGradient id="colorTokens" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="hsl(var(--success))" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="hsl(var(--success))" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
+              <LineChart data={trendData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                 <XAxis 
                   dataKey="time" 
                   axisLine={false} 
@@ -241,21 +248,55 @@ export function DashboardView() {
                   interval={23} // 每2小时显示一个标签
                 />
                 <YAxis 
+                  yAxisId="left"
                   axisLine={false} 
                   tickLine={false} 
                   tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
                   width={40}
                 />
-                <ChartTooltip content={<ChartTooltipContent />} />
-                <Area 
+                <YAxis 
+                  yAxisId="right"
+                  orientation="right"
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                  width={50}
+                  tickFormatter={(value) => `${(value / 1000).toFixed(0)}K`}
+                />
+                <ChartTooltip 
+                  content={<ChartTooltipContent />}
+                  formatter={(value: number, name: string) => {
+                    if (name === 'tokens') return [`${(value / 1000).toFixed(1)}K`, 'Token量'];
+                    if (name === 'activeUsers') return [value, '活跃用户'];
+                    if (name === 'requests') return [value, '调用次数'];
+                    return [value, name];
+                  }}
+                />
+                <Line 
+                  yAxisId="left"
+                  type="monotone" 
+                  dataKey="activeUsers" 
+                  stroke="hsl(var(--primary))" 
+                  strokeWidth={2}
+                  dot={false}
+                />
+                <Line 
+                  yAxisId="right"
+                  type="monotone" 
+                  dataKey="tokens" 
+                  stroke="hsl(var(--success))" 
+                  strokeWidth={2}
+                  dot={false}
+                />
+                <Line 
+                  yAxisId="left"
                   type="monotone" 
                   dataKey="requests" 
-                  stroke="hsl(var(--primary))" 
-                  fillOpacity={1} 
-                  fill="url(#colorRequests)"
+                  stroke="hsl(var(--warning))" 
                   strokeWidth={2}
+                  dot={false}
                 />
-              </AreaChart>
+              </LineChart>
             </ChartContainer>
           </div>
         </div>
