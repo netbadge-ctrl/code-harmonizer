@@ -21,6 +21,7 @@ export function DashboardView() {
       seats: 50,
       usedSeats: 5,
       expiresAt: '2024-12-31',
+      isTrial: true, // 是否为试用状态
     },
     identitySource: 'wecom' as const,
     orgSlug: 'techflow',
@@ -62,8 +63,13 @@ export function DashboardView() {
                   {planLabels[organization.subscription.plan]}
                 </span>
               </div>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-muted-foreground flex items-center gap-2">
                 有效期至: {organization.subscription.expiresAt}
+                {organization.subscription.isTrial && (
+                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-amber-500/10 text-amber-600 border border-amber-500/20">
+                    试用中
+                  </span>
+                )}
               </p>
             </div>
           </div>
