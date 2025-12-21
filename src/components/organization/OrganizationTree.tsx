@@ -183,12 +183,48 @@ export function OrganizationTree() {
     setExpanded(newExpanded);
   };
 
+  // Helper to get all descendant IDs of a department
+  const getAllDescendantIds = (dept: Department): string[] => {
+    const ids: string[] = [];
+    if (dept.children) {
+      for (const child of dept.children) {
+        ids.push(child.id);
+        ids.push(...getAllDescendantIds(child));
+      }
+    }
+    return ids;
+  };
+
+  // Find a department by ID in the tree
+  const findDepartment = (depts: Department[], id: string): Department | null => {
+    for (const dept of depts) {
+      if (dept.id === id) return dept;
+      if (dept.children) {
+        const found = findDepartment(dept.children, id);
+        if (found) return found;
+      }
+    }
+    return null;
+  };
+
   const handleToggleSelect = (id: string) => {
     const newSelected = new Set(selected);
+    const dept = findDepartment(departments, id);
+    
     if (newSelected.has(id)) {
+      // Deselect this and all descendants
       newSelected.delete(id);
+      if (dept) {
+        const descendantIds = getAllDescendantIds(dept);
+        descendantIds.forEach(descId => newSelected.delete(descId));
+      }
     } else {
+      // Select this and all descendants
       newSelected.add(id);
+      if (dept) {
+        const descendantIds = getAllDescendantIds(dept);
+        descendantIds.forEach(descId => newSelected.add(descId));
+      }
     }
     setSelected(newSelected);
   };
