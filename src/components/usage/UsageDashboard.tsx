@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { 
   TrendingUp, 
   Zap, 
@@ -6,23 +6,9 @@ import {
   Clock,
   Download,
   Calendar,
-  Eye,
-  Copy,
-  CheckCircle2,
-  XCircle,
-  AlertCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { mockUsageStats, mockUsageRecords } from '@/data/mockData';
-import { UsageRecord } from '@/types';
-import { cn } from '@/lib/utils';
-import { toast } from '@/hooks/use-toast';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { mockUsageStats } from '@/data/mockData';
 import {
   LineChart,
   Line,
@@ -39,38 +25,6 @@ import {
 const COLORS = ['hsl(217, 91%, 60%)', 'hsl(142, 76%, 36%)', 'hsl(38, 92%, 50%)', 'hsl(215, 16%, 47%)'];
 
 export function UsageDashboard() {
-  const [selectedRecord, setSelectedRecord] = useState<UsageRecord | null>(null);
-  const [showDetailDialog, setShowDetailDialog] = useState(false);
-
-  const handleViewDetail = (record: UsageRecord) => {
-    setSelectedRecord(record);
-    setShowDetailDialog(true);
-  };
-
-  const handleCopy = (text: string, label: string) => {
-    navigator.clipboard.writeText(text);
-    toast({ title: `${label}已复制` });
-  };
-
-  const getStatusIcon = (status: UsageRecord['status']) => {
-    switch (status) {
-      case 'success':
-        return <CheckCircle2 className="w-4 h-4 text-success" />;
-      case 'error':
-        return <XCircle className="w-4 h-4 text-destructive" />;
-      case 'timeout':
-        return <AlertCircle className="w-4 h-4 text-warning" />;
-    }
-  };
-
-  const getStatusText = (status: UsageRecord['status']) => {
-    switch (status) {
-      case 'success': return '成功';
-      case 'error': return '错误';
-      case 'timeout': return '超时';
-    }
-  };
-
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
@@ -211,153 +165,6 @@ export function UsageDashboard() {
           </div>
         </div>
       </div>
-
-      {/* Usage Records */}
-      <div className="enterprise-card">
-        <div className="p-4 border-b border-border">
-          <h3 className="font-semibold text-foreground">调用明细</h3>
-        </div>
-        <table className="data-table">
-          <thead>
-            <tr>
-              <th>时间</th>
-              <th>用户</th>
-              <th>模型</th>
-              <th>输入 Token</th>
-              <th>输出 Token</th>
-              <th>耗时</th>
-              <th>状态</th>
-              <th className="text-right">操作</th>
-            </tr>
-          </thead>
-          <tbody>
-            {mockUsageRecords.map((record) => (
-              <tr key={record.id} className="group">
-                <td>
-                  <span className="text-sm text-foreground">
-                    {new Date(record.timestamp).toLocaleTimeString('zh-CN')}
-                  </span>
-                </td>
-                <td>
-                  <span className="text-sm text-foreground">{record.userName}</span>
-                </td>
-                <td>
-                  <span className="text-sm text-foreground">{record.model}</span>
-                </td>
-                <td>
-                  <span className="text-sm font-mono text-foreground">{record.inputTokens.toLocaleString()}</span>
-                </td>
-                <td>
-                  <span className="text-sm font-mono text-foreground">{record.outputTokens.toLocaleString()}</span>
-                </td>
-                <td>
-                  <span className="text-sm text-foreground">{record.latency}s</span>
-                </td>
-                <td>
-                  <div className="flex items-center gap-1.5">
-                    {getStatusIcon(record.status)}
-                    <span className={cn(
-                      "text-sm",
-                      record.status === 'success' ? "text-success" :
-                      record.status === 'error' ? "text-destructive" : "text-warning"
-                    )}>
-                      {getStatusText(record.status)}
-                    </span>
-                  </div>
-                </td>
-                <td>
-                  <div className="flex justify-end">
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      className="opacity-0 group-hover:opacity-100 transition-opacity gap-1"
-                      onClick={() => handleViewDetail(record)}
-                    >
-                      <Eye className="w-4 h-4" />
-                      查看
-                    </Button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Detail Dialog */}
-      <Dialog open={showDetailDialog} onOpenChange={setShowDetailDialog}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>调用详情</DialogTitle>
-          </DialogHeader>
-          {selectedRecord && (
-            <div className="space-y-4 py-4">
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="text-muted-foreground">调用时间</span>
-                  <p className="text-foreground mt-1">
-                    {new Date(selectedRecord.timestamp).toLocaleString('zh-CN')}
-                  </p>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">用户</span>
-                  <p className="text-foreground mt-1">{selectedRecord.userName}</p>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">模型</span>
-                  <p className="text-foreground mt-1">{selectedRecord.model}</p>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Token 消耗</span>
-                  <p className="text-foreground mt-1">
-                    {selectedRecord.inputTokens} + {selectedRecord.outputTokens} = {selectedRecord.inputTokens + selectedRecord.outputTokens}
-                  </p>
-                </div>
-              </div>
-
-              {selectedRecord.prompt && (
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm text-muted-foreground">Prompt</span>
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      className="gap-1 h-7"
-                      onClick={() => handleCopy(selectedRecord.prompt!, 'Prompt')}
-                    >
-                      <Copy className="w-3.5 h-3.5" />
-                      复制
-                    </Button>
-                  </div>
-                  <div className="p-3 rounded-lg bg-muted text-sm font-mono text-foreground max-h-32 overflow-y-auto">
-                    {selectedRecord.prompt}
-                  </div>
-                </div>
-              )}
-
-              {selectedRecord.response && (
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm text-muted-foreground">Response</span>
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      className="gap-1 h-7"
-                      onClick={() => handleCopy(selectedRecord.response!, 'Response')}
-                    >
-                      <Copy className="w-3.5 h-3.5" />
-                      复制
-                    </Button>
-                  </div>
-                  <div className="p-3 rounded-lg bg-muted text-sm font-mono text-foreground max-h-32 overflow-y-auto">
-                    {selectedRecord.response}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
