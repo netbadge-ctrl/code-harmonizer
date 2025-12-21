@@ -188,14 +188,12 @@ export function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
                   { 
                     value: 'wps365', 
                     label: 'WPS 365', 
-                    desc: '金山办公企业版',
-                    icon: '📄'
+                    desc: '金山办公企业版'
                   },
                   { 
                     value: 'wecom', 
                     label: '企业微信', 
-                    desc: '腾讯企业微信',
-                    icon: '💬'
+                    desc: '腾讯企业微信'
                   },
                 ].map((source) => (
                   <label
@@ -209,7 +207,17 @@ export function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
                   >
                     <RadioGroupItem value={source.value} className="sr-only" />
                     <div className="flex items-start gap-4">
-                      <span className="text-3xl">{source.icon}</span>
+                      {source.value === 'wps365' ? (
+                        <svg className="w-8 h-8 flex-shrink-0" viewBox="0 0 24 24" fill="none">
+                          <rect width="24" height="24" rx="4" fill="#D9291C"/>
+                          <path d="M4 8h16v2H4V8zm0 3h16v2H4v-2zm0 3h10v2H4v-2z" fill="white"/>
+                        </svg>
+                      ) : (
+                        <svg className="w-8 h-8 flex-shrink-0" viewBox="0 0 24 24" fill="none">
+                          <rect width="24" height="24" rx="4" fill="#07C160"/>
+                          <path d="M6 8.5C6 7.67 6.67 7 7.5 7h2C10.33 7 11 7.67 11 8.5v2c0 .83-.67 1.5-1.5 1.5h-2C6.67 12 6 11.33 6 10.5v-2zM13 8.5c0-.83.67-1.5 1.5-1.5h2c.83 0 1.5.67 1.5 1.5v2c0 .83-.67 1.5-1.5 1.5h-2c-.83 0-1.5-.67-1.5-1.5v-2zM6 14.5c0-.83.67-1.5 1.5-1.5h2c.83 0 1.5.67 1.5 1.5v2c0 .83-.67 1.5-1.5 1.5h-2C6.67 18 6 17.33 6 16.5v-2z" fill="white"/>
+                        </svg>
+                      )}
                       <div>
                         <p className="font-medium text-foreground">{source.label}</p>
                         <p className="text-sm text-muted-foreground">{source.desc}</p>
@@ -228,6 +236,7 @@ export function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
                       placeholder="请输入应用 ID"
                       value={config.appId}
                       onChange={(e) => setConfig(prev => ({ ...prev, appId: e.target.value }))}
+                      className="bg-background"
                     />
                   </div>
                   <div className="space-y-2">
@@ -238,19 +247,18 @@ export function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
                       placeholder="请输入应用密钥"
                       value={config.appKey}
                       onChange={(e) => setConfig(prev => ({ ...prev, appKey: e.target.value }))}
+                      className="bg-background"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="redirectUri">Redirect URI</Label>
+                    <Label htmlFor="redirectUri">Redirect URI (回调地址)</Label>
                     <Input 
                       id="redirectUri"
                       placeholder="https://your-domain.com/callback"
                       value={config.redirectUri}
                       onChange={(e) => setConfig(prev => ({ ...prev, redirectUri: e.target.value }))}
+                      className="bg-background"
                     />
-                    <p className="text-xs text-muted-foreground">
-                      请将此 URI 配置到您的 {identitySource === 'wps365' ? 'WPS 365' : '企业微信'} 应用中
-                    </p>
                   </div>
                 </div>
               )}
