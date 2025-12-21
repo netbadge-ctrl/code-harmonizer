@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { 
   Key, 
-  Download,
   Check,
   AlertTriangle,
   Eye,
-  EyeOff
+  EyeOff,
+  ExternalLink
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -47,22 +47,25 @@ const DingTalkIcon = () => (
   </svg>
 );
 
-const identitySources: { value: IdentitySource; label: string; Icon: React.FC }[] = [
-  { value: 'wps365', label: 'WPS协作', Icon: WPSIcon },
-  { value: 'wecom', label: '企业微信', Icon: WeComIcon },
-  { value: 'feishu', label: '飞书', Icon: FeishuIcon },
-  { value: 'dingtalk', label: '钉钉', Icon: DingTalkIcon },
+const identitySources: { value: IdentitySource; label: string; Icon: React.FC; docUrl: string }[] = [
+  { value: 'wps365', label: 'WPS协作', Icon: WPSIcon, docUrl: 'https://open.wps.cn/docs/oauth' },
+  { value: 'wecom', label: '企业微信', Icon: WeComIcon, docUrl: 'https://developer.work.weixin.qq.com/document' },
+  { value: 'feishu', label: '飞书', Icon: FeishuIcon, docUrl: 'https://open.feishu.cn/document' },
+  { value: 'dingtalk', label: '钉钉', Icon: DingTalkIcon, docUrl: 'https://open.dingtalk.com/document' },
 ];
 
 export function SettingsView() {
   const [selectedSource, setSelectedSource] = useState<IdentitySource>('wps365');
   const [pendingSource, setPendingSource] = useState<IdentitySource | null>(null);
-  const [appId, setAppId] = useState('');
-  const [appKey, setAppKey] = useState('');
-  const [redirectUri, setRedirectUri] = useState('');
+  const [appId, setAppId] = useState('wk_corp_8a7b6c5d4e3f2a1b');
+  const [appKey, setAppKey] = useState('sk-wps-xxxx-yyyy-zzzz-1234567890ab');
+  const [redirectUri, setRedirectUri] = useState('https://api.example.com/auth/callback');
   const [showAppKey, setShowAppKey] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  
+  const currentSource = identitySources.find(s => s.value === selectedSource);
+  const currentSourceLabel = currentSource?.label || '';
 
   const handleSourceChange = (value: IdentitySource) => {
     if (value !== selectedSource) {
@@ -97,15 +100,6 @@ export function SettingsView() {
     setHasUnsavedChanges(false);
     toast({ title: '配置已保存' });
   };
-
-  const handleDownloadCli = () => {
-    toast({ title: '开始下载 CLI', description: '请稍候...' });
-    setTimeout(() => {
-      toast({ title: 'CLI 下载完成' });
-    }, 1000);
-  };
-
-  const currentSourceLabel = identitySources.find(s => s.value === selectedSource)?.label || '';
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -151,9 +145,20 @@ export function SettingsView() {
                 );
               })}
             </div>
-            <p className="text-xs text-muted-foreground">
-              当前使用 {currentSourceLabel} 作为企业登录认证源
-            </p>
+            <div className="flex items-center gap-2">
+              <p className="text-xs text-muted-foreground">
+                当前使用 {currentSourceLabel} 作为企业登录认证源
+              </p>
+              <a
+                href={currentSource?.docUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+              >
+                查看配置说明
+                <ExternalLink className="w-3 h-3" />
+              </a>
+            </div>
           </div>
 
           {/* App ID */}
@@ -165,39 +170,31 @@ export function SettingsView() {
               className="font-mono"
               placeholder="请输入 App ID"
             />
-            <p className="text-xs text-muted-foreground">
-              从 {currentSourceLabel} 开放平台获取的应用 ID
-            </p>
           </div>
 
           {/* App Key */}
           <div className="space-y-2">
             <Label>App Key</Label>
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <Input 
-                  value={appKey}
-                  onChange={(e) => { setAppKey(e.target.value); handleConfigChange(); }}
-                  type={showAppKey ? 'text' : 'password'}
-                  className="font-mono pr-10"
-                  placeholder="请输入 App Key"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowAppKey(!showAppKey)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  {showAppKey ? (
-                    <EyeOff className="w-4 h-4" />
-                  ) : (
-                    <Eye className="w-4 h-4" />
-                  )}
-                </button>
-              </div>
+            <div className="relative">
+              <Input 
+                value={appKey}
+                onChange={(e) => { setAppKey(e.target.value); handleConfigChange(); }}
+                type={showAppKey ? 'text' : 'password'}
+                className="font-mono pr-10"
+                placeholder="请输入 App Key"
+              />
+              <button
+                type="button"
+                onClick={() => setShowAppKey(!showAppKey)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {showAppKey ? (
+                  <EyeOff className="w-4 h-4" />
+                ) : (
+                  <Eye className="w-4 h-4" />
+                )}
+              </button>
             </div>
-            <p className="text-xs text-muted-foreground">
-              请妥善保管您的 App Key，不要泄露给他人
-            </p>
           </div>
 
           {/* Redirect URI */}
@@ -209,9 +206,6 @@ export function SettingsView() {
               className="font-mono"
               placeholder="请输入回调地址"
             />
-            <p className="text-xs text-muted-foreground">
-              请将此地址配置到 {currentSourceLabel} 开放平台的授权回调地址中
-            </p>
           </div>
         </div>
 
@@ -224,15 +218,9 @@ export function SettingsView() {
               </span>
             )}
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={handleDownloadCli}>
-              <Download className="w-4 h-4 mr-2" />
-              下载 CLI
-            </Button>
-            <Button onClick={handleSaveConfig} disabled={!hasUnsavedChanges}>
-              保存配置
-            </Button>
-          </div>
+          <Button onClick={handleSaveConfig} disabled={!hasUnsavedChanges}>
+            保存配置
+          </Button>
         </div>
       </div>
 
