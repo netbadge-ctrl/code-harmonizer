@@ -56,18 +56,23 @@ export function SubscriptionUpgradeDialog({
   const [billingType, setBillingType] = useState<"prepaid" | "postpaid">("prepaid");
   const [duration, setDuration] = useState<string>("1");
 
+  const isProfessional = currentPlan === "professional";
+
   const planDetails = useMemo(() => ({
     basic: {
       name: "基础版",
       price: 99,
-      features: ["基础AI模型访问", "标准技术支持", "基础数据分析"],
+      features: ["基础AI模型访问", "标准技术支持", "日志保存3个月"],
     },
     professional: {
       name: "专业版",
       price: 199,
-      features: ["全部AI模型访问", "优先技术支持", "高级数据分析", "API访问权限"],
+      features: ["支持多模态模型使用", "支持调用明细查看", "日志保存时间 > 3个月", "全部AI模型访问"],
     },
   }), []);
+
+  // Filter seat options - cannot reduce seats
+  const availableSeatOptions = SEAT_OPTIONS.filter(seats => seats >= currentSeats);
 
   const calculateTotal = () => {
     const basePrice = planDetails[selectedPlan].price;
@@ -100,60 +105,89 @@ export function SubscriptionUpgradeDialog({
         </DialogHeader>
 
         <div className="space-y-6 py-4">
+          {/* Current Plan Info */}
+          <div className="rounded-lg bg-muted/30 p-3 text-sm">
+            <span className="text-muted-foreground">当前订阅：</span>
+            <span className="font-medium">{isProfessional ? "专业版" : "基础版"}</span>
+            <span className="mx-2 text-muted-foreground">·</span>
+            <span className="font-medium">{currentSeats}人席位</span>
+          </div>
+
           {/* Plan Selection */}
           <div className="space-y-3">
             <Label className="text-sm font-medium">选择版本</Label>
             <div className="grid grid-cols-2 gap-4">
-              {(["basic", "professional"] as const).map((plan) => (
-                <div
-                  key={plan}
-                  onClick={() => setSelectedPlan(plan)}
-                  className={cn(
-                    "relative cursor-pointer rounded-lg border-2 p-4 transition-all",
-                    selectedPlan === plan
-                      ? "border-primary bg-primary/5"
-                      : "border-border hover:border-muted-foreground/50"
-                  )}
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-medium">{planDetails[plan].name}</span>
-                    <span className="text-primary font-semibold">
-                      ¥{planDetails[plan].price}/人/月
-                    </span>
-                  </div>
-                  <ul className="text-sm text-muted-foreground space-y-1">
-                    {planDetails[plan].features.map((feature, idx) => (
-                      <li key={idx} className="flex items-center gap-1">
-                        <span className="text-primary">✓</span> {feature}
-                      </li>
-                    ))}
-                  </ul>
-                  {selectedPlan === plan && (
-                    <div className="absolute top-2 right-2 w-5 h-5 bg-primary rounded-full flex items-center justify-center">
-                      <span className="text-primary-foreground text-xs">✓</span>
+              {(["basic", "professional"] as const).map((plan) => {
+                const isDisabled = isProfessional && plan === "basic";
+                return (
+                  <div
+                    key={plan}
+                    onClick={() => !isDisabled && setSelectedPlan(plan)}
+                    className={cn(
+                      "relative rounded-lg border-2 p-4 transition-all",
+                      isDisabled
+                        ? "cursor-not-allowed opacity-50 border-border bg-muted/20"
+                        : "cursor-pointer",
+                      !isDisabled && selectedPlan === plan
+                        ? "border-primary bg-primary/5"
+                        : !isDisabled && "border-border hover:border-muted-foreground/50"
+                    )}
+                  >
+                    {isDisabled && (
+                      <div className="absolute top-2 right-2 text-xs text-destructive font-medium">
+                        不支持降级
+                      </div>
+                    )}
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-medium">{planDetails[plan].name}</span>
+                      <span className="text-primary font-semibold">
+                        ¥{planDetails[plan].price}/人/月
+                      </span>
                     </div>
-                  )}
-                </div>
-              ))}
+                    <ul className="text-sm text-muted-foreground space-y-1">
+                      {planDetails[plan].features.map((feature, idx) => (
+                        <li key={idx} className="flex items-center gap-1">
+                          <span className="text-primary">✓</span> {feature}
+                        </li>
+                      ))}
+                    </ul>
+                    {!isDisabled && selectedPlan === plan && (
+                      <div className="absolute top-2 right-2 w-5 h-5 bg-primary rounded-full flex items-center justify-center">
+                        <span className="text-primary-foreground text-xs">✓</span>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
 
           {/* Seats Selection */}
           <div className="space-y-3">
-            <Label className="text-sm font-medium">席位数量</Label>
+            <div className="flex items-center gap-2">
+              <Label className="text-sm font-medium">席位数量</Label>
+              <span className="text-xs text-muted-foreground">(不支持减少席位)</span>
+            </div>
             <div className="flex flex-wrap gap-2">
-              {SEAT_OPTIONS.map((seats) => (
-                <Button
-                  key={seats}
-                  type="button"
-                  variant={selectedSeats === seats ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setSelectedSeats(seats)}
-                  className="min-w-[70px]"
-                >
-                  {seats}人
-                </Button>
-              ))}
+              {SEAT_OPTIONS.map((seats) => {
+                const isDisabled = seats < currentSeats;
+                return (
+                  <Button
+                    key={seats}
+                    type="button"
+                    variant={selectedSeats === seats ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => !isDisabled && setSelectedSeats(seats)}
+                    disabled={isDisabled}
+                    className={cn(
+                      "min-w-[70px]",
+                      isDisabled && "opacity-40 cursor-not-allowed"
+                    )}
+                  >
+                    {seats}人
+                  </Button>
+                );
+              })}
             </div>
           </div>
 
