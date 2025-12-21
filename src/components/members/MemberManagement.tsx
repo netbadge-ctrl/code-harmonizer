@@ -32,6 +32,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { SubscriptionUpgradeDialog } from '@/components/subscription/SubscriptionUpgradeDialog';
 
 export function MemberManagement() {
   const [members, setMembers] = useState<Member[]>(mockMembers);
@@ -42,6 +43,7 @@ export function MemberManagement() {
   const [editingMember, setEditingMember] = useState<Member | null>(null);
   const [newMember, setNewMember] = useState({ name: '', email: '' });
   const [isAdding, setIsAdding] = useState(false);
+  const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
 
   const filteredMembers = members.filter(member => {
     const matchesSearch = member.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -217,7 +219,7 @@ export function MemberManagement() {
               </span>
             </div>
           </div>
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={() => setShowUpgradeDialog(true)}>
             订阅管理 / 扩容
           </Button>
         </div>
@@ -426,6 +428,13 @@ export function MemberManagement() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <SubscriptionUpgradeDialog
+        open={showUpgradeDialog}
+        onOpenChange={setShowUpgradeDialog}
+        currentPlan="professional"
+        currentSeats={subscriptionData.totalSeats}
+      />
     </div>
   );
 }
