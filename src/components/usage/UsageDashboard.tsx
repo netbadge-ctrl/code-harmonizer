@@ -8,24 +8,21 @@ import {
   Calendar,
   Filter,
   X,
+  ChevronDown,
+  Check,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { mockUsageStats, mockModels, mockDepartments, mockMembers } from '@/data/mockData';
-import { format, subDays, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
+import { format, subDays, startOfDay, endOfDay } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 import {
   LineChart,
@@ -58,6 +55,90 @@ const flattenDepartments = (depts: typeof mockDepartments, prefix = ''): { id: s
 
 const allDepartments = flattenDepartments(mockDepartments);
 
+// Multi-select dropdown component
+function MultiSelectDropdown({
+  label,
+  options,
+  selected,
+  onChange,
+  placeholder,
+}: {
+  label: string;
+  options: { id: string; name: string }[];
+  selected: string[];
+  onChange: (selected: string[]) => void;
+  placeholder: string;
+}) {
+  const [open, setOpen] = useState(false);
+
+  const toggleOption = (id: string) => {
+    if (selected.includes(id)) {
+      onChange(selected.filter(s => s !== id));
+    } else {
+      onChange([...selected, id]);
+    }
+  };
+
+  const selectAll = () => {
+    onChange(options.map(o => o.id));
+  };
+
+  const clearAll = () => {
+    onChange([]);
+  };
+
+  const getDisplayText = () => {
+    if (selected.length === 0) return placeholder;
+    if (selected.length === 1) {
+      return options.find(o => o.id === selected[0])?.name || placeholder;
+    }
+    return `已选 ${selected.length} 项`;
+  };
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="h-9 gap-2 min-w-[140px] justify-between"
+        >
+          <span className="truncate">{getDisplayText()}</span>
+          <ChevronDown className="w-4 h-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-56 p-0 bg-popover border border-border shadow-lg z-50" align="start">
+        <div className="p-2 border-b border-border flex gap-2">
+          <Button variant="ghost" size="sm" className="h-7 text-xs flex-1" onClick={selectAll}>
+            全选
+          </Button>
+          <Button variant="ghost" size="sm" className="h-7 text-xs flex-1" onClick={clearAll}>
+            清空
+          </Button>
+        </div>
+        <ScrollArea className="h-[200px]">
+          <div className="p-2 space-y-1">
+            {options.map(option => (
+              <div
+                key={option.id}
+                className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-accent cursor-pointer"
+                onClick={() => toggleOption(option.id)}
+              >
+                <Checkbox 
+                  checked={selected.includes(option.id)}
+                  onCheckedChange={() => toggleOption(option.id)}
+                  className="pointer-events-none"
+                />
+                <span className="text-sm truncate">{option.name}</span>
+              </div>
+            ))}
+          </div>
+        </ScrollArea>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 type DateRangeType = 'today' | 'yesterday' | '7days' | '30days' | 'custom';
 
 export function UsageDashboard() {
@@ -67,10 +148,14 @@ export function UsageDashboard() {
     from: undefined,
     to: undefined,
   });
-  const [selectedModel, setSelectedModel] = useState<string>('all');
-  const [selectedDepartment, setSelectedDepartment] = useState<string>('all');
-  const [selectedMember, setSelectedMember] = useState<string>('all');
+  const [selectedModels, setSelectedModels] = useState<string[]>([]);
+  const [selectedDepartments, setSelectedDepartments] = useState<string[]>([]);
+  const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
   const [calendarOpen, setCalendarOpen] = useState(false);
+
+  // Prepare options for multi-select
+  const modelOptions = mockModels.map(m => ({ id: m.id, name: m.name }));
+  const memberOptions = mockMembers.map(m => ({ id: m.id, name: m.name }));
 
   // Get date range based on selection
   const getDateRange = () => {
@@ -100,21 +185,21 @@ export function UsageDashboard() {
     // Mock filtering logic - in real app this would filter actual data
     let multiplier = 1;
     
-    if (selectedModel !== 'all') multiplier *= 0.25;
-    if (selectedDepartment !== 'all') multiplier *= 0.3;
-    if (selectedMember !== 'all') multiplier *= 0.05;
+    if (selectedModels.length > 0) multiplier *= (selectedModels.length / mockModels.length) * 0.8;
+    if (selectedDepartments.length > 0) multiplier *= (selectedDepartments.length / allDepartments.length) * 0.8;
+    if (selectedMembers.length > 0) multiplier *= (selectedMembers.length / mockMembers.length) * 0.5;
 
     const dayCount = dateRangeType === 'today' || dateRangeType === 'yesterday' ? 1 : 
                      dateRangeType === '7days' ? 7 : 
                      dateRangeType === '30days' ? 30 : 7;
 
     return {
-      userCount: Math.round(mockUsageStats.activeUsers * multiplier * (selectedMember !== 'all' ? 0.1 : 1)),
+      userCount: Math.round(mockUsageStats.activeUsers * multiplier * (selectedMembers.length > 0 ? 0.3 : 1)),
       totalTokens: Math.round(mockUsageStats.totalTokens * multiplier * (dayCount / 7)),
       totalRequests: Math.round(mockUsageStats.totalRequests * multiplier * (dayCount / 7)),
       avgLatency: mockUsageStats.avgLatency,
     };
-  }, [dateRangeType, selectedModel, selectedDepartment, selectedMember]);
+  }, [dateRangeType, selectedModels, selectedDepartments, selectedMembers]);
 
   // Generate trend data based on date range
   const trendData = useMemo(() => {
@@ -129,9 +214,9 @@ export function UsageDashboard() {
       const baseUsers = 25 + Math.random() * 20;
 
       let multiplier = 1;
-      if (selectedModel !== 'all') multiplier *= 0.25;
-      if (selectedDepartment !== 'all') multiplier *= 0.3;
-      if (selectedMember !== 'all') multiplier *= 0.05;
+      if (selectedModels.length > 0) multiplier *= (selectedModels.length / mockModels.length) * 0.8;
+      if (selectedDepartments.length > 0) multiplier *= (selectedDepartments.length / allDepartments.length) * 0.8;
+      if (selectedMembers.length > 0) multiplier *= (selectedMembers.length / mockMembers.length) * 0.5;
 
       data.push({
         date: format(date, 'MM-dd'),
@@ -142,7 +227,7 @@ export function UsageDashboard() {
       });
     }
     return data;
-  }, [dateRangeType, selectedModel, selectedDepartment, selectedMember]);
+  }, [dateRangeType, selectedModels, selectedDepartments, selectedMembers]);
 
   // Get label for date range
   const getDateRangeLabel = () => {
@@ -161,12 +246,12 @@ export function UsageDashboard() {
   };
 
   // Check if any filter is active
-  const hasActiveFilters = selectedModel !== 'all' || selectedDepartment !== 'all' || selectedMember !== 'all';
+  const hasActiveFilters = selectedModels.length > 0 || selectedDepartments.length > 0 || selectedMembers.length > 0;
 
   const clearFilters = () => {
-    setSelectedModel('all');
-    setSelectedDepartment('all');
-    setSelectedMember('all');
+    setSelectedModels([]);
+    setSelectedDepartments([]);
+    setSelectedMembers([]);
   };
 
   return (
@@ -226,43 +311,31 @@ export function UsageDashboard() {
           </Popover>
 
           {/* Model Filter */}
-          <Select value={selectedModel} onValueChange={setSelectedModel}>
-            <SelectTrigger className="w-[140px] h-9">
-              <SelectValue placeholder="选择模型" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">全部模型</SelectItem>
-              {mockModels.map(model => (
-                <SelectItem key={model.id} value={model.id}>{model.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <MultiSelectDropdown
+            label="模型"
+            options={modelOptions}
+            selected={selectedModels}
+            onChange={setSelectedModels}
+            placeholder="全部模型"
+          />
 
           {/* Department Filter */}
-          <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
-            <SelectTrigger className="w-[160px] h-9">
-              <SelectValue placeholder="选择部门" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">全部部门</SelectItem>
-              {allDepartments.map(dept => (
-                <SelectItem key={dept.id} value={dept.id}>{dept.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <MultiSelectDropdown
+            label="部门"
+            options={allDepartments}
+            selected={selectedDepartments}
+            onChange={setSelectedDepartments}
+            placeholder="全部部门"
+          />
 
           {/* Member Filter */}
-          <Select value={selectedMember} onValueChange={setSelectedMember}>
-            <SelectTrigger className="w-[140px] h-9">
-              <SelectValue placeholder="选择成员" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">全部成员</SelectItem>
-              {mockMembers.map(member => (
-                <SelectItem key={member.id} value={member.id}>{member.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <MultiSelectDropdown
+            label="成员"
+            options={memberOptions}
+            selected={selectedMembers}
+            onChange={setSelectedMembers}
+            placeholder="全部成员"
+          />
 
           {hasActiveFilters && (
             <Button variant="ghost" size="sm" onClick={clearFilters} className="gap-1 text-muted-foreground">
@@ -281,25 +354,31 @@ export function UsageDashboard() {
 
         {/* Active Filters Display */}
         {hasActiveFilters && (
-          <div className="flex items-center gap-2 mt-3 pt-3 border-t border-border">
+          <div className="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-border">
             <Filter className="w-4 h-4 text-muted-foreground" />
             <span className="text-sm text-muted-foreground">当前筛选：</span>
-            {selectedModel !== 'all' && (
+            {selectedModels.length > 0 && (
               <Badge variant="secondary" className="gap-1">
-                模型: {mockModels.find(m => m.id === selectedModel)?.name}
-                <X className="w-3 h-3 cursor-pointer" onClick={() => setSelectedModel('all')} />
+                模型: {selectedModels.length === 1 
+                  ? mockModels.find(m => m.id === selectedModels[0])?.name 
+                  : `${selectedModels.length} 个`}
+                <X className="w-3 h-3 cursor-pointer" onClick={() => setSelectedModels([])} />
               </Badge>
             )}
-            {selectedDepartment !== 'all' && (
+            {selectedDepartments.length > 0 && (
               <Badge variant="secondary" className="gap-1">
-                部门: {allDepartments.find(d => d.id === selectedDepartment)?.name}
-                <X className="w-3 h-3 cursor-pointer" onClick={() => setSelectedDepartment('all')} />
+                部门: {selectedDepartments.length === 1 
+                  ? allDepartments.find(d => d.id === selectedDepartments[0])?.name 
+                  : `${selectedDepartments.length} 个`}
+                <X className="w-3 h-3 cursor-pointer" onClick={() => setSelectedDepartments([])} />
               </Badge>
             )}
-            {selectedMember !== 'all' && (
+            {selectedMembers.length > 0 && (
               <Badge variant="secondary" className="gap-1">
-                成员: {mockMembers.find(m => m.id === selectedMember)?.name}
-                <X className="w-3 h-3 cursor-pointer" onClick={() => setSelectedMember('all')} />
+                成员: {selectedMembers.length === 1 
+                  ? mockMembers.find(m => m.id === selectedMembers[0])?.name 
+                  : `${selectedMembers.length} 人`}
+                <X className="w-3 h-3 cursor-pointer" onClick={() => setSelectedMembers([])} />
               </Badge>
             )}
           </div>
