@@ -135,22 +135,46 @@ export function DashboardView() {
 
         {/* CLI Installation Command */}
         <div className="mt-6 p-4 bg-slate-900 rounded-lg border border-slate-700">
-          <p className="text-xs text-slate-400 mb-2 flex items-center gap-2">
-            <span className="inline-block w-1.5 h-1.5 rounded-full bg-success animate-pulse"></span>
-            员工终端安装命令 (Mac/Linux)
-          </p>
-          <div className="flex items-center justify-between gap-4">
-            <code className="text-sm text-amber-400 font-mono flex-1 overflow-x-auto whitespace-nowrap">
-              {cliCommand}
-            </code>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={handleCopyCliCommand}
-              className="flex-shrink-0 text-slate-400 hover:text-white hover:bg-slate-800"
-            >
-              {copied ? <Check className="w-4 h-4 text-success" /> : <Copy className="w-4 h-4" />}
-            </Button>
+          <div className="flex gap-6">
+            {/* 左侧：安装命令 */}
+            <div className="flex-1 min-w-0">
+              <p className="text-xs text-slate-400 mb-2 flex items-center gap-2">
+                <span className="inline-block w-1.5 h-1.5 rounded-full bg-success animate-pulse"></span>
+                员工终端安装命令 (Mac/Linux)
+              </p>
+              <div className="flex items-center justify-between gap-4">
+                <code className="text-sm text-amber-400 font-mono flex-1 overflow-x-auto whitespace-nowrap">
+                  {cliCommand}
+                </code>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={handleCopyCliCommand}
+                  className="flex-shrink-0 text-slate-400 hover:text-white hover:bg-slate-800"
+                >
+                  {copied ? <Check className="w-4 h-4 text-success" /> : <Copy className="w-4 h-4" />}
+                </Button>
+              </div>
+            </div>
+            
+            {/* 右侧：使用说明 */}
+            <div className="w-64 flex-shrink-0 border-l border-slate-700 pl-6">
+              <p className="text-xs text-slate-400 mb-2">使用说明</p>
+              <ul className="text-xs text-slate-300 space-y-1.5">
+                <li className="flex items-start gap-2">
+                  <span className="text-amber-400">1.</span>
+                  <span>复制左侧命令到终端执行</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-amber-400">2.</span>
+                  <span>根据提示完成身份认证</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-amber-400">3.</span>
+                  <span>安装完成后即可使用 AI 服务</span>
+                </li>
+              </ul>
+            </div>
           </div>
         </div>
       </div>
