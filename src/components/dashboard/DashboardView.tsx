@@ -122,10 +122,10 @@ export function DashboardView() {
 
       {/* 数据概览 - 当日数据 */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* 使用AI的总人数 */}
+        {/* 本日活跃用户 */}
         <Card className="p-5 bg-card border-border">
           <div className="flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">使用AI的总人数</p>
+            <p className="text-sm text-muted-foreground">本日活跃用户</p>
             <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
               <Users className="w-4 h-4 text-primary" />
             </div>
@@ -135,15 +135,15 @@ export function DashboardView() {
             <div className="flex items-center gap-1 mt-1">
               <TrendingDown className="w-3 h-3 text-destructive" />
               <span className="text-xs text-destructive">-96%</span>
-              <span className="text-xs text-muted-foreground ml-1">相比上期</span>
+              <span className="text-xs text-muted-foreground ml-1">相较昨日</span>
             </div>
           </div>
         </Card>
 
-        {/* 总TOKEN量 */}
+        {/* 本日Token量 */}
         <Card className="p-5 bg-card border-border">
           <div className="flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">总TOKEN量</p>
+            <p className="text-sm text-muted-foreground">本日Token量</p>
             <div className="w-8 h-8 rounded-lg bg-success/10 flex items-center justify-center">
               <TrendingUp className="w-4 h-4 text-success" />
             </div>
@@ -153,15 +153,15 @@ export function DashboardView() {
             <div className="flex items-center gap-1 mt-1">
               <TrendingUp className="w-3 h-3 text-success" />
               <span className="text-xs text-success">+3064%</span>
-              <span className="text-xs text-muted-foreground ml-1">相比上期</span>
+              <span className="text-xs text-muted-foreground ml-1">相较昨日</span>
             </div>
           </div>
         </Card>
 
-        {/* 总请求次数 */}
+        {/* 本日请求次数 */}
         <Card className="p-5 bg-card border-border">
           <div className="flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">总请求次数</p>
+            <p className="text-sm text-muted-foreground">本日请求次数</p>
             <div className="w-8 h-8 rounded-lg bg-warning/10 flex items-center justify-center">
               <ArrowRight className="w-4 h-4 text-warning" />
             </div>
@@ -171,7 +171,7 @@ export function DashboardView() {
             <div className="flex items-center gap-1 mt-1">
               <TrendingDown className="w-3 h-3 text-destructive" />
               <span className="text-xs text-destructive">-78.59%</span>
-              <span className="text-xs text-muted-foreground ml-1">相比上期</span>
+              <span className="text-xs text-muted-foreground ml-1">相较昨日</span>
             </div>
           </div>
         </Card>
