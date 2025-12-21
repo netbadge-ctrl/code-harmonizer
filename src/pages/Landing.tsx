@@ -46,8 +46,8 @@ export function Landing() {
       <header className="border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
         <div className="container mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-primary flex items-center justify-center">
-              <Terminal className="w-5 h-5 text-primary-foreground" />
+            <div className="w-9 h-9 rounded-lg bg-red-600 flex items-center justify-center">
+              <Terminal className="w-5 h-5 text-white" />
             </div>
             <span className="text-lg font-semibold text-foreground tracking-tight">KSGC</span>
           </div>
@@ -194,8 +194,8 @@ export function Landing() {
         <div className="container mx-auto px-6">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-                <Terminal className="w-4 h-4 text-primary-foreground" />
+              <div className="w-8 h-8 rounded-lg bg-red-600 flex items-center justify-center">
+                <Terminal className="w-4 h-4 text-white" />
               </div>
               <span className="text-sm font-medium text-foreground">KSGC</span>
               <span className="text-sm text-muted-foreground">企业级 AI CLI 编程助手</span>
