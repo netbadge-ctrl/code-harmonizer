@@ -183,8 +183,37 @@ export function MemberManagement() {
     return buttons;
   };
 
+  // Subscription data (mock)
+  const subscriptionData = {
+    usedSeats: 5,
+    totalSeats: 50,
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
+      {/* Subscription Seats Header */}
+      <div className="enterprise-card p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex-1 max-w-md">
+            <div className="text-sm text-muted-foreground mb-2">订阅席位使用情况</div>
+            <div className="flex items-center gap-4">
+              <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-primary rounded-full transition-all"
+                  style={{ width: `${(subscriptionData.usedSeats / subscriptionData.totalSeats) * 100}%` }}
+                />
+              </div>
+              <span className="text-sm font-medium text-foreground whitespace-nowrap">
+                {subscriptionData.usedSeats} / {subscriptionData.totalSeats} 人
+              </span>
+            </div>
+          </div>
+          <Button variant="outline" size="sm">
+            订阅管理 / 扩容
+          </Button>
+        </div>
+      </div>
+
       <Tabs defaultValue="members" className="w-full">
         <TabsList>
           <TabsTrigger value="members" className="gap-2">
