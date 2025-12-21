@@ -20,12 +20,16 @@ interface SidebarProps {
   onToggleCollapse: () => void;
 }
 
+// 独立菜单项
+const standaloneItems = [
+  { id: 'dashboard', label: '概览', icon: LayoutDashboard },
+];
+
 const menuGroups = [
   {
-    id: 'resource',
-    label: '资源管理',
+    id: 'statistics',
+    label: '数据统计',
     items: [
-      { id: 'dashboard', label: '概览', icon: LayoutDashboard },
       { id: 'usage', label: '用量看板', icon: BarChart3 },
       { id: 'callDetails', label: '调用明细', icon: FileText },
     ],
@@ -43,7 +47,7 @@ const menuGroups = [
 ];
 
 export function Sidebar({ currentView, onViewChange, collapsed, onToggleCollapse }: SidebarProps) {
-  const [expandedGroups, setExpandedGroups] = React.useState<string[]>(['resource', 'service']);
+  const [expandedGroups, setExpandedGroups] = React.useState<string[]>(['statistics', 'service']);
 
   const toggleGroup = (groupId: string) => {
     setExpandedGroups(prev => 
@@ -75,6 +79,26 @@ export function Sidebar({ currentView, onViewChange, collapsed, onToggleCollapse
 
       {/* Navigation */}
       <nav className="flex-1 py-2 overflow-y-auto">
+      {/* 独立菜单项 - 概览 */}
+        <div className="px-2 mb-2">
+          {standaloneItems.map((item) => (
+            <button
+              key={item.id}
+              onClick={() => onViewChange(item.id)}
+              className={cn(
+                "w-full flex items-center gap-2 px-2 py-1.5 rounded text-sm transition-colors",
+                currentView === item.id 
+                  ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium" 
+                  : "text-sidebar-muted hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+              )}
+              title={collapsed ? item.label : undefined}
+            >
+              {!collapsed && <span>{item.label}</span>}
+              {collapsed && <item.icon className="w-4 h-4 flex-shrink-0 mx-auto" />}
+            </button>
+          ))}
+        </div>
+
         {menuGroups.map((group) => (
           <div key={group.id} className="mb-1">
             {!collapsed && (
