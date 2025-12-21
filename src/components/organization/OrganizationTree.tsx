@@ -6,8 +6,6 @@ import {
   Users, 
   RefreshCw,
   Search,
-  CheckCircle2,
-  Settings2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,14 +14,6 @@ import { mockDepartments, mockModels } from '@/data/mockData';
 import { Department } from '@/types';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -35,7 +25,6 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
 
 interface TreeNodeProps {
   department: Department;
@@ -78,15 +67,19 @@ const TreeNode: React.FC<TreeNodeProps> = ({
     <div className="select-none">
       <div 
         className={cn(
-          "flex items-center gap-2 py-2 px-3 rounded-lg transition-colors",
+          "flex items-center gap-2 py-2.5 px-3 rounded-lg transition-colors cursor-pointer",
           isSelected ? "bg-primary/10" : "hover:bg-muted/50",
           matchesSearch && searchQuery ? "ring-1 ring-primary/30" : ""
         )}
-        style={{ paddingLeft: `${level * 24 + 12}px` }}
+        style={{ paddingLeft: `${level * 20 + 12}px` }}
+        onClick={() => onToggleSelect(department.id)}
       >
         {/* Expand/Collapse */}
         <button
-          onClick={() => hasChildren && onToggleExpand(department.id)}
+          onClick={(e) => {
+            e.stopPropagation();
+            hasChildren && onToggleExpand(department.id);
+          }}
           className={cn(
             "w-5 h-5 flex items-center justify-center rounded hover:bg-muted",
             !hasChildren && "invisible"
@@ -101,11 +94,12 @@ const TreeNode: React.FC<TreeNodeProps> = ({
         <Checkbox
           checked={isSelected}
           onCheckedChange={() => onToggleSelect(department.id)}
+          onClick={(e) => e.stopPropagation()}
           className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
         />
 
         {/* Department icon */}
-        <Building2 className="w-4 h-4 text-muted-foreground" />
+        <Building2 className="w-4 h-4 text-primary" />
 
         {/* Department name */}
         <span className="font-medium text-foreground flex-1">{department.name}</span>
@@ -115,21 +109,6 @@ const TreeNode: React.FC<TreeNodeProps> = ({
           <Users className="w-3.5 h-3.5" />
           <span>{department.memberCount}人</span>
         </div>
-
-        {/* AI status */}
-        <div className={cn(
-          "status-badge text-xs",
-          department.aiEnabled ? "status-badge-success" : "status-badge-neutral"
-        )}>
-          {department.aiEnabled ? '已开通' : '未开通'}
-        </div>
-
-        {/* Allowed models count */}
-        {department.aiEnabled && department.allowedModels.length > 0 && (
-          <span className="text-xs text-muted-foreground">
-            {department.allowedModels.length}个模型
-          </span>
-        )}
       </div>
 
       {/* Children */}
@@ -162,16 +141,20 @@ export function OrganizationTree() {
   
   // Dialog states
   const [showAuthDialog, setShowAuthDialog] = useState(false);
-  const [showBatchModelDialog, setShowBatchModelDialog] = useState(false);
-  const [showBatchServiceDialog, setShowBatchServiceDialog] = useState(false);
   
   // Sync status - in real app this would come from backend
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [lastSyncTime, setLastSyncTime] = useState<string | null>(null);
   
-  // Batch operation states
-  const [batchModels, setBatchModels] = useState<Record<string, boolean>>({});
-  const [batchServiceEnabled, setBatchServiceEnabled] = useState(true);
+  // Model configuration for selected departments
+  const [modelConfig, setModelConfig] = useState<Record<string, boolean>>(() => {
+    const initial: Record<string, boolean> = {};
+    mockModels.forEach(m => {
+      initial[m.id] = false;
+    });
+    return initial;
+  });
+  const [aiServiceEnabled, setAiServiceEnabled] = useState(true);
 
   const handleToggleExpand = (id: string) => {
     const newExpanded = new Set(expanded);
@@ -273,28 +256,6 @@ export function OrganizationTree() {
     });
   };
 
-  const handleBatchModelConfig = () => {
-    if (selected.size === 0) {
-      toast({ title: '请先选择部门', variant: 'destructive' });
-      return;
-    }
-    // Initialize batch models state
-    const initialModels: Record<string, boolean> = {};
-    mockModels.forEach(m => {
-      initialModels[m.id] = false;
-    });
-    setBatchModels(initialModels);
-    setShowBatchModelDialog(true);
-  };
-
-  const handleBatchServiceToggle = () => {
-    if (selected.size === 0) {
-      toast({ title: '请先选择部门', variant: 'destructive' });
-      return;
-    }
-    setShowBatchServiceDialog(true);
-  };
-
   const updateDepartments = (
     depts: Department[],
     ids: Set<string>,
@@ -309,8 +270,13 @@ export function OrganizationTree() {
     });
   };
 
-  const handleConfirmBatchModels = () => {
-    const enabledModels = Object.entries(batchModels)
+  const handleSaveModelConfig = () => {
+    if (selected.size === 0) {
+      toast({ title: '请先选择部门', variant: 'destructive' });
+      return;
+    }
+
+    const enabledModels = Object.entries(modelConfig)
       .filter(([_, enabled]) => enabled)
       .map(([id]) => id);
     
@@ -318,42 +284,36 @@ export function OrganizationTree() {
       updateDepartments(prev, selected, d => ({
         ...d,
         allowedModels: enabledModels,
-        aiEnabled: enabledModels.length > 0,
+        aiEnabled: aiServiceEnabled && enabledModels.length > 0,
       }))
     );
     
-    setShowBatchModelDialog(false);
     setSelected(new Set());
     
     toast({
-      title: '模型配置已更新',
+      title: '配置已保存',
       description: `已为 ${selected.size} 个部门更新模型权限`,
     });
   };
 
-  const handleConfirmBatchService = () => {
-    setDepartments(prev =>
-      updateDepartments(prev, selected, d => ({
-        ...d,
-        aiEnabled: batchServiceEnabled,
-        allowedModels: batchServiceEnabled ? d.allowedModels : [],
-      }))
-    );
-    
-    setShowBatchServiceDialog(false);
-    setSelected(new Set());
-    
-    toast({
-      title: batchServiceEnabled ? 'AI 服务已开通' : 'AI 服务已关闭',
-      description: `已为 ${selected.size} 个部门${batchServiceEnabled ? '开通' : '关闭'} AI 服务`,
-    });
+  // Get selected department names for display
+  const getSelectedDeptNames = (): string[] => {
+    const names: string[] = [];
+    const collect = (depts: Department[]) => {
+      depts.forEach(d => {
+        if (selected.has(d.id)) names.push(d.name);
+        if (d.children) collect(d.children);
+      });
+    };
+    collect(departments);
+    return names.slice(0, 3);
   };
 
   // Not authorized yet - show authorization prompt
   if (!isAuthorized) {
     return (
       <div className="space-y-6">
-        <div className="enterprise-card p-8 text-center">
+        <div className="border border-border rounded-lg p-8 text-center bg-card">
           <Building2 className="w-16 h-16 mx-auto text-muted-foreground/50 mb-6" />
           <h3 className="text-xl font-semibold text-foreground mb-3">同步企业组织架构</h3>
           <p className="text-muted-foreground mb-6 max-w-md mx-auto">
@@ -405,15 +365,17 @@ export function OrganizationTree() {
     );
   }
 
+  const selectedNames = getSelectedDeptNames();
+
   return (
     <div className="space-y-4">
-      {/* Header with sync info */}
-      <div className="flex items-center justify-between">
-        <div className="text-sm text-muted-foreground">
-          {lastSyncTime && (
-            <span>上次同步: {lastSyncTime} · 每日 0:00、12:00 自动同步</span>
-          )}
-        </div>
+      {/* Header with sync info - moved next to button */}
+      <div className="flex items-center justify-end gap-4">
+        {lastSyncTime && (
+          <span className="text-sm text-muted-foreground">
+            上次同步: {lastSyncTime} · 每日 0:00、12:00 自动同步
+          </span>
+        )}
         <Button
           variant="outline"
           size="sm"
@@ -426,152 +388,157 @@ export function OrganizationTree() {
         </Button>
       </div>
 
-      {/* Search and batch actions */}
-      <div className="enterprise-card p-4">
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              placeholder="按部门名称检索..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9"
-            />
+      {/* Main content - split layout */}
+      <div className="flex gap-4">
+        {/* Left Panel - Organization Tree */}
+        <div className="flex-1 border border-border rounded-lg bg-card overflow-hidden">
+          {/* Search */}
+          <div className="p-4 border-b border-border">
+            <div className="flex items-center gap-3">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="按部门名称检索..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9 h-9"
+                />
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleSelectAll}
+              >
+                {selected.size > 0 ? '取消全选' : '全选'}
+              </Button>
+            </div>
+            {selected.size > 0 && (
+              <div className="mt-2 text-sm text-primary">
+                已选择 {selected.size} 个部门
+              </div>
+            )}
           </div>
-          <div className="flex gap-2 flex-wrap">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleSelectAll}
-            >
-              {selected.size > 0 ? '取消全选' : '全选'}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleBatchServiceToggle}
-              disabled={selected.size === 0}
-              className="gap-2"
-            >
-              <CheckCircle2 className="w-4 h-4" />
-              批量开通/关闭服务
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleBatchModelConfig}
-              disabled={selected.size === 0}
-              className="gap-2"
-            >
-              <Settings2 className="w-4 h-4" />
-              批量配置模型
-            </Button>
+
+          {/* Tree */}
+          <div className="p-4 max-h-[500px] overflow-y-auto">
+            <div className="space-y-0.5">
+              {departments.map(dept => (
+                <TreeNode
+                  key={dept.id}
+                  department={dept}
+                  level={0}
+                  expanded={expanded}
+                  selected={selected}
+                  onToggleExpand={handleToggleExpand}
+                  onToggleSelect={handleToggleSelect}
+                  searchQuery={searchQuery}
+                />
+              ))}
+            </div>
+
+            {departments.length === 0 && (
+              <div className="p-12 text-center">
+                <Building2 className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
+                <p className="text-muted-foreground">暂无组织架构数据</p>
+              </div>
+            )}
           </div>
         </div>
-        {selected.size > 0 && (
-          <div className="mt-3 text-sm text-primary">
-            已选择 {selected.size} 个部门
+
+        {/* Right Panel - Model Configuration */}
+        <div className="w-80 border border-border rounded-lg bg-card overflow-hidden flex flex-col">
+          <div className="p-4 border-b border-border">
+            <h3 className="font-medium text-foreground">模型配置</h3>
+            {selected.size > 0 ? (
+              <p className="text-sm text-muted-foreground mt-1">
+                为 {selectedNames.join('、')}{selected.size > 3 ? ` 等 ${selected.size} 个部门` : ''} 配置可用模型
+              </p>
+            ) : (
+              <p className="text-sm text-muted-foreground mt-1">
+                请在左侧选择要配置的部门
+              </p>
+            )}
           </div>
-        )}
-      </div>
 
-      {/* Department Tree */}
-      <div className="enterprise-card p-4">
-        <div className="space-y-1">
-          {departments.map(dept => (
-            <TreeNode
-              key={dept.id}
-              department={dept}
-              level={0}
-              expanded={expanded}
-              selected={selected}
-              onToggleExpand={handleToggleExpand}
-              onToggleSelect={handleToggleSelect}
-              searchQuery={searchQuery}
-            />
-          ))}
-        </div>
-
-        {departments.length === 0 && (
-          <div className="p-12 text-center">
-            <Building2 className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
-            <p className="text-muted-foreground">暂无组织架构数据</p>
-          </div>
-        )}
-      </div>
-
-      {/* Batch Service Toggle Dialog */}
-      <Dialog open={showBatchServiceDialog} onOpenChange={setShowBatchServiceDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>批量调整 AI 服务</DialogTitle>
-            <DialogDescription>
-              为选中的 {selected.size} 个部门批量开通或关闭 AI 服务
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-6">
-            <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
+          <div className="flex-1 p-4 overflow-y-auto">
+            {/* AI Service Toggle */}
+            <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30 mb-4">
               <div>
-                <Label className="text-base font-medium">AI 服务状态</Label>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {batchServiceEnabled ? '开通后部门成员可使用 AI 功能' : '关闭后部门成员将无法使用 AI 功能'}
+                <p className="text-sm font-medium text-foreground">AI 服务</p>
+                <p className="text-xs text-muted-foreground">
+                  {aiServiceEnabled ? '已开通' : '已关闭'}
                 </p>
               </div>
               <Switch
-                checked={batchServiceEnabled}
-                onCheckedChange={setBatchServiceEnabled}
+                checked={aiServiceEnabled}
+                onCheckedChange={setAiServiceEnabled}
+                disabled={selected.size === 0}
               />
             </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowBatchServiceDialog(false)}>
-              取消
-            </Button>
-            <Button onClick={handleConfirmBatchService}>
-              确认
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
-      {/* Batch Model Config Dialog */}
-      <Dialog open={showBatchModelDialog} onOpenChange={setShowBatchModelDialog}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>批量配置模型权限</DialogTitle>
-            <DialogDescription>
-              为选中的 {selected.size} 个部门配置可用的 AI 模型
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4 space-y-3">
-            {mockModels.filter(m => m.enabled).map(model => (
-              <div
-                key={model.id}
-                className="flex items-center justify-between p-3 rounded-lg border"
-              >
-                <div>
-                  <p className="font-medium text-foreground">{model.name}</p>
-                  <p className="text-xs text-muted-foreground">{model.provider}</p>
+            {/* Model List */}
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-foreground mb-2">可用模型</p>
+              {mockModels.filter(m => m.enabled).map(model => (
+                <div
+                  key={model.id}
+                  className={cn(
+                    "flex items-center justify-between p-3 rounded-lg border transition-colors",
+                    modelConfig[model.id] ? "border-primary bg-primary/5" : "border-border",
+                    selected.size === 0 && "opacity-50"
+                  )}
+                >
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-foreground">{model.name}</p>
+                    <p className="text-xs text-muted-foreground">{model.provider}</p>
+                  </div>
+                  <Checkbox
+                    checked={modelConfig[model.id] || false}
+                    onCheckedChange={(checked) => 
+                      setModelConfig(prev => ({ ...prev, [model.id]: !!checked }))
+                    }
+                    disabled={selected.size === 0 || !aiServiceEnabled}
+                  />
                 </div>
-                <Checkbox
-                  checked={batchModels[model.id] || false}
-                  onCheckedChange={(checked) => 
-                    setBatchModels(prev => ({ ...prev, [model.id]: !!checked }))
-                  }
-                />
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowBatchModelDialog(false)}>
-              取消
+
+          {/* Save Button */}
+          <div className="p-4 border-t border-border">
+            <Button 
+              className="w-full"
+              onClick={handleSaveModelConfig}
+              disabled={selected.size === 0}
+            >
+              保存配置
             </Button>
-            <Button onClick={handleConfirmBatchModels}>
-              确认
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </div>
+        </div>
+      </div>
+
+      {/* Auth Confirmation Dialog */}
+      <AlertDialog open={showAuthDialog} onOpenChange={setShowAuthDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>授权同步组织架构</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-3">
+              <p>您即将授权系统同步企业组织架构数据，请确认以下信息：</p>
+              <ul className="list-disc list-inside space-y-1 text-sm">
+                <li>系统将获取您企业的部门结构和人员信息</li>
+                <li>同步后，系统将在每天 0:00 和 12:00 自动更新</li>
+                <li>您可以随时手动触发同步</li>
+              </ul>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>取消</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmAuth}>
+              确认授权
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
