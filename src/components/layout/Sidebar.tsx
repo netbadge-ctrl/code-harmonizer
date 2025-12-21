@@ -66,9 +66,11 @@ export function Sidebar({ currentView, onViewChange, collapsed, onToggleCollapse
     >
       {/* Logo */}
       <div className="flex items-center gap-2 px-3 h-12 border-b border-sidebar-border">
-        <div className="w-7 h-7 rounded-md bg-primary flex items-center justify-center flex-shrink-0">
-          <Sparkles className="w-4 h-4 text-primary-foreground" />
-        </div>
+        <img 
+          src="/assets/logo.png" 
+          alt="Logo" 
+          className="w-7 h-7 rounded-md flex-shrink-0"
+        />
         {!collapsed && (
           <div className="animate-fade-in flex items-center gap-1">
             <span className="text-sm font-semibold text-sidebar-foreground">智码云</span>

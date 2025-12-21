@@ -41,9 +41,9 @@ export function Header({ title, description }: HeaderProps) {
           {/* User Menu */}
           <button className="flex items-center gap-2 px-2 py-1 rounded hover:bg-muted transition-colors">
             <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center">
-              <span className="text-xs font-medium text-primary-foreground">张</span>
+              <span className="text-xs font-medium text-primary-foreground">陈</span>
             </div>
-            <span className="text-sm text-foreground">zhangming</span>
+            <span className="text-sm text-foreground">chennan 陈楠</span>
             <ChevronDown className="w-3 h-3 text-muted-foreground" />
           </button>
         </div>
