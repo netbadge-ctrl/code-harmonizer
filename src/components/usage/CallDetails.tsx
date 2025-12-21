@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Search, Download, Calendar, Filter, Database, Copy, Zap } from 'lucide-react';
-import { toast } from 'sonner';
+import React, { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Search, Download, Calendar, Filter, Database, Copy, Zap } from "lucide-react";
+import { toast } from "sonner";
 
 interface CallRecord {
   id: string;
@@ -17,22 +17,22 @@ interface CallRecord {
   inputTokens: number;
   outputTokens: number;
   duration: number;
-  status: 'success' | 'error' | 'timeout';
+  status: "success" | "error" | "timeout";
   prompt: string;
   response: string;
 }
 
 const mockCallRecords: CallRecord[] = [
-  { 
-    id: '1', 
-    timestamp: '2024-03-23 10:45:12', 
-    user: 'zhangwei@tech.com', 
-    model: 'deepseek-v3.2', 
-    client: 'VS Code',
-    inputTokens: 450, 
-    outputTokens: 1200, 
-    duration: 2.3, 
-    status: 'success',
+  {
+    id: "1",
+    timestamp: "2024-03-23 10:45:12",
+    user: "zhangwei@tech.com",
+    model: "deepseek-v3.2",
+    client: "VS Code",
+    inputTokens: 450,
+    outputTokens: 1200,
+    duration: 2.3,
+    status: "success",
     prompt: `为以下 React 组件编写一个防抖 (debounce) 自定义 Hook:
 
 \`\`\`tsx
@@ -63,121 +63,132 @@ function useDebounce<T>(value: T, delay: number): T {
 }
 
 export default useDebounce;
-\`\`\``
+\`\`\``,
   },
-  { 
-    id: '2', 
-    timestamp: '2024-03-23 10:30:45', 
-    user: 'lihua@tech.com', 
-    model: 'Claude-3.5-Sonnet', 
-    client: 'Web',
-    inputTokens: 2100, 
-    outputTokens: 1560, 
-    duration: 3.8, 
-    status: 'success',
-    prompt: '请解释 React 中 useCallback 和 useMemo 的区别',
-    response: 'useCallback 用于缓存函数引用，useMemo 用于缓存计算结果...'
+  {
+    id: "2",
+    timestamp: "2024-03-23 10:30:45",
+    user: "lihua@tech.com",
+    model: "Claude-3.5-Sonnet",
+    client: "Web",
+    inputTokens: 2100,
+    outputTokens: 1560,
+    duration: 3.8,
+    status: "success",
+    prompt: "请解释 React 中 useCallback 和 useMemo 的区别",
+    response: "useCallback 用于缓存函数引用，useMemo 用于缓存计算结果...",
   },
-  { 
-    id: '3', 
-    timestamp: '2024-03-23 10:28:12', 
-    user: 'wangfang@tech.com', 
-    model: 'GPT-4o', 
-    client: 'API',
-    inputTokens: 890, 
-    outputTokens: 0, 
-    duration: 30.0, 
-    status: 'timeout',
-    prompt: '生成一篇关于人工智能发展历史的长文...',
-    response: ''
+  {
+    id: "3",
+    timestamp: "2024-03-23 10:28:12",
+    user: "wangfang@tech.com",
+    model: "GPT-4o",
+    client: "API",
+    inputTokens: 890,
+    outputTokens: 0,
+    duration: 30.0,
+    status: "timeout",
+    prompt: "生成一篇关于人工智能发展历史的长文...",
+    response: "",
   },
-  { 
-    id: '4', 
-    timestamp: '2024-03-23 10:25:33', 
-    user: 'zhangwei@tech.com', 
-    model: 'DeepSeek-V3', 
-    client: 'VS Code',
-    inputTokens: 3200, 
-    outputTokens: 2100, 
-    duration: 4.2, 
-    status: 'success',
-    prompt: '优化以下 SQL 查询语句...',
-    response: '这是优化后的 SQL 查询...'
+  {
+    id: "4",
+    timestamp: "2024-03-23 10:25:33",
+    user: "zhangwei@tech.com",
+    model: "DeepSeek-V3",
+    client: "VS Code",
+    inputTokens: 3200,
+    outputTokens: 2100,
+    duration: 4.2,
+    status: "success",
+    prompt: "优化以下 SQL 查询语句...",
+    response: "这是优化后的 SQL 查询...",
   },
-  { 
-    id: '5', 
-    timestamp: '2024-03-23 10:22:08', 
-    user: 'chengang@tech.com', 
-    model: 'GPT-4o', 
-    client: 'Web',
-    inputTokens: 1500, 
-    outputTokens: 0, 
-    duration: 1.2, 
-    status: 'error',
-    prompt: '请分析这段代码的问题...',
-    response: ''
+  {
+    id: "5",
+    timestamp: "2024-03-23 10:22:08",
+    user: "chengang@tech.com",
+    model: "GPT-4o",
+    client: "Web",
+    inputTokens: 1500,
+    outputTokens: 0,
+    duration: 1.2,
+    status: "error",
+    prompt: "请分析这段代码的问题...",
+    response: "",
   },
-  { 
-    id: '6', 
-    timestamp: '2024-03-23 10:18:55', 
-    user: 'lihua@tech.com', 
-    model: 'Claude-3.5-Sonnet', 
-    client: 'API',
-    inputTokens: 980, 
-    outputTokens: 720, 
-    duration: 1.9, 
-    status: 'success',
-    prompt: '如何实现 JWT 认证？',
-    response: 'JWT 认证的实现步骤如下...'
+  {
+    id: "6",
+    timestamp: "2024-03-23 10:18:55",
+    user: "lihua@tech.com",
+    model: "Claude-3.5-Sonnet",
+    client: "API",
+    inputTokens: 980,
+    outputTokens: 720,
+    duration: 1.9,
+    status: "success",
+    prompt: "如何实现 JWT 认证？",
+    response: "JWT 认证的实现步骤如下...",
   },
-  { 
-    id: '7', 
-    timestamp: '2024-03-23 10:15:22', 
-    user: 'wangfang@tech.com', 
-    model: 'DeepSeek-V3', 
-    client: 'VS Code',
-    inputTokens: 4500, 
-    outputTokens: 3200, 
-    duration: 5.6, 
-    status: 'success',
-    prompt: '帮我重构这个 React 组件...',
-    response: '这是重构后的组件代码...'
+  {
+    id: "7",
+    timestamp: "2024-03-23 10:15:22",
+    user: "wangfang@tech.com",
+    model: "DeepSeek-V3",
+    client: "VS Code",
+    inputTokens: 4500,
+    outputTokens: 3200,
+    duration: 5.6,
+    status: "success",
+    prompt: "帮我重构这个 React 组件...",
+    response: "这是重构后的组件代码...",
   },
-  { 
-    id: '8', 
-    timestamp: '2024-03-23 10:12:10', 
-    user: 'zhangwei@tech.com', 
-    model: 'GPT-4o', 
-    client: 'Web',
-    inputTokens: 780, 
-    outputTokens: 540, 
-    duration: 1.5, 
-    status: 'success',
-    prompt: '解释 TypeScript 中的泛型',
-    response: 'TypeScript 泛型是一种...'
+  {
+    id: "8",
+    timestamp: "2024-03-23 10:12:10",
+    user: "zhangwei@tech.com",
+    model: "GPT-4o",
+    client: "Web",
+    inputTokens: 780,
+    outputTokens: 540,
+    duration: 1.5,
+    status: "success",
+    prompt: "解释 TypeScript 中的泛型",
+    response: "TypeScript 泛型是一种...",
   },
 ];
 
 export function CallDetails() {
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [selectedRecord, setSelectedRecord] = useState<CallRecord | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
 
-  const getStatusBadge = (status: CallRecord['status']) => {
+  const getStatusBadge = (status: CallRecord["status"]) => {
     switch (status) {
-      case 'success':
-        return <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/20">成功</Badge>;
-      case 'error':
-        return <Badge variant="outline" className="bg-red-500/10 text-red-600 border-red-500/20">错误</Badge>;
-      case 'timeout':
-        return <Badge variant="outline" className="bg-yellow-500/10 text-yellow-600 border-yellow-500/20">超时</Badge>;
+      case "success":
+        return (
+          <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/20">
+            成功
+          </Badge>
+        );
+      case "error":
+        return (
+          <Badge variant="outline" className="bg-red-500/10 text-red-600 border-red-500/20">
+            错误
+          </Badge>
+        );
+      case "timeout":
+        return (
+          <Badge variant="outline" className="bg-yellow-500/10 text-yellow-600 border-yellow-500/20">
+            超时
+          </Badge>
+        );
     }
   };
 
-  const filteredRecords = mockCallRecords.filter(record =>
-    record.user.includes(searchTerm) ||
-    record.model.includes(searchTerm) ||
-    record.timestamp.includes(searchTerm)
+  const filteredRecords = mockCallRecords.filter(
+    (record) =>
+      record.user.includes(searchTerm) || record.model.includes(searchTerm) || record.timestamp.includes(searchTerm),
   );
 
   const handleViewDetails = (record: CallRecord) => {
@@ -252,9 +263,9 @@ export function CallDetails() {
                     <TableCell className="text-right font-mono">{record.duration.toFixed(1)}</TableCell>
                     <TableCell>{getStatusBadge(record.status)}</TableCell>
                     <TableCell className="text-center">
-                      <Button 
-                        variant="link" 
-                        size="sm" 
+                      <Button
+                        variant="link"
+                        size="sm"
                         className="text-primary h-auto p-0"
                         onClick={() => handleViewDetails(record)}
                       >
@@ -270,9 +281,13 @@ export function CallDetails() {
           <div className="flex items-center justify-between mt-4 text-sm text-muted-foreground">
             <span>共 {filteredRecords.length} 条记录</span>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" disabled>上一页</Button>
+              <Button variant="outline" size="sm" disabled>
+                上一页
+              </Button>
               <span className="px-2">1 / 1</span>
-              <Button variant="outline" size="sm" disabled>下一页</Button>
+              <Button variant="outline" size="sm" disabled>
+                下一页
+              </Button>
             </div>
           </div>
         </CardContent>
@@ -307,11 +322,15 @@ export function CallDetails() {
                 </div>
                 <div>
                   <div className="text-xs text-muted-foreground mb-1">模型 / 客户端</div>
-                  <div className="text-sm font-medium">{selectedRecord.model} | {selectedRecord.client}</div>
+                  <div className="text-sm font-medium">
+                    {selectedRecord.model} | {selectedRecord.client}
+                  </div>
                 </div>
                 <div>
                   <div className="text-xs text-muted-foreground mb-1">TOKEN 统计</div>
-                  <div className="text-sm font-medium">Input: {selectedRecord.inputTokens} / Output: {selectedRecord.outputTokens}</div>
+                  <div className="text-sm font-medium">
+                    Input: {selectedRecord.inputTokens} / Output: {selectedRecord.outputTokens}
+                  </div>
                 </div>
               </div>
 
@@ -326,7 +345,7 @@ export function CallDetails() {
                     variant="ghost"
                     size="sm"
                     className="h-7 text-xs text-muted-foreground hover:text-foreground"
-                    onClick={() => handleCopy(selectedRecord.prompt, '提示词')}
+                    onClick={() => handleCopy(selectedRecord.prompt, "提示词")}
                   >
                     <Copy className="w-3 h-3 mr-1" />
                     复制内容
@@ -342,13 +361,13 @@ export function CallDetails() {
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
                     <Zap className="w-4 h-4 text-primary" />
-                    <span className="font-medium">模型输出 (Response)</span>
+                    <span className="font-medium">模型输出</span>
                   </div>
                   <Button
                     variant="ghost"
                     size="sm"
                     className="h-7 text-xs text-muted-foreground hover:text-foreground"
-                    onClick={() => handleCopy(selectedRecord.response, '模型输出')}
+                    onClick={() => handleCopy(selectedRecord.response, "模型输出")}
                     disabled={!selectedRecord.response}
                   >
                     <Copy className="w-3 h-3 mr-1" />
