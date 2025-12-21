@@ -6,12 +6,39 @@ import { mockUsageStats, mockMembers, mockModels } from '@/data/mockData';
 import { toast } from '@/hooks/use-toast';
 import { Progress } from '@/components/ui/progress';
 import { SubscriptionUpgradeDialog } from '@/components/subscription/SubscriptionUpgradeDialog';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 
 export function DashboardView() {
   const activeMembers = mockMembers.filter(m => m.status === 'active').length;
   const enabledModels = mockModels.filter(m => m.enabled).length;
   const [copied, setCopied] = useState(false);
   const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
+  const [dateRange, setDateRange] = useState<string>('today');
+
+  // 模拟实时调用数据
+  const realtimeCalls = [
+    { user: '张明', model: 'Kimi', tokens: 1250, time: '刚刚', status: 'success' },
+    { user: '李华', model: 'Qwen 2.5', tokens: 3420, time: '2分钟前', status: 'success' },
+    { user: '王芳', model: 'DeepSeek', tokens: 890, time: '5分钟前', status: 'success' },
+    { user: '陈强', model: 'Kimi', tokens: 0, time: '8分钟前', status: 'error' },
+    { user: '刘洋', model: 'Qwen 2.5', tokens: 2150, time: '12分钟前', status: 'success' },
+  ];
+
+  // 根据时间范围获取统计数据
+  const getStatsForRange = (range: string) => {
+    const multipliers: Record<string, number> = {
+      'today': 1,
+      'week': 7,
+      'month': 30,
+    };
+    const m = multipliers[range] || 1;
+    return {
+      tokens: (mockUsageStats.totalTokens * m / 1000000).toFixed(1),
+      activeMembers: Math.min(activeMembers + Math.floor(m * 0.5), mockMembers.length),
+    };
+  };
+
+  const currentStats = getStatsForRange(dateRange);
 
   // 模拟组织数据
   const organization = {
@@ -113,80 +140,114 @@ export function DashboardView() {
         </div>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatsCard
-          title="活跃成员"
-          value={activeMembers}
-          change={12}
-          changeLabel="较昨日"
-          icon={Users}
-          trend="up"
-        />
-        <StatsCard
-          title="今日 Token 消耗"
-          value={`${(mockUsageStats.totalTokens / 1000000).toFixed(1)}M`}
-          change={8}
-          changeLabel="较昨日"
-          icon={Zap}
-          trend="up"
-        />
-        <StatsCard
-          title="平均响应时间"
-          value={`${mockUsageStats.avgLatency}s`}
-          change={-5}
-          changeLabel="较昨日"
-          icon={Clock}
-          trend="up"
-        />
-        <StatsCard
-          title="成功率"
-          value={`${mockUsageStats.successRate}%`}
-          change={0.5}
-          changeLabel="较昨日"
-          icon={Activity}
-          trend="up"
-        />
+      {/* Stats Grid with Date Range Selector */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="font-semibold text-foreground">数据概览</h3>
+          <ToggleGroup type="single" value={dateRange} onValueChange={(v) => v && setDateRange(v)} className="bg-muted/50 rounded-lg p-1">
+            <ToggleGroupItem value="today" className="text-xs px-3 py-1.5 data-[state=on]:bg-background data-[state=on]:shadow-sm">
+              当日
+            </ToggleGroupItem>
+            <ToggleGroupItem value="week" className="text-xs px-3 py-1.5 data-[state=on]:bg-background data-[state=on]:shadow-sm">
+              近7日
+            </ToggleGroupItem>
+            <ToggleGroupItem value="month" className="text-xs px-3 py-1.5 data-[state=on]:bg-background data-[state=on]:shadow-sm">
+              本月
+            </ToggleGroupItem>
+          </ToggleGroup>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatsCard
+            title="活跃成员"
+            value={currentStats.activeMembers}
+            change={12}
+            changeLabel="较上期"
+            icon={Users}
+            trend="up"
+          />
+          <StatsCard
+            title={`${dateRange === 'today' ? '今日' : dateRange === 'week' ? '近7日' : '本月'} Token 消耗`}
+            value={`${currentStats.tokens}M`}
+            change={8}
+            changeLabel="较上期"
+            icon={Zap}
+            trend="up"
+          />
+          <StatsCard
+            title="平均响应时间"
+            value={`${mockUsageStats.avgLatency}s`}
+            change={-5}
+            changeLabel="较上期"
+            icon={Clock}
+            trend="up"
+          />
+          <StatsCard
+            title="成功率"
+            value={`${mockUsageStats.successRate}%`}
+            change={0.5}
+            changeLabel="较上期"
+            icon={Activity}
+            trend="up"
+          />
+        </div>
       </div>
 
       {/* Two Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Recent Activity */}
         <div className="lg:col-span-2 enterprise-card">
-          <div className="p-4 border-b border-border">
-            <h3 className="font-semibold text-foreground">实时调用监控</h3>
+          <div className="p-4 border-b border-border flex items-center justify-between">
+            <h3 className="font-semibold text-foreground flex items-center gap-2">
+              <span className="inline-block w-2 h-2 rounded-full bg-success animate-pulse"></span>
+              实时调用监控
+            </h3>
           </div>
-          <div className="p-4 space-y-3">
-            {[
-              { user: '张明', model: 'Kimi', action: '代码优化', time: '刚刚', status: 'success' },
-              { user: '李华', model: 'Qwen 2.5', action: '文档生成', time: '2分钟前', status: 'success' },
-              { user: '王芳', model: 'DeepSeek', action: '代码补全', time: '5分钟前', status: 'success' },
-              { user: '陈强', model: 'Kimi', action: '问题解答', time: '8分钟前', status: 'error' },
-              { user: '刘洋', model: 'Qwen 2.5', action: '代码审查', time: '12分钟前', status: 'success' },
-            ].map((item, index) => (
-              <div 
-                key={index}
-                className="flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                    <span className="text-sm font-medium text-primary">{item.user[0]}</span>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-foreground">{item.user}</p>
-                    <p className="text-xs text-muted-foreground">{item.action} · {item.model}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  {item.status === 'success' ? (
-                    <CheckCircle2 className="w-4 h-4 text-success" />
-                  ) : (
-                    <AlertCircle className="w-4 h-4 text-destructive" />
-                  )}
-                  <span className="text-xs text-muted-foreground">{item.time}</span>
-                </div>
-              </div>
-            ))}
+          <div className="p-4">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="text-xs text-muted-foreground border-b border-border">
+                    <th className="text-left pb-3 font-medium">调用人</th>
+                    <th className="text-left pb-3 font-medium">模型</th>
+                    <th className="text-right pb-3 font-medium">Token 消耗</th>
+                    <th className="text-right pb-3 font-medium">时间</th>
+                    <th className="text-center pb-3 font-medium">状态</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {realtimeCalls.map((item, index) => (
+                    <tr key={index} className="hover:bg-muted/30 transition-colors">
+                      <td className="py-3">
+                        <div className="flex items-center gap-2">
+                          <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center">
+                            <span className="text-xs font-medium text-primary">{item.user[0]}</span>
+                          </div>
+                          <span className="text-sm font-medium text-foreground">{item.user}</span>
+                        </div>
+                      </td>
+                      <td className="py-3">
+                        <span className="text-sm text-foreground">{item.model}</span>
+                      </td>
+                      <td className="py-3 text-right">
+                        <span className={`text-sm font-mono ${item.tokens > 0 ? 'text-foreground' : 'text-muted-foreground'}`}>
+                          {item.tokens > 0 ? item.tokens.toLocaleString() : '-'}
+                        </span>
+                      </td>
+                      <td className="py-3 text-right">
+                        <span className="text-xs text-muted-foreground">{item.time}</span>
+                      </td>
+                      <td className="py-3 text-center">
+                        {item.status === 'success' ? (
+                          <CheckCircle2 className="w-4 h-4 text-success inline-block" />
+                        ) : (
+                          <AlertCircle className="w-4 h-4 text-destructive inline-block" />
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
 
@@ -197,7 +258,7 @@ export function DashboardView() {
           </div>
           <div className="p-4 space-y-4">
             {mockModels.slice(0, 4).map((model) => (
-              <div key={model.id} className="space-y-2">
+              <div key={model.id} className="space-y-3 p-3 rounded-lg bg-muted/20">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium text-foreground">{model.name}</span>
                   <span className={`status-badge ${model.enabled ? 'status-badge-success' : 'status-badge-neutral'}`}>
@@ -205,16 +266,32 @@ export function DashboardView() {
                   </span>
                 </div>
                 {model.enabled && (
-                  <div className="space-y-1">
-                    <div className="flex justify-between text-xs text-muted-foreground">
-                      <span>RPM: {model.currentRpm}/{model.rpmLimit}</span>
-                      <span>{Math.round(model.currentRpm / model.rpmLimit * 100)}%</span>
+                  <div className="space-y-2">
+                    {/* RPM */}
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-xs text-muted-foreground">
+                        <span className="font-medium">RPM</span>
+                        <span>{model.currentRpm}/{model.rpmLimit}</span>
+                      </div>
+                      <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-primary rounded-full transition-all duration-500"
+                          style={{ width: `${(model.currentRpm / model.rpmLimit) * 100}%` }}
+                        />
+                      </div>
                     </div>
-                    <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-primary rounded-full transition-all duration-500"
-                        style={{ width: `${(model.currentRpm / model.rpmLimit) * 100}%` }}
-                      />
+                    {/* TPM */}
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-xs text-muted-foreground">
+                        <span className="font-medium">TPM</span>
+                        <span>{Math.floor(model.currentRpm * 150)}/{model.rpmLimit * 200}</span>
+                      </div>
+                      <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-success rounded-full transition-all duration-500"
+                          style={{ width: `${(model.currentRpm / model.rpmLimit) * 100 * 0.75}%` }}
+                        />
+                      </div>
                     </div>
                   </div>
                 )}
