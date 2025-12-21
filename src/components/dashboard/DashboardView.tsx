@@ -6,7 +6,34 @@ import { toast } from '@/hooks/use-toast';
 import { Progress } from '@/components/ui/progress';
 import { SubscriptionUpgradeDialog } from '@/components/subscription/SubscriptionUpgradeDialog';
 import { Card } from '@/components/ui/card';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Area, AreaChart } from 'recharts';
 
+// 生成当日5分钟间隔的趋势数据
+const generateTrendData = () => {
+  const data = [];
+  const now = new Date();
+  const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+  
+  for (let i = 0; i <= 288; i++) { // 24小时 * 12个5分钟 = 288个点
+    const time = new Date(startOfDay.getTime() + i * 5 * 60 * 1000);
+    if (time > now) break;
+    
+    const hour = time.getHours();
+    // 模拟真实的调用模式：凌晨低，工作时间高
+    const baseValue = hour >= 9 && hour <= 18 ? 50 : hour >= 6 && hour <= 22 ? 20 : 5;
+    const randomFactor = Math.random() * 30;
+    
+    data.push({
+      time: `${hour.toString().padStart(2, '0')}:${time.getMinutes().toString().padStart(2, '0')}`,
+      requests: Math.floor(baseValue + randomFactor),
+      tokens: Math.floor((baseValue + randomFactor) * 150 + Math.random() * 500),
+    });
+  }
+  return data;
+};
+
+const trendData = generateTrendData();
 export function DashboardView() {
   const [copied, setCopied] = useState(false);
   const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
@@ -179,8 +206,62 @@ export function DashboardView() {
 
       {/* Two Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Recent Activity */}
+        {/* 当日数据趋势图 */}
         <div className="lg:col-span-2 enterprise-card">
+          <div className="p-4 border-b border-border flex items-center justify-between">
+            <h3 className="font-semibold text-foreground flex items-center gap-2">
+              当日数据趋势
+              <span className="text-xs text-muted-foreground font-normal">(每5分钟)</span>
+            </h3>
+          </div>
+          <div className="p-4">
+            <ChartContainer 
+              config={{
+                requests: { label: "请求次数", color: "hsl(var(--primary))" },
+                tokens: { label: "Token量", color: "hsl(var(--success))" },
+              }}
+              className="h-[280px] w-full"
+            >
+              <AreaChart data={trendData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="colorRequests" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                  </linearGradient>
+                  <linearGradient id="colorTokens" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="hsl(var(--success))" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="hsl(var(--success))" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <XAxis 
+                  dataKey="time" 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                  interval={23} // 每2小时显示一个标签
+                />
+                <YAxis 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                  width={40}
+                />
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <Area 
+                  type="monotone" 
+                  dataKey="requests" 
+                  stroke="hsl(var(--primary))" 
+                  fillOpacity={1} 
+                  fill="url(#colorRequests)"
+                  strokeWidth={2}
+                />
+              </AreaChart>
+            </ChartContainer>
+          </div>
+        </div>
+
+        {/* 实时调用监控 */}
+        <div className="enterprise-card">
           <div className="p-4 border-b border-border flex items-center justify-between">
             <h3 className="font-semibold text-foreground flex items-center gap-2">
               <span className="inline-block w-2 h-2 rounded-full bg-success animate-pulse"></span>
@@ -188,100 +269,34 @@ export function DashboardView() {
             </h3>
           </div>
           <div className="p-4">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="text-xs text-muted-foreground border-b border-border">
-                    <th className="text-left pb-3 font-medium">调用人</th>
-                    <th className="text-left pb-3 font-medium">模型</th>
-                    <th className="text-right pb-3 font-medium">Token 消耗</th>
-                    <th className="text-right pb-3 font-medium">时间</th>
-                    <th className="text-center pb-3 font-medium">状态</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {realtimeCalls.map((item, index) => (
-                    <tr key={index} className="hover:bg-muted/30 transition-colors">
-                      <td className="py-3">
-                        <div className="flex items-center gap-2">
-                          <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center">
-                            <span className="text-xs font-medium text-primary">{item.user[0]}</span>
-                          </div>
-                          <span className="text-sm font-medium text-foreground">{item.user}</span>
-                        </div>
-                      </td>
-                      <td className="py-3">
-                        <span className="text-sm text-foreground">{item.model}</span>
-                      </td>
-                      <td className="py-3 text-right">
-                        <span className={`text-sm font-mono ${item.tokens > 0 ? 'text-foreground' : 'text-muted-foreground'}`}>
-                          {item.tokens > 0 ? item.tokens.toLocaleString() : '-'}
-                        </span>
-                      </td>
-                      <td className="py-3 text-right">
-                        <span className="text-xs text-muted-foreground">{item.time}</span>
-                      </td>
-                      <td className="py-3 text-center">
-                        {item.status === 'success' ? (
-                          <CheckCircle2 className="w-4 h-4 text-success inline-block" />
-                        ) : (
-                          <AlertCircle className="w-4 h-4 text-destructive inline-block" />
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-
-        {/* Model Status */}
-        <div className="enterprise-card">
-          <div className="p-4 border-b border-border">
-            <h3 className="font-semibold text-foreground">模型状态</h3>
-          </div>
-          <div className="p-4 space-y-4">
-            {mockModels.slice(0, 4).map((model) => (
-              <div key={model.id} className="space-y-3 p-3 rounded-lg bg-muted/20">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-foreground">{model.name}</span>
-                  <span className={`status-badge ${model.enabled ? 'status-badge-success' : 'status-badge-neutral'}`}>
-                    {model.enabled ? '运行中' : '已停用'}
-                  </span>
-                </div>
-                {model.enabled && (
-                  <div className="space-y-2">
-                    {/* RPM */}
-                    <div className="space-y-1">
-                      <div className="flex justify-between text-xs text-muted-foreground">
-                        <span className="font-medium">RPM</span>
-                        <span>{model.currentRpm}/{model.rpmLimit}</span>
-                      </div>
-                      <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-primary rounded-full transition-all duration-500"
-                          style={{ width: `${(model.currentRpm / model.rpmLimit) * 100}%` }}
-                        />
-                      </div>
+            <div className="space-y-3">
+              {realtimeCalls.map((item, index) => (
+                <div key={index} className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/30 transition-colors">
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center">
+                      <span className="text-xs font-medium text-primary">{item.user[0]}</span>
                     </div>
-                    {/* TPM */}
-                    <div className="space-y-1">
-                      <div className="flex justify-between text-xs text-muted-foreground">
-                        <span className="font-medium">TPM</span>
-                        <span>{Math.floor(model.currentRpm * 150)}/{model.rpmLimit * 200}</span>
-                      </div>
-                      <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-success rounded-full transition-all duration-500"
-                          style={{ width: `${(model.currentRpm / model.rpmLimit) * 100 * 0.75}%` }}
-                        />
-                      </div>
+                    <div>
+                      <span className="text-sm font-medium text-foreground">{item.user}</span>
+                      <p className="text-xs text-muted-foreground">{item.model}</p>
                     </div>
                   </div>
-                )}
-              </div>
-            ))}
+                  <div className="text-right">
+                    <span className={`text-sm font-mono ${item.tokens > 0 ? 'text-foreground' : 'text-muted-foreground'}`}>
+                      {item.tokens > 0 ? item.tokens.toLocaleString() : '-'}
+                    </span>
+                    <div className="flex items-center gap-1 justify-end">
+                      <span className="text-xs text-muted-foreground">{item.time}</span>
+                      {item.status === 'success' ? (
+                        <CheckCircle2 className="w-3 h-3 text-success" />
+                      ) : (
+                        <AlertCircle className="w-3 h-3 text-destructive" />
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
