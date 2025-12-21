@@ -9,6 +9,7 @@ import {
   Filter,
   X,
   ChevronDown,
+  ChevronRight,
   Check,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -24,6 +25,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { mockUsageStats, mockModels, mockDepartments, mockMembers } from '@/data/mockData';
 import { format, subDays, startOfDay, endOfDay } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
+import { Department } from '@/types';
 import {
   LineChart,
   Line,
@@ -40,22 +42,208 @@ import {
 
 const COLORS = ['hsl(217, 91%, 60%)', 'hsl(142, 76%, 36%)', 'hsl(38, 92%, 50%)', 'hsl(215, 16%, 47%)'];
 
-// Flatten departments for select
-const flattenDepartments = (depts: typeof mockDepartments, prefix = ''): { id: string; name: string }[] => {
+// Flatten departments for display names
+const flattenDepartmentsHelper = (depts: Department[], prefix = ''): { id: string; name: string }[] => {
   const result: { id: string; name: string }[] = [];
   depts.forEach(dept => {
     const displayName = prefix ? `${prefix} / ${dept.name}` : dept.name;
     result.push({ id: dept.id, name: displayName });
     if (dept.children && dept.children.length > 0) {
-      result.push(...flattenDepartments(dept.children, displayName));
+      result.push(...flattenDepartmentsHelper(dept.children, displayName));
     }
   });
   return result;
 };
 
-const allDepartments = flattenDepartments(mockDepartments);
+const allDepartmentsFlat = flattenDepartmentsHelper(mockDepartments);
 
-// Multi-select dropdown component
+// Get all descendant IDs of a department
+const getDescendantIds = (dept: Department): string[] => {
+  const ids: string[] = [];
+  if (dept.children) {
+    dept.children.forEach(child => {
+      ids.push(child.id);
+      ids.push(...getDescendantIds(child));
+    });
+  }
+  return ids;
+};
+
+// Cascading Department Tree Node
+function DepartmentTreeNode({
+  dept,
+  selected,
+  onChange,
+  expanded,
+  onToggleExpand,
+  level = 0,
+}: {
+  dept: Department;
+  selected: string[];
+  onChange: (selected: string[]) => void;
+  expanded: string[];
+  onToggleExpand: (id: string) => void;
+  level?: number;
+}) {
+  const hasChildren = dept.children && dept.children.length > 0;
+  const isExpanded = expanded.includes(dept.id);
+  const isSelected = selected.includes(dept.id);
+  
+  // Check if all children are selected
+  const allChildrenSelected = hasChildren && dept.children!.every(child => {
+    const descendantIds = [child.id, ...getDescendantIds(child)];
+    return descendantIds.every(id => selected.includes(id));
+  });
+  
+  // Check if some children are selected
+  const someChildrenSelected = hasChildren && dept.children!.some(child => {
+    const descendantIds = [child.id, ...getDescendantIds(child)];
+    return descendantIds.some(id => selected.includes(id));
+  });
+
+  const handleToggle = () => {
+    const descendantIds = getDescendantIds(dept);
+    const allIds = [dept.id, ...descendantIds];
+    
+    if (isSelected || allChildrenSelected) {
+      // Deselect this and all descendants
+      onChange(selected.filter(id => !allIds.includes(id)));
+    } else {
+      // Select this and all descendants
+      onChange([...new Set([...selected, ...allIds])]);
+    }
+  };
+
+  return (
+    <div>
+      <div
+        className="flex items-center gap-1 px-2 py-1.5 rounded-md hover:bg-accent cursor-pointer"
+        style={{ paddingLeft: `${level * 16 + 8}px` }}
+      >
+        {hasChildren ? (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleExpand(dept.id);
+            }}
+            className="p-0.5 hover:bg-muted rounded"
+          >
+            {isExpanded ? (
+              <ChevronDown className="w-3 h-3 text-muted-foreground" />
+            ) : (
+              <ChevronRight className="w-3 h-3 text-muted-foreground" />
+            )}
+          </button>
+        ) : (
+          <div className="w-4" />
+        )}
+        <div
+          className="flex items-center gap-2 flex-1"
+          onClick={handleToggle}
+        >
+          <Checkbox 
+            checked={isSelected || allChildrenSelected}
+            className={`pointer-events-none ${someChildrenSelected && !allChildrenSelected ? 'data-[state=checked]:bg-primary/50' : ''}`}
+          />
+          <span className="text-sm">{dept.name}</span>
+          <span className="text-xs text-muted-foreground">({dept.memberCount}人)</span>
+        </div>
+      </div>
+      {hasChildren && isExpanded && (
+        <div>
+          {dept.children!.map(child => (
+            <DepartmentTreeNode
+              key={child.id}
+              dept={child}
+              selected={selected}
+              onChange={onChange}
+              expanded={expanded}
+              onToggleExpand={onToggleExpand}
+              level={level + 1}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Cascading Department Multi-Select
+function CascadingDepartmentSelect({
+  selected,
+  onChange,
+  placeholder,
+}: {
+  selected: string[];
+  onChange: (selected: string[]) => void;
+  placeholder: string;
+}) {
+  const [open, setOpen] = useState(false);
+  const [expanded, setExpanded] = useState<string[]>(['dept-1', 'dept-2']);
+
+  const toggleExpand = (id: string) => {
+    setExpanded(prev => 
+      prev.includes(id) ? prev.filter(e => e !== id) : [...prev, id]
+    );
+  };
+
+  const selectAll = () => {
+    onChange(allDepartmentsFlat.map(d => d.id));
+  };
+
+  const clearAll = () => {
+    onChange([]);
+  };
+
+  const getDisplayText = () => {
+    if (selected.length === 0) return placeholder;
+    if (selected.length === 1) {
+      return allDepartmentsFlat.find(d => d.id === selected[0])?.name || placeholder;
+    }
+    return `已选 ${selected.length} 个部门`;
+  };
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="h-9 gap-2 min-w-[140px] justify-between"
+        >
+          <span className="truncate">{getDisplayText()}</span>
+          <ChevronDown className="w-4 h-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-72 p-0 bg-popover border border-border shadow-lg z-50" align="start">
+        <div className="p-2 border-b border-border flex gap-2">
+          <Button variant="ghost" size="sm" className="h-7 text-xs flex-1" onClick={selectAll}>
+            全选
+          </Button>
+          <Button variant="ghost" size="sm" className="h-7 text-xs flex-1" onClick={clearAll}>
+            清空
+          </Button>
+        </div>
+        <ScrollArea className="h-[280px]">
+          <div className="p-1">
+            {mockDepartments.map(dept => (
+              <DepartmentTreeNode
+                key={dept.id}
+                dept={dept}
+                selected={selected}
+                onChange={onChange}
+                expanded={expanded}
+                onToggleExpand={toggleExpand}
+              />
+            ))}
+          </div>
+        </ScrollArea>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+// Multi-select dropdown component (for models and members)
 function MultiSelectDropdown({
   label,
   options,
@@ -138,6 +326,8 @@ function MultiSelectDropdown({
     </Popover>
   );
 }
+
+const allDepartments = allDepartmentsFlat;
 
 type DateRangeType = 'today' | 'yesterday' | '7days' | '30days' | 'custom';
 
@@ -319,10 +509,8 @@ export function UsageDashboard() {
             placeholder="全部模型"
           />
 
-          {/* Department Filter */}
-          <MultiSelectDropdown
-            label="部门"
-            options={allDepartments}
+          {/* Department Filter - Cascading */}
+          <CascadingDepartmentSelect
             selected={selectedDepartments}
             onChange={setSelectedDepartments}
             placeholder="全部部门"
