@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { 
-  Search, 
   Plus, 
   Mail, 
   RefreshCw,
   Users,
-  Building2
+  Building2,
+  RotateCcw,
+  UserPlus
 } from 'lucide-react';
 import { OrganizationTree } from '@/components/organization/OrganizationTree';
 import { Button } from '@/components/ui/button';
@@ -24,11 +25,17 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 export function MemberManagement() {
   const [members, setMembers] = useState<Member[]>(mockMembers);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filter, setFilter] = useState<'all' | 'sso' | 'manual'>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'pending' | 'inactive'>('all');
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
@@ -39,9 +46,8 @@ export function MemberManagement() {
   const filteredMembers = members.filter(member => {
     const matchesSearch = member.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          member.email.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesFilter = filter === 'all' || member.source === filter;
     const matchesStatus = statusFilter === 'all' || member.status === statusFilter;
-    return matchesSearch && matchesFilter && matchesStatus;
+    return matchesSearch && matchesStatus;
   });
 
   const handleAddMember = async () => {
@@ -112,14 +118,19 @@ export function MemberManagement() {
     });
   };
 
+  const handleReset = () => {
+    setSearchQuery('');
+    setStatusFilter('all');
+  };
+
   const getStatusBadge = (status: Member['status']) => {
     switch (status) {
       case 'active':
-        return <span className="status-badge status-badge-success">正常</span>;
+        return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border border-success text-success">正常</span>;
       case 'inactive':
-        return <span className="status-badge status-badge-error">禁用</span>;
+        return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border border-destructive text-destructive">禁用</span>;
       case 'pending':
-        return <span className="status-badge status-badge-warning">待激活</span>;
+        return <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border border-warning text-warning">未激活</span>;
     }
   };
 
@@ -153,20 +164,27 @@ export function MemberManagement() {
         label: '重发秘钥',
         onClick: () => handleResendKey(member),
       });
+    } else {
+      // SSO用户也可以编辑
+      actions.push({
+        key: 'edit',
+        label: '编辑',
+        onClick: () => handleEditMember(member),
+      });
     }
 
     return (
-      <div className="flex items-center justify-end gap-0">
+      <div className="flex items-center justify-end">
         {actions.map((action, index) => (
           <React.Fragment key={action.key}>
             <button
-              className="text-primary hover:text-primary/80 text-sm px-2 py-1 transition-colors"
+              className="text-primary hover:text-primary/80 text-sm transition-colors"
               onClick={action.onClick}
             >
               {action.label}
             </button>
             {index < actions.length - 1 && (
-              <span className="text-border">|</span>
+              <span className="text-muted-foreground/50 mx-2">|</span>
             )}
           </React.Fragment>
         ))}
@@ -181,9 +199,9 @@ export function MemberManagement() {
   };
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="animate-fade-in">
       {/* Subscription Seats Header */}
-      <div className="enterprise-card p-4">
+      <div className="bg-card rounded-lg border border-border p-4 mb-6">
         <div className="flex items-center justify-between">
           <div className="flex-1 max-w-md">
             <div className="text-sm text-muted-foreground mb-2">订阅席位使用情况</div>
@@ -205,146 +223,115 @@ export function MemberManagement() {
         </div>
       </div>
 
-      <Tabs defaultValue="members" className="w-full">
-        <TabsList>
-          <TabsTrigger value="members" className="gap-2">
-            <Users className="w-4 h-4" />
-            成员管理
-          </TabsTrigger>
-          <TabsTrigger value="organization" className="gap-2">
-            <Building2 className="w-4 h-4" />
-            组织管理
-          </TabsTrigger>
-        </TabsList>
+      <div className="bg-card rounded-lg border border-border">
+        <div className="p-6">
+          <Tabs defaultValue="members" className="w-full">
+            <TabsList className="mb-6">
+              <TabsTrigger value="members">
+                成员管理
+              </TabsTrigger>
+              <TabsTrigger value="organization">
+                组织管理
+              </TabsTrigger>
+            </TabsList>
 
-        <TabsContent value="members" className="space-y-6 mt-6">
-          {/* Header */}
-          <div className="flex items-center justify-end gap-3">
-            <Button size="sm" className="gap-2" onClick={() => setShowAddDialog(true)}>
-              <Plus className="w-4 h-4" />
-              添加成员
-            </Button>
-          </div>
-
-          {/* Filters */}
-          <div className="enterprise-card p-4">
-            <div className="flex flex-col md:flex-row gap-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input 
-                  placeholder="搜索姓名或邮箱..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9"
-                />
-              </div>
-              <div className="flex gap-2 flex-wrap">
-                <div className="flex gap-1 items-center">
-                  <span className="text-sm text-muted-foreground mr-1">来源:</span>
-                  {[
-                    { value: 'all', label: '全部' },
-                    { value: 'sso', label: 'SSO' },
-                    { value: 'manual', label: '手动添加' },
-                  ].map((item) => (
-                    <Button
-                      key={item.value}
-                      variant={filter === item.value ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => setFilter(item.value as typeof filter)}
-                    >
-                      {item.label}
-                    </Button>
-                  ))}
+            <TabsContent value="members" className="mt-0">
+              {/* Filters */}
+              <div className="flex items-center gap-4 mb-6">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground whitespace-nowrap">姓名:</span>
+                  <Input 
+                    placeholder="输入姓名"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-40 h-9"
+                  />
                 </div>
-                <div className="flex gap-1 items-center">
-                  <span className="text-sm text-muted-foreground mr-1">状态:</span>
-                  {[
-                    { value: 'all', label: '全部' },
-                    { value: 'active', label: '正常' },
-                    { value: 'pending', label: '待激活' },
-                    { value: 'inactive', label: '禁用' },
-                  ].map((item) => (
-                    <Button
-                      key={item.value}
-                      variant={statusFilter === item.value ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => setStatusFilter(item.value as typeof statusFilter)}
-                    >
-                      {item.label}
-                    </Button>
-                  ))}
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground whitespace-nowrap">状态:</span>
+                  <Select value={statusFilter} onValueChange={(value: typeof statusFilter) => setStatusFilter(value)}>
+                    <SelectTrigger className="w-24 h-9">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">全部</SelectItem>
+                      <SelectItem value="active">正常</SelectItem>
+                      <SelectItem value="pending">未激活</SelectItem>
+                      <SelectItem value="inactive">禁用</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
+                <div className="flex-1" />
+                <Button variant="outline" size="sm" onClick={handleReset} className="gap-1.5">
+                  <RotateCcw className="w-4 h-4" />
+                  重置
+                </Button>
+                <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setShowAddDialog(true)}>
+                  <UserPlus className="w-4 h-4" />
+                  添加成员
+                </Button>
               </div>
-            </div>
-          </div>
 
-          {/* Member Table */}
-          <div className="bg-card rounded-lg border border-border overflow-hidden">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-border bg-muted/30">
-                  <th className="px-4 py-3 text-left text-sm font-medium text-foreground">成员信息</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-foreground">部门</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-foreground">来源</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-foreground">状态</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-foreground">最后活跃</th>
-                  <th className="px-4 py-3 text-center text-sm font-medium text-foreground">操作</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredMembers.map((member) => (
-                  <tr key={member.id} className="border-b border-border last:border-b-0 hover:bg-muted/20 transition-colors">
-                    <td className="px-4 py-4 text-left">
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center">
-                          <span className="text-sm font-medium text-primary">{member.name[0]}</span>
-                        </div>
-                        <div>
-                          <p className="font-medium text-foreground">{member.name}</p>
-                          <p className="text-xs text-muted-foreground">{member.email}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-4 text-left">
-                      <span className="text-sm text-foreground">{member.department || '-'}</span>
-                    </td>
-                    <td className="px-4 py-4 text-left">
-                      <span className={cn(
-                        "status-badge",
-                        member.source === 'sso' ? "status-badge-neutral" : "bg-primary/10 text-primary"
-                      )}>
-                        {member.source === 'sso' ? 'SSO 同步' : '手动添加'}
-                      </span>
-                    </td>
-                    <td className="px-4 py-4 text-left">{getStatusBadge(member.status)}</td>
-                    <td className="px-4 py-4 text-left">
-                      <span className="text-sm text-muted-foreground">
-                        {member.lastActiveAt 
-                          ? new Date(member.lastActiveAt).toLocaleDateString('zh-CN')
-                          : '-'}
-                      </span>
-                    </td>
-                    <td className="px-4 py-4 text-center">
-                      {renderActionButtons(member)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            
-            {filteredMembers.length === 0 && (
-              <div className="p-12 text-center">
-                <Users className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
-                <p className="text-muted-foreground">没有找到匹配的成员</p>
+              {/* Member Table */}
+              <div className="border border-border rounded-lg overflow-hidden">
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-muted/30">
+                      <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">用户</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">部门</th>
+                      <th className="px-4 py-3 text-center text-sm font-medium text-muted-foreground">状态</th>
+                      <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">操作</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredMembers.map((member, index) => (
+                      <tr 
+                        key={member.id} 
+                        className={cn(
+                          "hover:bg-muted/20 transition-colors",
+                          index !== filteredMembers.length - 1 && "border-b border-border"
+                        )}
+                      >
+                        <td className="px-4 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
+                              <span className="text-sm font-medium text-primary-foreground">{member.name[0]}</span>
+                            </div>
+                            <div>
+                              <p className="font-medium text-foreground">{member.name}</p>
+                              <p className="text-sm text-primary">{member.email}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-4">
+                          <span className="text-sm text-foreground">{member.department || '-'}</span>
+                        </td>
+                        <td className="px-4 py-4 text-center">
+                          {getStatusBadge(member.status)}
+                        </td>
+                        <td className="px-4 py-4">
+                          {renderActionButtons(member)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                
+                {filteredMembers.length === 0 && (
+                  <div className="p-12 text-center">
+                    <Users className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
+                    <p className="text-muted-foreground">没有找到匹配的成员</p>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-        </TabsContent>
+            </TabsContent>
 
-        <TabsContent value="organization" className="space-y-6 mt-6">
-          <OrganizationTree />
-        </TabsContent>
-      </Tabs>
+            <TabsContent value="organization" className="mt-0">
+              <OrganizationTree />
+            </TabsContent>
+          </Tabs>
+        </div>
+      </div>
 
       {/* Add Member Dialog */}
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
