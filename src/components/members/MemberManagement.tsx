@@ -5,7 +5,6 @@ import {
   Mail, 
   RefreshCw,
   Users,
-  Download,
   Building2
 } from 'lucide-react';
 import { OrganizationTree } from '@/components/organization/OrganizationTree';
@@ -125,62 +124,54 @@ export function MemberManagement() {
   };
 
   const renderActionButtons = (member: Member) => {
-    const buttons = [];
+    const actions: { key: string; label: string; onClick: () => void }[] = [];
 
     // 禁用/启用按钮
     if (member.status === 'active' || member.status === 'pending') {
-      buttons.push(
-        <Button
-          key="disable"
-          variant="ghost"
-          size="sm"
-          className="h-7 px-2 text-xs"
-          onClick={() => handleToggleStatus(member, 'disable')}
-        >
-          禁用
-        </Button>
-      );
+      actions.push({
+        key: 'disable',
+        label: '禁用',
+        onClick: () => handleToggleStatus(member, 'disable'),
+      });
     } else {
-      buttons.push(
-        <Button
-          key="enable"
-          variant="ghost"
-          size="sm"
-          className="h-7 px-2 text-xs"
-          onClick={() => handleToggleStatus(member, 'enable')}
-        >
-          启用
-        </Button>
-      );
+      actions.push({
+        key: 'enable',
+        label: '启用',
+        onClick: () => handleToggleStatus(member, 'enable'),
+      });
     }
 
     // 仅手动添加的用户显示编辑和重新发送秘钥
     if (member.source === 'manual') {
-      buttons.push(
-        <Button
-          key="edit"
-          variant="ghost"
-          size="sm"
-          className="h-7 px-2 text-xs"
-          onClick={() => handleEditMember(member)}
-        >
-          编辑
-        </Button>
-      );
-      buttons.push(
-        <Button
-          key="resend"
-          variant="ghost"
-          size="sm"
-          className="h-7 px-2 text-xs"
-          onClick={() => handleResendKey(member)}
-        >
-          重新发送秘钥
-        </Button>
-      );
+      actions.push({
+        key: 'edit',
+        label: '编辑',
+        onClick: () => handleEditMember(member),
+      });
+      actions.push({
+        key: 'resend',
+        label: '重发秘钥',
+        onClick: () => handleResendKey(member),
+      });
     }
 
-    return buttons;
+    return (
+      <div className="flex items-center justify-end gap-0">
+        {actions.map((action, index) => (
+          <React.Fragment key={action.key}>
+            <button
+              className="text-primary hover:text-primary/80 text-sm px-2 py-1 transition-colors"
+              onClick={action.onClick}
+            >
+              {action.label}
+            </button>
+            {index < actions.length - 1 && (
+              <span className="text-border">|</span>
+            )}
+          </React.Fragment>
+        ))}
+      </div>
+    );
   };
 
   // Subscription data (mock)
@@ -229,10 +220,6 @@ export function MemberManagement() {
         <TabsContent value="members" className="space-y-6 mt-6">
           {/* Header */}
           <div className="flex items-center justify-end gap-3">
-            <Button variant="outline" size="sm" className="gap-2">
-              <Download className="w-4 h-4" />
-              导出
-            </Button>
             <Button size="sm" className="gap-2" onClick={() => setShowAddDialog(true)}>
               <Plus className="w-4 h-4" />
               添加成员
@@ -292,22 +279,22 @@ export function MemberManagement() {
           </div>
 
           {/* Member Table */}
-          <div className="enterprise-card overflow-hidden">
-            <table className="data-table">
+          <div className="bg-card rounded-lg border border-border overflow-hidden">
+            <table className="w-full">
               <thead>
-                <tr>
-                  <th className="text-left">成员信息</th>
-                  <th className="text-left">部门</th>
-                  <th className="text-left">来源</th>
-                  <th className="text-left">状态</th>
-                  <th className="text-left">最后活跃</th>
-                  <th className="text-right">操作</th>
+                <tr className="border-b border-border bg-muted/30">
+                  <th className="px-4 py-3 text-left text-sm font-medium text-foreground">成员信息</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-foreground">部门</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-foreground">来源</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-foreground">状态</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-foreground">最后活跃</th>
+                  <th className="px-4 py-3 text-center text-sm font-medium text-foreground">操作</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredMembers.map((member) => (
-                  <tr key={member.id} className="group">
-                    <td className="text-left">
+                  <tr key={member.id} className="border-b border-border last:border-b-0 hover:bg-muted/20 transition-colors">
+                    <td className="px-4 py-4 text-left">
                       <div className="flex items-center gap-3">
                         <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center">
                           <span className="text-sm font-medium text-primary">{member.name[0]}</span>
@@ -318,10 +305,10 @@ export function MemberManagement() {
                         </div>
                       </div>
                     </td>
-                    <td className="text-left">
+                    <td className="px-4 py-4 text-left">
                       <span className="text-sm text-foreground">{member.department || '-'}</span>
                     </td>
-                    <td className="text-left">
+                    <td className="px-4 py-4 text-left">
                       <span className={cn(
                         "status-badge",
                         member.source === 'sso' ? "status-badge-neutral" : "bg-primary/10 text-primary"
@@ -329,18 +316,16 @@ export function MemberManagement() {
                         {member.source === 'sso' ? 'SSO 同步' : '手动添加'}
                       </span>
                     </td>
-                    <td className="text-left">{getStatusBadge(member.status)}</td>
-                    <td className="text-left">
+                    <td className="px-4 py-4 text-left">{getStatusBadge(member.status)}</td>
+                    <td className="px-4 py-4 text-left">
                       <span className="text-sm text-muted-foreground">
                         {member.lastActiveAt 
                           ? new Date(member.lastActiveAt).toLocaleDateString('zh-CN')
                           : '-'}
                       </span>
                     </td>
-                    <td className="text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        {renderActionButtons(member)}
-                      </div>
+                    <td className="px-4 py-4 text-center">
+                      {renderActionButtons(member)}
                     </td>
                   </tr>
                 ))}
