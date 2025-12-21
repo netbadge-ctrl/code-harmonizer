@@ -63,19 +63,19 @@ export function DashboardView() {
               <Building2 className="w-6 h-6 text-primary" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
                 <h2 className="text-xl font-semibold text-foreground">{organization.name}</h2>
                 <span className="status-badge status-badge-success">
                   {planLabels[organization.subscription.plan]}
                 </span>
+              </div>
+              <p className="text-sm text-muted-foreground flex items-center gap-2">
+                有效期至: {organization.subscription.expiresAt}
                 {organization.subscription.isTrial && (
-                  <span className="status-badge status-badge-warning">
-                    试用
+                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-amber-500/10 text-amber-600 border border-amber-500/20">
+                    试用中
                   </span>
                 )}
-              </div>
-              <p className="text-sm text-muted-foreground">
-                有效期至: {organization.subscription.expiresAt}
               </p>
             </div>
           </div>
@@ -98,42 +98,23 @@ export function DashboardView() {
         </div>
 
         {/* CLI Installation Command */}
-        <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <div className="lg:col-span-2 p-4 bg-slate-900 rounded-lg border border-slate-700">
-            <p className="text-xs text-slate-400 mb-2 flex items-center gap-2">
-              <span className="inline-block w-1.5 h-1.5 rounded-full bg-success animate-pulse"></span>
-              员工终端安装命令 (Mac/Linux)
-            </p>
-            <div className="flex items-center justify-between gap-4">
-              <code className="text-sm text-amber-400 font-mono flex-1 overflow-x-auto whitespace-nowrap">
-                {cliCommand}
-              </code>
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={handleCopyCliCommand}
-                className="flex-shrink-0 text-slate-400 hover:text-white hover:bg-slate-800"
-              >
-                {copied ? <Check className="w-4 h-4 text-success" /> : <Copy className="w-4 h-4" />}
-              </Button>
-            </div>
-          </div>
-          <div className="p-4 bg-muted/30 rounded-lg border border-border">
-            <p className="text-xs font-medium text-foreground mb-2">使用说明</p>
-            <ul className="text-xs text-muted-foreground space-y-1.5">
-              <li className="flex items-start gap-2">
-                <span className="text-primary mt-0.5">1.</span>
-                <span>在终端中运行上述安装命令</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-primary mt-0.5">2.</span>
-                <span>按提示完成企业微信授权</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-primary mt-0.5">3.</span>
-                <span>安装完成后即可使用 AI 模型</span>
-              </li>
-            </ul>
+        <div className="mt-6 p-4 bg-slate-900 rounded-lg border border-slate-700">
+          <p className="text-xs text-slate-400 mb-2 flex items-center gap-2">
+            <span className="inline-block w-1.5 h-1.5 rounded-full bg-success animate-pulse"></span>
+            员工终端安装命令 (Mac/Linux)
+          </p>
+          <div className="flex items-center justify-between gap-4">
+            <code className="text-sm text-amber-400 font-mono flex-1 overflow-x-auto whitespace-nowrap">
+              {cliCommand}
+            </code>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={handleCopyCliCommand}
+              className="flex-shrink-0 text-slate-400 hover:text-white hover:bg-slate-800"
+            >
+              {copied ? <Check className="w-4 h-4 text-success" /> : <Copy className="w-4 h-4" />}
+            </Button>
           </div>
         </div>
       </div>
