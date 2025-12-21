@@ -7,6 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -172,21 +179,35 @@ export function ModelManagement() {
     }
   };
 
-  const filteredModels = models.filter((model) => {
-    const matchesSearch =
-      model.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      model.description.toLowerCase().includes(searchTerm.toLowerCase());
+  // 筛选状态
+  const [typeFilter, setTypeFilter] = useState<"all" | "text" | "vision">("all");
+  const [statusFilter, setStatusFilter] = useState<"all" | "enabled" | "disabled">("all");
 
-    if (activeFilters.includes("all")) return matchesSearch;
+  const filteredModels = models
+    .filter((model) => {
+      // 名称筛选
+      const matchesSearch = model.name.toLowerCase().includes(searchTerm.toLowerCase());
 
-    let matchesFilter = true;
-    if (activeFilters.includes("text") && model.type !== "text") matchesFilter = false;
-    if (activeFilters.includes("vision") && model.type !== "vision") matchesFilter = false;
-    if (activeFilters.includes("enabled") && !model.enabled) matchesFilter = false;
-    if (activeFilters.includes("disabled") && model.enabled) matchesFilter = false;
+      // 模型类型筛选
+      const matchesType = typeFilter === "all" || model.type === typeFilter;
 
-    return matchesSearch && matchesFilter;
-  });
+      // 开通状态筛选
+      const matchesStatus =
+        statusFilter === "all" ||
+        (statusFilter === "enabled" && model.enabled) ||
+        (statusFilter === "disabled" && !model.enabled);
+
+      return matchesSearch && matchesType && matchesStatus;
+    })
+    // 按模型类型和模型名称排序
+    .sort((a, b) => {
+      // 先按类型排序 (text 在前, vision 在后)
+      if (a.type !== b.type) {
+        return a.type === "text" ? -1 : 1;
+      }
+      // 再按名称排序
+      return a.name.localeCompare(b.name);
+    });
 
   const textModelsEnabled = models.filter((m) => m.type === "text" && m.enabled).length;
   const textModelsTotal = models.filter((m) => m.type === "text").length;
@@ -352,14 +373,36 @@ export function ModelManagement() {
 
       {/* Search and Filter Bar */}
       <div className="flex items-center justify-between gap-4">
-        <div className="relative flex-1 max-w-xs">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="搜索模型名称或描述..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-9 h-9 bg-card border-border"
-          />
+        <div className="flex items-center gap-3">
+          <div className="relative max-w-xs">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="搜索模型名称..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-9 h-9 bg-card border-border w-48"
+            />
+          </div>
+          <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v as "all" | "text" | "vision")}>
+            <SelectTrigger className="w-32 h-9 bg-card border-border">
+              <SelectValue placeholder="模型类型" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">全部类型</SelectItem>
+              <SelectItem value="text">文本模型</SelectItem>
+              <SelectItem value="vision">视觉理解模型</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as "all" | "enabled" | "disabled")}>
+            <SelectTrigger className="w-28 h-9 bg-card border-border">
+              <SelectValue placeholder="开通状态" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">全部状态</SelectItem>
+              <SelectItem value="enabled">已开通</SelectItem>
+              <SelectItem value="disabled">未开通</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-2">
@@ -383,13 +426,10 @@ export function ModelManagement() {
         <table className="w-full">
           <thead>
             <tr className="border-b border-border bg-muted/30">
-              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">模型名称</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">模型类型</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">模型</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">上下文限制</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">
-                每分钟请求数 <span className="text-muted-foreground/60">↗</span>
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">每分钟令牌数</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">每分钟请求数</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">每分钟token数</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground">模型详情</th>
               <th className="px-4 py-3 text-center text-xs font-medium text-muted-foreground">操作</th>
             </tr>
@@ -397,24 +437,22 @@ export function ModelManagement() {
           <tbody className="divide-y divide-border">
             {filteredModels.map((model) => (
               <tr key={model.id} className="hover:bg-muted/20 transition-colors">
-                {/* Model Name */}
+                {/* Model Name & Type */}
                 <td className="px-4 py-3">
-                  <span className="text-sm font-medium text-foreground">{model.name}</span>
-                </td>
-
-                {/* Model Type */}
-                <td className="px-4 py-3">
-                  <Badge
-                    variant="outline"
-                    className={cn(
-                      "text-xs font-normal",
-                      model.type === "text"
-                        ? "bg-primary/10 text-primary border-primary/20"
-                        : "bg-orange-500/10 text-orange-600 border-orange-500/20",
-                    )}
-                  >
-                    {model.type === "text" ? "文本模型" : "视觉理解模型"}
-                  </Badge>
+                  <div className="flex flex-col gap-1">
+                    <span className="text-sm font-medium text-foreground">{model.name}</span>
+                    <Badge
+                      variant="outline"
+                      className={cn(
+                        "text-xs font-normal w-fit",
+                        model.type === "text"
+                          ? "bg-primary/10 text-primary border-primary/20"
+                          : "bg-orange-500/10 text-orange-600 border-orange-500/20",
+                      )}
+                    >
+                      {model.type === "text" ? "文本模型" : "视觉理解模型"}
+                    </Badge>
+                  </div>
                 </td>
 
                 {/* Context Limit */}
