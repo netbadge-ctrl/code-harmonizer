@@ -1,19 +1,14 @@
 import React, { useState } from 'react';
-import { Users, Zap, Activity, Clock, ArrowRight, CheckCircle2, AlertCircle, TrendingUp, Building2, Copy, Check } from 'lucide-react';
-import { StatsCard } from './StatsCard';
+import { Users, ArrowRight, CheckCircle2, AlertCircle, TrendingUp, Building2, Copy, Check, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { mockUsageStats, mockMembers, mockModels } from '@/data/mockData';
+import { mockMembers, mockModels } from '@/data/mockData';
 import { toast } from '@/hooks/use-toast';
 import { Progress } from '@/components/ui/progress';
 import { SubscriptionUpgradeDialog } from '@/components/subscription/SubscriptionUpgradeDialog';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 
 export function DashboardView() {
-  const activeMembers = mockMembers.filter(m => m.status === 'active').length;
-  const enabledModels = mockModels.filter(m => m.enabled).length;
   const [copied, setCopied] = useState(false);
   const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
-  const [dateRange, setDateRange] = useState<string>('today');
 
   // 模拟实时调用数据
   const realtimeCalls = [
@@ -23,22 +18,6 @@ export function DashboardView() {
     { user: '陈强', model: 'Kimi', tokens: 0, time: '8分钟前', status: 'error' },
     { user: '刘洋', model: 'Qwen 2.5', tokens: 2150, time: '12分钟前', status: 'success' },
   ];
-
-  // 根据时间范围获取统计数据
-  const getStatsForRange = (range: string) => {
-    const multipliers: Record<string, number> = {
-      'today': 1,
-      'week': 7,
-      'month': 30,
-    };
-    const m = multipliers[range] || 1;
-    return {
-      tokens: (mockUsageStats.totalTokens * m / 1000000).toFixed(1),
-      activeMembers: Math.min(activeMembers + Math.floor(m * 0.5), mockMembers.length),
-    };
-  };
-
-  const currentStats = getStatsForRange(dateRange);
 
   // 模拟组织数据
   const organization = {
@@ -140,57 +119,6 @@ export function DashboardView() {
         </div>
       </div>
 
-      {/* Stats Grid with Date Range Selector */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="font-semibold text-foreground">数据概览</h3>
-          <ToggleGroup type="single" value={dateRange} onValueChange={(v) => v && setDateRange(v)} className="bg-muted/50 rounded-lg p-1">
-            <ToggleGroupItem value="today" className="text-xs px-3 py-1.5 data-[state=on]:bg-background data-[state=on]:shadow-sm">
-              当日
-            </ToggleGroupItem>
-            <ToggleGroupItem value="week" className="text-xs px-3 py-1.5 data-[state=on]:bg-background data-[state=on]:shadow-sm">
-              近7日
-            </ToggleGroupItem>
-            <ToggleGroupItem value="month" className="text-xs px-3 py-1.5 data-[state=on]:bg-background data-[state=on]:shadow-sm">
-              本月
-            </ToggleGroupItem>
-          </ToggleGroup>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatsCard
-            title="活跃成员"
-            value={currentStats.activeMembers}
-            change={12}
-            changeLabel="较上期"
-            icon={Users}
-            trend="up"
-          />
-          <StatsCard
-            title={`${dateRange === 'today' ? '今日' : dateRange === 'week' ? '近7日' : '本月'} Token 消耗`}
-            value={`${currentStats.tokens}M`}
-            change={8}
-            changeLabel="较上期"
-            icon={Zap}
-            trend="up"
-          />
-          <StatsCard
-            title="平均响应时间"
-            value={`${mockUsageStats.avgLatency}s`}
-            change={-5}
-            changeLabel="较上期"
-            icon={Clock}
-            trend="up"
-          />
-          <StatsCard
-            title="成功率"
-            value={`${mockUsageStats.successRate}%`}
-            change={0.5}
-            changeLabel="较上期"
-            icon={Activity}
-            trend="up"
-          />
-        </div>
-      </div>
 
       {/* Two Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -306,7 +234,7 @@ export function DashboardView() {
         {[
           { title: '添加成员', desc: '邀请新成员加入团队', icon: Users, color: 'bg-primary' },
           { title: '查看用量', desc: '分析 Token 消耗趋势', icon: TrendingUp, color: 'bg-success' },
-          { title: '安全配置', desc: '管理 IP 白名单规则', icon: Activity, color: 'bg-warning' },
+          { title: '安全配置', desc: '管理 IP 白名单规则', icon: Shield, color: 'bg-warning' },
         ].map((action, index) => (
           <button 
             key={index}
