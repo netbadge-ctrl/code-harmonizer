@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { Users, ArrowRight, CheckCircle2, AlertCircle, TrendingUp, Building2, Copy, Check, Shield } from 'lucide-react';
+import { Users, ArrowRight, CheckCircle2, AlertCircle, TrendingUp, Building2, Copy, Check, Shield, TrendingDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { mockMembers, mockModels } from '@/data/mockData';
 import { toast } from '@/hooks/use-toast';
 import { Progress } from '@/components/ui/progress';
 import { SubscriptionUpgradeDialog } from '@/components/subscription/SubscriptionUpgradeDialog';
+import { Card } from '@/components/ui/card';
 
 export function DashboardView() {
   const [copied, setCopied] = useState(false);
@@ -119,6 +120,62 @@ export function DashboardView() {
         </div>
       </div>
 
+      {/* 数据概览 - 当日数据 */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* 使用AI的总人数 */}
+        <Card className="p-5 bg-card border-border">
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-muted-foreground">使用AI的总人数</p>
+            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Users className="w-4 h-4 text-primary" />
+            </div>
+          </div>
+          <div className="mt-3">
+            <p className="text-3xl font-bold text-foreground">2</p>
+            <div className="flex items-center gap-1 mt-1">
+              <TrendingDown className="w-3 h-3 text-destructive" />
+              <span className="text-xs text-destructive">-96%</span>
+              <span className="text-xs text-muted-foreground ml-1">相比上期</span>
+            </div>
+          </div>
+        </Card>
+
+        {/* 总TOKEN量 */}
+        <Card className="p-5 bg-card border-border">
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-muted-foreground">总TOKEN量</p>
+            <div className="w-8 h-8 rounded-lg bg-success/10 flex items-center justify-center">
+              <TrendingUp className="w-4 h-4 text-success" />
+            </div>
+          </div>
+          <div className="mt-3">
+            <p className="text-3xl font-bold text-foreground">2.06M</p>
+            <div className="flex items-center gap-1 mt-1">
+              <TrendingUp className="w-3 h-3 text-success" />
+              <span className="text-xs text-success">+3064%</span>
+              <span className="text-xs text-muted-foreground ml-1">相比上期</span>
+            </div>
+          </div>
+        </Card>
+
+        {/* 总请求次数 */}
+        <Card className="p-5 bg-card border-border">
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-muted-foreground">总请求次数</p>
+            <div className="w-8 h-8 rounded-lg bg-warning/10 flex items-center justify-center">
+              <ArrowRight className="w-4 h-4 text-warning" />
+            </div>
+          </div>
+          <div className="mt-3">
+            <p className="text-3xl font-bold text-foreground">121</p>
+            <div className="flex items-center gap-1 mt-1">
+              <TrendingDown className="w-3 h-3 text-destructive" />
+              <span className="text-xs text-destructive">-78.59%</span>
+              <span className="text-xs text-muted-foreground ml-1">相比上期</span>
+            </div>
+          </div>
+        </Card>
+      </div>
 
       {/* Two Column Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
