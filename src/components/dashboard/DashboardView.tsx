@@ -5,11 +5,13 @@ import { Button } from '@/components/ui/button';
 import { mockUsageStats, mockMembers, mockModels } from '@/data/mockData';
 import { toast } from '@/hooks/use-toast';
 import { Progress } from '@/components/ui/progress';
+import { SubscriptionUpgradeDialog } from '@/components/subscription/SubscriptionUpgradeDialog';
 
 export function DashboardView() {
   const activeMembers = mockMembers.filter(m => m.status === 'active').length;
   const enabledModels = mockModels.filter(m => m.enabled).length;
   const [copied, setCopied] = useState(false);
+  const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
 
   // 模拟组织数据
   const organization = {
@@ -43,6 +45,7 @@ export function DashboardView() {
   const seatUsagePercent = (organization.subscription.usedSeats / organization.subscription.seats) * 100;
 
   return (
+    <>
     <div className="space-y-6 animate-fade-in">
       {/* Organization Header */}
       <div className="enterprise-card p-6">
@@ -76,7 +79,7 @@ export function DashboardView() {
                 </span>
               </div>
             </div>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={() => setShowUpgradeDialog(true)}>
               订阅管理 / 扩容
             </Button>
           </div>
@@ -238,5 +241,13 @@ export function DashboardView() {
         ))}
       </div>
     </div>
+
+      <SubscriptionUpgradeDialog
+        open={showUpgradeDialog}
+        onOpenChange={setShowUpgradeDialog}
+        currentPlan="professional"
+        currentSeats={organization.subscription.seats}
+      />
+    </>
   );
 }
