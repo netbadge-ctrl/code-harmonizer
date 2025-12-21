@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Users, ArrowRight, CheckCircle2, AlertCircle, TrendingUp, Building2, Copy, Check, Shield, TrendingDown } from 'lucide-react';
+import { Users, ArrowRight, CheckCircle2, AlertCircle, TrendingUp, Building2, Copy, Check, TrendingDown, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { mockMembers, mockModels } from '@/data/mockData';
 import { toast } from '@/hooks/use-toast';
@@ -8,6 +8,7 @@ import { SubscriptionUpgradeDialog } from '@/components/subscription/Subscriptio
 import { Card } from '@/components/ui/card';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Area, AreaChart, Legend } from 'recharts';
+import { Checkbox } from '@/components/ui/checkbox';
 
 // 生成当日5分钟间隔的趋势数据
 const generateTrendData = () => {
@@ -34,19 +35,25 @@ const generateTrendData = () => {
   return data;
 };
 
+// 模拟实时调用数据
+const generateRealtimeCalls = () => [
+  { user: '张明', model: 'Kimi', tokens: 1250, time: '刚刚', status: 'success' },
+  { user: '李华', model: 'Qwen 2.5', tokens: 3420, time: '2分钟前', status: 'success' },
+  { user: '王芳', model: 'DeepSeek', tokens: 890, time: '5分钟前', status: 'success' },
+  { user: '陈强', model: 'Kimi', tokens: 0, time: '8分钟前', status: 'error' },
+  { user: '刘洋', model: 'Qwen 2.5', tokens: 2150, time: '12分钟前', status: 'success' },
+];
+
 const trendData = generateTrendData();
 export function DashboardView() {
   const [copied, setCopied] = useState(false);
   const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
-
-  // 模拟实时调用数据
-  const realtimeCalls = [
-    { user: '张明', model: 'Kimi', tokens: 1250, time: '刚刚', status: 'success' },
-    { user: '李华', model: 'Qwen 2.5', tokens: 3420, time: '2分钟前', status: 'success' },
-    { user: '王芳', model: 'DeepSeek', tokens: 890, time: '5分钟前', status: 'success' },
-    { user: '陈强', model: 'Kimi', tokens: 0, time: '8分钟前', status: 'error' },
-    { user: '刘洋', model: 'Qwen 2.5', tokens: 2150, time: '12分钟前', status: 'success' },
-  ];
+  const [realtimeCalls, setRealtimeCalls] = useState(generateRealtimeCalls());
+  const [visibleMetrics, setVisibleMetrics] = useState({
+    activeUsers: true,
+    tokens: true,
+    requests: true,
+  });
 
   // 模拟组织数据
   const organization = {
@@ -214,23 +221,41 @@ export function DashboardView() {
               当日数据趋势
               <span className="text-xs text-muted-foreground font-normal">(每5分钟)</span>
             </h3>
+            {/* 数据项选择 */}
+            <div className="flex items-center gap-4">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <Checkbox 
+                  checked={visibleMetrics.activeUsers}
+                  onCheckedChange={(checked) => setVisibleMetrics(prev => ({ ...prev, activeUsers: !!checked }))}
+                />
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2.5 h-2.5 rounded-full bg-primary"></div>
+                  <span className="text-xs text-muted-foreground">活跃用户</span>
+                </div>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <Checkbox 
+                  checked={visibleMetrics.tokens}
+                  onCheckedChange={(checked) => setVisibleMetrics(prev => ({ ...prev, tokens: !!checked }))}
+                />
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2.5 h-2.5 rounded-full bg-success"></div>
+                  <span className="text-xs text-muted-foreground">Token量</span>
+                </div>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <Checkbox 
+                  checked={visibleMetrics.requests}
+                  onCheckedChange={(checked) => setVisibleMetrics(prev => ({ ...prev, requests: !!checked }))}
+                />
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2.5 h-2.5 rounded-full bg-warning"></div>
+                  <span className="text-xs text-muted-foreground">调用次数</span>
+                </div>
+              </label>
+            </div>
           </div>
           <div className="p-4">
-            {/* 图例 */}
-            <div className="flex items-center gap-6 mb-4">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-primary"></div>
-                <span className="text-xs text-muted-foreground">活跃用户</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-success"></div>
-                <span className="text-xs text-muted-foreground">Token量 (K)</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-warning"></div>
-                <span className="text-xs text-muted-foreground">调用次数</span>
-              </div>
-            </div>
             <ChartContainer 
               config={{
                 activeUsers: { label: "活跃用户", color: "hsl(var(--primary))" },
@@ -272,30 +297,36 @@ export function DashboardView() {
                     return [value, name];
                   }}
                 />
-                <Line 
-                  yAxisId="left"
-                  type="monotone" 
-                  dataKey="activeUsers" 
-                  stroke="hsl(var(--primary))" 
-                  strokeWidth={2}
-                  dot={false}
-                />
-                <Line 
-                  yAxisId="right"
-                  type="monotone" 
-                  dataKey="tokens" 
-                  stroke="hsl(var(--success))" 
-                  strokeWidth={2}
-                  dot={false}
-                />
-                <Line 
-                  yAxisId="left"
-                  type="monotone" 
-                  dataKey="requests" 
-                  stroke="hsl(var(--warning))" 
-                  strokeWidth={2}
-                  dot={false}
-                />
+                {visibleMetrics.activeUsers && (
+                  <Line 
+                    yAxisId="left"
+                    type="monotone" 
+                    dataKey="activeUsers" 
+                    stroke="hsl(var(--primary))" 
+                    strokeWidth={2}
+                    dot={false}
+                  />
+                )}
+                {visibleMetrics.tokens && (
+                  <Line 
+                    yAxisId="right"
+                    type="monotone" 
+                    dataKey="tokens" 
+                    stroke="hsl(var(--success))" 
+                    strokeWidth={2}
+                    dot={false}
+                  />
+                )}
+                {visibleMetrics.requests && (
+                  <Line 
+                    yAxisId="left"
+                    type="monotone" 
+                    dataKey="requests" 
+                    stroke="hsl(var(--warning))" 
+                    strokeWidth={2}
+                    dot={false}
+                  />
+                )}
               </LineChart>
             </ChartContainer>
           </div>
@@ -308,6 +339,17 @@ export function DashboardView() {
               <span className="inline-block w-2 h-2 rounded-full bg-success animate-pulse"></span>
               实时调用监控
             </h3>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-8 w-8"
+              onClick={() => {
+                setRealtimeCalls(generateRealtimeCalls());
+                toast({ title: '已刷新调用数据' });
+              }}
+            >
+              <RefreshCw className="w-4 h-4" />
+            </Button>
           </div>
           <div className="p-4">
             <div className="space-y-3">
@@ -342,28 +384,6 @@ export function DashboardView() {
         </div>
       </div>
 
-      {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {[
-          { title: '添加成员', desc: '邀请新成员加入团队', icon: Users, color: 'bg-primary' },
-          { title: '查看用量', desc: '分析 Token 消耗趋势', icon: TrendingUp, color: 'bg-success' },
-          { title: '安全配置', desc: '管理 IP 白名单规则', icon: Shield, color: 'bg-warning' },
-        ].map((action, index) => (
-          <button 
-            key={index}
-            className="enterprise-card p-4 flex items-center gap-4 text-left hover:border-primary/30 transition-colors group"
-          >
-            <div className={`w-10 h-10 rounded-lg ${action.color} flex items-center justify-center`}>
-              <action.icon className="w-5 h-5 text-primary-foreground" />
-            </div>
-            <div className="flex-1">
-              <p className="font-medium text-foreground group-hover:text-primary transition-colors">{action.title}</p>
-              <p className="text-sm text-muted-foreground">{action.desc}</p>
-            </div>
-            <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
-          </button>
-        ))}
-      </div>
     </div>
 
       <SubscriptionUpgradeDialog
