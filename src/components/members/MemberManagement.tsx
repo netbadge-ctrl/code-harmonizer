@@ -8,6 +8,7 @@ import {
   Download,
   Building2
 } from 'lucide-react';
+import { OrganizationTree } from '@/components/organization/OrganizationTree';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { mockMembers } from '@/data/mockData';
@@ -327,11 +328,7 @@ export function MemberManagement() {
         </TabsContent>
 
         <TabsContent value="organization" className="space-y-6 mt-6">
-          <div className="enterprise-card p-8 text-center">
-            <Building2 className="w-12 h-12 mx-auto text-muted-foreground/50 mb-4" />
-            <h3 className="text-lg font-medium text-foreground mb-2">组织管理</h3>
-            <p className="text-muted-foreground">组织结构管理功能即将上线</p>
-          </div>
+          <OrganizationTree />
         </TabsContent>
       </Tabs>
 
