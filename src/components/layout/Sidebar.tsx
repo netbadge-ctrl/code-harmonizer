@@ -80,16 +80,16 @@ export function Sidebar({ currentView, onViewChange, collapsed, onToggleCollapse
       {/* Navigation */}
       <nav className="flex-1 py-2 overflow-y-auto">
       {/* 独立菜单项 - 概览 */}
-        <div className="px-2 mb-2">
+        <div className="px-2 mb-1">
           {standaloneItems.map((item) => (
             <button
               key={item.id}
               onClick={() => onViewChange(item.id)}
               className={cn(
-                "w-full flex items-center gap-2 px-2 py-1.5 rounded text-sm transition-colors",
+                "w-full flex items-center gap-2 px-2 py-2 rounded text-sm font-semibold transition-colors",
                 currentView === item.id 
-                  ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium" 
-                  : "text-sidebar-muted hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                  ? "bg-sidebar-accent text-sidebar-accent-foreground" 
+                  : "text-sidebar-foreground hover:bg-sidebar-accent/50"
               )}
               title={collapsed ? item.label : undefined}
             >
@@ -104,7 +104,7 @@ export function Sidebar({ currentView, onViewChange, collapsed, onToggleCollapse
             {!collapsed && (
               <button
                 onClick={() => toggleGroup(group.id)}
-                className="w-full flex items-center justify-between px-3 py-2 text-xs font-medium text-sidebar-muted hover:text-sidebar-foreground transition-colors"
+                className="w-full flex items-center justify-between px-3 py-2 text-sm font-semibold text-sidebar-foreground hover:text-sidebar-foreground transition-colors"
               >
                 <span>{group.label}</span>
                 <ChevronDown className={cn(
@@ -121,7 +121,7 @@ export function Sidebar({ currentView, onViewChange, collapsed, onToggleCollapse
                     key={item.id}
                     onClick={() => onViewChange(item.id)}
                     className={cn(
-                      "w-full flex items-center gap-2 px-2 py-1.5 rounded text-sm transition-colors",
+                      "w-full flex items-center gap-2 px-3 py-1.5 rounded text-xs transition-colors",
                       currentView === item.id 
                         ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium" 
                         : "text-sidebar-muted hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
