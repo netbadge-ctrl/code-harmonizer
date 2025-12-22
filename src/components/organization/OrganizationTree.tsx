@@ -60,7 +60,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
     return null;
   }
 
-  // Limit to 3 levels
+  // Support up to 3 levels (level 0, 1, 2 = 3 levels total)
   if (level >= 3) return null;
 
   return (
@@ -142,9 +142,19 @@ export function OrganizationTree() {
   // Dialog states
   const [showAuthDialog, setShowAuthDialog] = useState(false);
   
-  // Sync status - in real app this would come from backend
-  const [isAuthorized, setIsAuthorized] = useState(false);
-  const [lastSyncTime, setLastSyncTime] = useState<string | null>(null);
+  // Sync status - in real app this would come from backend/localStorage
+  // Authorization is persistent once done, only needs re-auth if identity source changes
+  const [isAuthorized, setIsAuthorized] = useState(() => {
+    // Check localStorage for existing authorization
+    const stored = localStorage.getItem('org_sync_authorized');
+    return stored === 'true';
+  });
+  const [lastSyncTime, setLastSyncTime] = useState<string | null>(() => {
+    return localStorage.getItem('org_last_sync_time');
+  });
+  const [authorizedIdentitySource, setAuthorizedIdentitySource] = useState<string | null>(() => {
+    return localStorage.getItem('org_authorized_identity_source');
+  });
   
   // Model configuration for selected departments
   const [modelConfig, setModelConfig] = useState<Record<string, boolean>>(() => {
@@ -234,8 +244,18 @@ export function OrganizationTree() {
     // Simulate sync
     await new Promise(resolve => setTimeout(resolve, 2000));
     
+    const syncTime = new Date().toLocaleString('zh-CN');
+    const currentIdentitySource = 'wps365'; // In real app, this would come from org settings
+    
     setIsAuthorized(true);
-    setLastSyncTime(new Date().toLocaleString('zh-CN'));
+    setLastSyncTime(syncTime);
+    setAuthorizedIdentitySource(currentIdentitySource);
+    
+    // Persist authorization state
+    localStorage.setItem('org_sync_authorized', 'true');
+    localStorage.setItem('org_last_sync_time', syncTime);
+    localStorage.setItem('org_authorized_identity_source', currentIdentitySource);
+    
     setIsSyncing(false);
     
     toast({
@@ -247,7 +267,9 @@ export function OrganizationTree() {
   const handleManualSync = async () => {
     setIsSyncing(true);
     await new Promise(resolve => setTimeout(resolve, 1500));
-    setLastSyncTime(new Date().toLocaleString('zh-CN'));
+    const syncTime = new Date().toLocaleString('zh-CN');
+    setLastSyncTime(syncTime);
+    localStorage.setItem('org_last_sync_time', syncTime);
     setIsSyncing(false);
     
     toast({

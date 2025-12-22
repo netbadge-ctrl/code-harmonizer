@@ -422,21 +422,28 @@ function DateRangePicker({
   );
 }
 
-// Mock department usage data - all departments
+// Mock department usage data - all departments with 3 levels
 const mockDepartmentUsage = [
-  { name: '技术中心', tokens: 1200000, requests: 5800, users: 15, percentage: 46, level: 1 },
-  { name: '前端开发组', tokens: 480000, requests: 2200, users: 6, percentage: 18, level: 2 },
-  { name: '后端开发组', tokens: 520000, requests: 2500, users: 5, percentage: 20, level: 2 },
-  { name: '测试组', tokens: 200000, requests: 1100, users: 4, percentage: 8, level: 2 },
-  { name: '产品设计部', tokens: 780000, requests: 3200, users: 8, percentage: 30, level: 1 },
-  { name: '产品经理组', tokens: 420000, requests: 1800, users: 4, percentage: 16, level: 2 },
-  { name: 'UI设计组', tokens: 360000, requests: 1400, users: 4, percentage: 14, level: 2 },
-  { name: '市场运营部', tokens: 380000, requests: 1800, users: 6, percentage: 15, level: 1 },
-  { name: '内容运营组', tokens: 200000, requests: 900, users: 3, percentage: 8, level: 2 },
-  { name: '推广运营组', tokens: 180000, requests: 900, users: 3, percentage: 7, level: 2 },
-  { name: '行政人事部', tokens: 120000, requests: 600, users: 4, percentage: 5, level: 1 },
-  { name: '财务部', tokens: 100000, requests: 500, users: 3, percentage: 4, level: 1 },
+  { id: 'dept-1', name: '技术中心', tokens: 1200000, requests: 5800, users: 15, percentage: 46, level: 1, parentId: null },
+  { id: 'dept-1-1', name: '前端开发组', tokens: 480000, requests: 2200, users: 6, percentage: 18, level: 2, parentId: 'dept-1' },
+  { id: 'dept-1-2', name: '后端开发组', tokens: 520000, requests: 2500, users: 5, percentage: 20, level: 2, parentId: 'dept-1' },
+  { id: 'dept-1-2-1', name: 'Java 小组', tokens: 280000, requests: 1300, users: 3, percentage: 11, level: 3, parentId: 'dept-1-2' },
+  { id: 'dept-1-2-2', name: 'Go 小组', tokens: 240000, requests: 1200, users: 2, percentage: 9, level: 3, parentId: 'dept-1-2' },
+  { id: 'dept-1-3', name: 'DevOps 组', tokens: 200000, requests: 1100, users: 4, percentage: 8, level: 2, parentId: 'dept-1' },
+  { id: 'dept-2', name: '产品设计部', tokens: 780000, requests: 3200, users: 8, percentage: 30, level: 1, parentId: null },
+  { id: 'dept-2-1', name: 'UI/UX 设计组', tokens: 420000, requests: 1800, users: 4, percentage: 16, level: 2, parentId: 'dept-2' },
+  { id: 'dept-2-2', name: '产品经理组', tokens: 360000, requests: 1400, users: 4, percentage: 14, level: 2, parentId: 'dept-2' },
+  { id: 'dept-3', name: '市场运营部', tokens: 380000, requests: 1800, users: 6, percentage: 15, level: 1, parentId: null },
+  { id: 'dept-3-1', name: '内容运营组', tokens: 200000, requests: 900, users: 3, percentage: 8, level: 2, parentId: 'dept-3' },
+  { id: 'dept-3-2', name: '推广运营组', tokens: 180000, requests: 900, users: 3, percentage: 7, level: 2, parentId: 'dept-3' },
+  { id: 'dept-4', name: '行政人事部', tokens: 120000, requests: 600, users: 4, percentage: 5, level: 1, parentId: null },
+  { id: 'dept-5', name: '财务部', tokens: 100000, requests: 500, users: 3, percentage: 4, level: 1, parentId: null },
 ];
+
+// Get departments by level for the dropdown
+const getDepartmentsByLevel = (level: number) => {
+  return mockDepartmentUsage.filter(d => d.level === level);
+};
 
 // Mock member usage data
 const mockMemberUsage = [
@@ -475,8 +482,10 @@ export function UsageDashboard() {
   // Trend chart data selection - default all selected
   const [selectedTrendMetrics, setSelectedTrendMetrics] = useState<string[]>(['users', 'tokens', 'requests']);
 
-  // Department level filter for organization tab
-  const [selectedDepartmentLevel, setSelectedDepartmentLevel] = useState<string>('all');
+  // Department level filter for organization tab (default to level 1, no "all" option)
+  const [selectedDepartmentLevel, setSelectedDepartmentLevel] = useState<string>('1');
+  // Selected department in organization tab (for filtering within that level)
+  const [selectedOrgDepartment, setSelectedOrgDepartment] = useState<string>('all');
 
   // Prepare options for multi-select
   const modelOptions = mockModels.map(m => ({ id: m.id, name: m.name }));
@@ -561,23 +570,41 @@ export function UsageDashboard() {
 
   // Check if any filters are active
   const hasActiveFilters = selectedModels.length > 0 || 
-    (selectedDepartments.length > 0 && (activeTab === 'organization' || activeTab === 'member')) ||
-    (selectedMembers.length > 0 && activeTab === 'member');
+    (selectedDepartments.length > 0 && activeTab === 'member') ||
+    (selectedMembers.length > 0 && activeTab === 'member') ||
+    (activeTab === 'organization' && selectedOrgDepartment !== 'all');
 
   const clearFilters = () => {
     setSelectedModels([]);
     setSelectedDepartments([]);
     setSelectedMembers([]);
+    setSelectedOrgDepartment('all');
   };
 
-  // Filter department usage based on selected level
+  // Filter department usage based on selected level and department
   const filteredDepartmentUsage = useMemo(() => {
-    if (selectedDepartmentLevel === 'all') {
-      return mockDepartmentUsage;
-    }
     const level = parseInt(selectedDepartmentLevel);
-    return mockDepartmentUsage.filter(dept => dept.level === level);
+    let filtered = mockDepartmentUsage.filter(dept => dept.level === level);
+    
+    // If a specific department is selected, filter by it
+    if (selectedOrgDepartment !== 'all') {
+      filtered = filtered.filter(dept => dept.id === selectedOrgDepartment);
+    }
+    
+    return filtered;
+  }, [selectedDepartmentLevel, selectedOrgDepartment]);
+
+  // Get available departments for the current level
+  const availableDepartmentsForLevel = useMemo(() => {
+    const level = parseInt(selectedDepartmentLevel);
+    return getDepartmentsByLevel(level);
   }, [selectedDepartmentLevel]);
+
+  // Reset department selection when level changes
+  const handleLevelChange = (level: string) => {
+    setSelectedDepartmentLevel(level);
+    setSelectedOrgDepartment('all');
+  };
 
   const renderFilterBar = () => (
     <div className="enterprise-card p-4 mb-6">
@@ -598,8 +625,35 @@ export function UsageDashboard() {
           placeholder="全部模型"
         />
 
-        {/* Department Filter - Show for organization and member tabs */}
-        {(activeTab === 'organization' || activeTab === 'member') && (
+        {/* Organization Tab: Level Filter + Department Filter */}
+        {activeTab === 'organization' && (
+          <>
+            <Select value={selectedDepartmentLevel} onValueChange={handleLevelChange}>
+              <SelectTrigger className="w-[120px] h-9">
+                <SelectValue placeholder="选择层级" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="1">一级组织</SelectItem>
+                <SelectItem value="2">二级组织</SelectItem>
+                <SelectItem value="3">三级组织</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={selectedOrgDepartment} onValueChange={setSelectedOrgDepartment}>
+              <SelectTrigger className="w-[160px] h-9">
+                <SelectValue placeholder="全部部门" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">全部部门</SelectItem>
+                {availableDepartmentsForLevel.map(dept => (
+                  <SelectItem key={dept.id} value={dept.id}>{dept.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </>
+        )}
+
+        {/* Department Filter - Show for member tab only */}
+        {activeTab === 'member' && (
           <CascadingDepartmentSelect
             selected={selectedDepartments}
             onChange={setSelectedDepartments}
@@ -640,12 +694,18 @@ export function UsageDashboard() {
               <X className="w-3 h-3 cursor-pointer" onClick={() => setSelectedModels([])} />
             </Badge>
           )}
-          {selectedDepartments.length > 0 && (activeTab === 'organization' || activeTab === 'member') && (
+          {selectedDepartments.length > 0 && activeTab === 'member' && (
             <Badge variant="secondary" className="gap-1">
               部门: {selectedDepartments.length === 1 
                 ? allDepartments.find(d => d.id === selectedDepartments[0])?.name 
                 : `${selectedDepartments.length} 个`}
               <X className="w-3 h-3 cursor-pointer" onClick={() => setSelectedDepartments([])} />
+            </Badge>
+          )}
+          {selectedOrgDepartment !== 'all' && activeTab === 'organization' && (
+            <Badge variant="secondary" className="gap-1">
+              部门: {mockDepartmentUsage.find(d => d.id === selectedOrgDepartment)?.name}
+              <X className="w-3 h-3 cursor-pointer" onClick={() => setSelectedOrgDepartment('all')} />
             </Badge>
           )}
           {selectedMembers.length > 0 && activeTab === 'member' && (
@@ -919,19 +979,7 @@ export function UsageDashboard() {
 
       {/* Department Usage Table */}
       <div className="enterprise-card p-5">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="font-semibold text-foreground">部门用量</h3>
-          <Select value={selectedDepartmentLevel} onValueChange={setSelectedDepartmentLevel}>
-            <SelectTrigger className="w-[140px] h-9">
-              <SelectValue placeholder="选择层级" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">全部层级</SelectItem>
-              <SelectItem value="1">一级部门</SelectItem>
-              <SelectItem value="2">二级部门</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        <h3 className="font-semibold text-foreground mb-4">部门用量</h3>
         <div className="border border-border rounded-lg overflow-hidden">
           <table className="w-full">
             <thead>
