@@ -450,27 +450,9 @@ const getDepartmentsByLevel = (level: number) => {
 
 // Mock member usage data with detailed info - linked to department IDs
 const mockMemberUsage = [
+  // 技术中心 - 前端开发组 (6人)
   { 
     id: 'm1', 
-    name: '张伟', 
-    email: 'zhangwei@tech.com',
-    department: '技术中心/后端开发组/Java 小组',
-    departmentId: 'dept-1-2-1',
-    tokens: 145208, 
-    requests: 1200, 
-    avgLatency: 1.8,
-    activeDays: 18,
-    totalDays: 30,
-    mostUsedTerminal: 'VS Code Extension',
-    lastActive: '2024-03-23 09:45',
-    modelPreference: [
-      { model: 'DeepSeek-V3.2 (代码补全)', percentage: 75 },
-      { model: 'Qwen3-Coder (重构/注释)', percentage: 20 },
-      { model: 'Kimi-K2 (长文档解析)', percentage: 5 },
-    ]
-  },
-  { 
-    id: 'm2', 
     name: '李明', 
     email: 'liming@tech.com',
     department: '技术中心/前端开发组',
@@ -489,26 +471,161 @@ const mockMemberUsage = [
     ]
   },
   { 
-    id: 'm3', 
-    name: '王芳', 
-    email: 'wangfang@tech.com',
-    department: '产品设计部/UI/UX 设计组',
-    departmentId: 'dept-2-1',
+    id: 'm2', 
+    name: '陈晨', 
+    email: 'chenchen@tech.com',
+    department: '技术中心/前端开发组',
+    departmentId: 'dept-1-1',
     tokens: 76000, 
-    requests: 620, 
-    avgLatency: 2.1,
-    activeDays: 15,
+    requests: 680, 
+    avgLatency: 1.5,
+    activeDays: 20,
     totalDays: 30,
-    mostUsedTerminal: 'Web 控制台',
-    lastActive: '2024-03-21 14:20',
+    mostUsedTerminal: 'VS Code Extension',
+    lastActive: '2024-03-23 10:20',
     modelPreference: [
-      { model: 'Kimi-K2 (长文档解析)', percentage: 45 },
-      { model: 'Qwen3-Coder (重构/注释)', percentage: 35 },
-      { model: 'DeepSeek-V3.2 (代码补全)', percentage: 20 },
+      { model: 'DeepSeek-V3.2 (代码补全)', percentage: 65 },
+      { model: 'Qwen3-Coder (重构/注释)', percentage: 25 },
+      { model: 'GLM-4 (代码审查)', percentage: 10 },
+    ]
+  },
+  { 
+    id: 'm3', 
+    name: '林小雨', 
+    email: 'linxiaoyu@tech.com',
+    department: '技术中心/前端开发组',
+    departmentId: 'dept-1-1',
+    tokens: 65000, 
+    requests: 520, 
+    avgLatency: 1.7,
+    activeDays: 18,
+    totalDays: 30,
+    mostUsedTerminal: 'VS Code Extension',
+    lastActive: '2024-03-22 14:15',
+    modelPreference: [
+      { model: 'DeepSeek-V3.2 (代码补全)', percentage: 70 },
+      { model: 'Qwen3-Coder (重构/注释)', percentage: 20 },
+      { model: 'Kimi-K2 (长文档解析)', percentage: 10 },
     ]
   },
   { 
     id: 'm4', 
+    name: '黄磊', 
+    email: 'huanglei@tech.com',
+    department: '技术中心/前端开发组',
+    departmentId: 'dept-1-1',
+    tokens: 82000, 
+    requests: 710, 
+    avgLatency: 1.6,
+    activeDays: 21,
+    totalDays: 30,
+    mostUsedTerminal: 'WebStorm Plugin',
+    lastActive: '2024-03-23 09:00',
+    modelPreference: [
+      { model: 'Qwen3-Coder (重构/注释)', percentage: 55 },
+      { model: 'DeepSeek-V3.2 (代码补全)', percentage: 35 },
+      { model: 'GLM-4 (代码审查)', percentage: 10 },
+    ]
+  },
+  { 
+    id: 'm5', 
+    name: '刘洋', 
+    email: 'liuyang@tech.com',
+    department: '技术中心/前端开发组',
+    departmentId: 'dept-1-1',
+    tokens: 71000, 
+    requests: 590, 
+    avgLatency: 1.8,
+    activeDays: 19,
+    totalDays: 30,
+    mostUsedTerminal: 'VS Code Extension',
+    lastActive: '2024-03-21 17:30',
+    modelPreference: [
+      { model: 'DeepSeek-V3.2 (代码补全)', percentage: 60 },
+      { model: 'Qwen3-Coder (重构/注释)', percentage: 30 },
+      { model: 'Kimi-K2 (长文档解析)', percentage: 10 },
+    ]
+  },
+  { 
+    id: 'm6', 
+    name: '郑欣', 
+    email: 'zhengxin@tech.com',
+    department: '技术中心/前端开发组',
+    departmentId: 'dept-1-1',
+    tokens: 58000, 
+    requests: 480, 
+    avgLatency: 1.5,
+    activeDays: 16,
+    totalDays: 30,
+    mostUsedTerminal: 'VS Code Extension',
+    lastActive: '2024-03-20 15:45',
+    modelPreference: [
+      { model: 'DeepSeek-V3.2 (代码补全)', percentage: 75 },
+      { model: 'Qwen3-Coder (重构/注释)', percentage: 20 },
+      { model: 'GLM-4 (代码审查)', percentage: 5 },
+    ]
+  },
+  // 技术中心 - 后端开发组/Java 小组 (3人)
+  { 
+    id: 'm7', 
+    name: '张伟', 
+    email: 'zhangwei@tech.com',
+    department: '技术中心/后端开发组/Java 小组',
+    departmentId: 'dept-1-2-1',
+    tokens: 145208, 
+    requests: 1200, 
+    avgLatency: 1.8,
+    activeDays: 18,
+    totalDays: 30,
+    mostUsedTerminal: 'VS Code Extension',
+    lastActive: '2024-03-23 09:45',
+    modelPreference: [
+      { model: 'DeepSeek-V3.2 (代码补全)', percentage: 75 },
+      { model: 'Qwen3-Coder (重构/注释)', percentage: 20 },
+      { model: 'Kimi-K2 (长文档解析)', percentage: 5 },
+    ]
+  },
+  { 
+    id: 'm8', 
+    name: '王建国', 
+    email: 'wangjianguo@tech.com',
+    department: '技术中心/后端开发组/Java 小组',
+    departmentId: 'dept-1-2-1',
+    tokens: 112000, 
+    requests: 920, 
+    avgLatency: 1.7,
+    activeDays: 20,
+    totalDays: 30,
+    mostUsedTerminal: 'IntelliJ IDEA',
+    lastActive: '2024-03-23 11:00',
+    modelPreference: [
+      { model: 'DeepSeek-V3.2 (代码补全)', percentage: 70 },
+      { model: 'GLM-4 (代码审查)', percentage: 20 },
+      { model: 'Qwen3-Coder (重构/注释)', percentage: 10 },
+    ]
+  },
+  { 
+    id: 'm9', 
+    name: '杨帆', 
+    email: 'yangfan@tech.com',
+    department: '技术中心/后端开发组/Java 小组',
+    departmentId: 'dept-1-2-1',
+    tokens: 95000, 
+    requests: 780, 
+    avgLatency: 1.9,
+    activeDays: 17,
+    totalDays: 30,
+    mostUsedTerminal: 'IntelliJ IDEA',
+    lastActive: '2024-03-22 16:20',
+    modelPreference: [
+      { model: 'DeepSeek-V3.2 (代码补全)', percentage: 65 },
+      { model: 'Qwen3-Coder (重构/注释)', percentage: 25 },
+      { model: 'GLM-4 (代码审查)', percentage: 10 },
+    ]
+  },
+  // 技术中心 - 后端开发组/Go 小组 (2人)
+  { 
+    id: 'm10', 
     name: '赵强', 
     email: 'zhaoqiang@tech.com',
     department: '技术中心/后端开发组/Go 小组',
@@ -527,45 +644,27 @@ const mockMemberUsage = [
     ]
   },
   { 
-    id: 'm5', 
-    name: '钱丽', 
-    email: 'qianli@tech.com',
-    department: '市场运营部/内容运营组',
-    departmentId: 'dept-3-1',
-    tokens: 45000, 
-    requests: 380, 
-    avgLatency: 1.7,
-    activeDays: 12,
+    id: 'm11', 
+    name: '吴涛', 
+    email: 'wutao@tech.com',
+    department: '技术中心/后端开发组/Go 小组',
+    departmentId: 'dept-1-2-2',
+    tokens: 108000, 
+    requests: 860, 
+    avgLatency: 1.6,
+    activeDays: 19,
     totalDays: 30,
-    mostUsedTerminal: 'Web 控制台',
-    lastActive: '2024-03-20 09:30',
+    mostUsedTerminal: 'GoLand',
+    lastActive: '2024-03-23 10:30',
     modelPreference: [
-      { model: 'Kimi-K2 (长文档解析)', percentage: 70 },
-      { model: '文心一言 (营销文案)', percentage: 20 },
-      { model: 'Qwen3-Coder (重构/注释)', percentage: 10 },
+      { model: 'DeepSeek-V3.2 (代码补全)', percentage: 60 },
+      { model: 'Qwen3-Coder (重构/注释)', percentage: 30 },
+      { model: 'GLM-4 (代码审查)', percentage: 10 },
     ]
   },
+  // 技术中心 - DevOps 组 (4人)
   { 
-    id: 'm6', 
-    name: '孙浩', 
-    email: 'sunhao@tech.com',
-    department: '产品设计部/产品经理组',
-    departmentId: 'dept-2-2',
-    tokens: 52000, 
-    requests: 420, 
-    avgLatency: 2.0,
-    activeDays: 14,
-    totalDays: 30,
-    mostUsedTerminal: 'Web 控制台',
-    lastActive: '2024-03-22 10:45',
-    modelPreference: [
-      { model: 'Kimi-K2 (长文档解析)', percentage: 50 },
-      { model: 'GLM-4 (代码审查)', percentage: 30 },
-      { model: 'DeepSeek-V3.2 (代码补全)', percentage: 20 },
-    ]
-  },
-  { 
-    id: 'm7', 
+    id: 'm12', 
     name: '周杰', 
     email: 'zhoujie@tech.com',
     department: '技术中心/DevOps 组',
@@ -584,7 +683,277 @@ const mockMemberUsage = [
     ]
   },
   { 
-    id: 'm8', 
+    id: 'm13', 
+    name: '孙鹏', 
+    email: 'sunpeng@tech.com',
+    department: '技术中心/DevOps 组',
+    departmentId: 'dept-1-3',
+    tokens: 72000, 
+    requests: 580, 
+    avgLatency: 1.4,
+    activeDays: 18,
+    totalDays: 30,
+    mostUsedTerminal: 'Terminal',
+    lastActive: '2024-03-22 17:00',
+    modelPreference: [
+      { model: 'DeepSeek-V3.2 (代码补全)', percentage: 55 },
+      { model: 'Qwen3-Coder (重构/注释)', percentage: 35 },
+      { model: 'GLM-4 (代码审查)', percentage: 10 },
+    ]
+  },
+  { 
+    id: 'm14', 
+    name: '马超', 
+    email: 'machao@tech.com',
+    department: '技术中心/DevOps 组',
+    departmentId: 'dept-1-3',
+    tokens: 65000, 
+    requests: 520, 
+    avgLatency: 1.6,
+    activeDays: 16,
+    totalDays: 30,
+    mostUsedTerminal: 'Terminal',
+    lastActive: '2024-03-21 14:30',
+    modelPreference: [
+      { model: 'DeepSeek-V3.2 (代码补全)', percentage: 50 },
+      { model: 'Qwen3-Coder (重构/注释)', percentage: 40 },
+      { model: 'GLM-4 (代码审查)', percentage: 10 },
+    ]
+  },
+  { 
+    id: 'm15', 
+    name: '胡文', 
+    email: 'huwen@tech.com',
+    department: '技术中心/DevOps 组',
+    departmentId: 'dept-1-3',
+    tokens: 58000, 
+    requests: 460, 
+    avgLatency: 1.5,
+    activeDays: 15,
+    totalDays: 30,
+    mostUsedTerminal: 'Terminal',
+    lastActive: '2024-03-20 16:15',
+    modelPreference: [
+      { model: 'DeepSeek-V3.2 (代码补全)', percentage: 65 },
+      { model: 'Qwen3-Coder (重构/注释)', percentage: 25 },
+      { model: 'GLM-4 (代码审查)', percentage: 10 },
+    ]
+  },
+  // 产品设计部 - UI/UX 设计组 (4人)
+  { 
+    id: 'm16', 
+    name: '王芳', 
+    email: 'wangfang@tech.com',
+    department: '产品设计部/UI/UX 设计组',
+    departmentId: 'dept-2-1',
+    tokens: 76000, 
+    requests: 620, 
+    avgLatency: 2.1,
+    activeDays: 15,
+    totalDays: 30,
+    mostUsedTerminal: 'Web 控制台',
+    lastActive: '2024-03-21 14:20',
+    modelPreference: [
+      { model: 'Kimi-K2 (长文档解析)', percentage: 45 },
+      { model: 'Qwen3-Coder (重构/注释)', percentage: 35 },
+      { model: 'DeepSeek-V3.2 (代码补全)', percentage: 20 },
+    ]
+  },
+  { 
+    id: 'm17', 
+    name: '李婷', 
+    email: 'liting@tech.com',
+    department: '产品设计部/UI/UX 设计组',
+    departmentId: 'dept-2-1',
+    tokens: 68000, 
+    requests: 540, 
+    avgLatency: 2.0,
+    activeDays: 14,
+    totalDays: 30,
+    mostUsedTerminal: 'Web 控制台',
+    lastActive: '2024-03-22 11:30',
+    modelPreference: [
+      { model: 'Kimi-K2 (长文档解析)', percentage: 50 },
+      { model: 'Qwen3-Coder (重构/注释)', percentage: 30 },
+      { model: 'DeepSeek-V3.2 (代码补全)', percentage: 20 },
+    ]
+  },
+  { 
+    id: 'm18', 
+    name: '张雪', 
+    email: 'zhangxue@tech.com',
+    department: '产品设计部/UI/UX 设计组',
+    departmentId: 'dept-2-1',
+    tokens: 62000, 
+    requests: 490, 
+    avgLatency: 1.9,
+    activeDays: 13,
+    totalDays: 30,
+    mostUsedTerminal: 'Web 控制台',
+    lastActive: '2024-03-20 16:00',
+    modelPreference: [
+      { model: 'Kimi-K2 (长文档解析)', percentage: 55 },
+      { model: 'Qwen3-Coder (重构/注释)', percentage: 25 },
+      { model: 'DeepSeek-V3.2 (代码补全)', percentage: 20 },
+    ]
+  },
+  { 
+    id: 'm19', 
+    name: '陈艺', 
+    email: 'chenyi@tech.com',
+    department: '产品设计部/UI/UX 设计组',
+    departmentId: 'dept-2-1',
+    tokens: 55000, 
+    requests: 420, 
+    avgLatency: 2.2,
+    activeDays: 12,
+    totalDays: 30,
+    mostUsedTerminal: 'Web 控制台',
+    lastActive: '2024-03-19 15:30',
+    modelPreference: [
+      { model: 'Kimi-K2 (长文档解析)', percentage: 60 },
+      { model: 'Qwen3-Coder (重构/注释)', percentage: 25 },
+      { model: 'DeepSeek-V3.2 (代码补全)', percentage: 15 },
+    ]
+  },
+  // 产品设计部 - 产品经理组 (4人)
+  { 
+    id: 'm20', 
+    name: '孙浩', 
+    email: 'sunhao@tech.com',
+    department: '产品设计部/产品经理组',
+    departmentId: 'dept-2-2',
+    tokens: 52000, 
+    requests: 420, 
+    avgLatency: 2.0,
+    activeDays: 14,
+    totalDays: 30,
+    mostUsedTerminal: 'Web 控制台',
+    lastActive: '2024-03-22 10:45',
+    modelPreference: [
+      { model: 'Kimi-K2 (长文档解析)', percentage: 50 },
+      { model: 'GLM-4 (代码审查)', percentage: 30 },
+      { model: 'DeepSeek-V3.2 (代码补全)', percentage: 20 },
+    ]
+  },
+  { 
+    id: 'm21', 
+    name: '刘璐', 
+    email: 'liulu@tech.com',
+    department: '产品设计部/产品经理组',
+    departmentId: 'dept-2-2',
+    tokens: 48000, 
+    requests: 380, 
+    avgLatency: 1.9,
+    activeDays: 13,
+    totalDays: 30,
+    mostUsedTerminal: 'Web 控制台',
+    lastActive: '2024-03-21 14:00',
+    modelPreference: [
+      { model: 'Kimi-K2 (长文档解析)', percentage: 55 },
+      { model: 'GLM-4 (代码审查)', percentage: 25 },
+      { model: 'DeepSeek-V3.2 (代码补全)', percentage: 20 },
+    ]
+  },
+  { 
+    id: 'm22', 
+    name: '王磊', 
+    email: 'wanglei@tech.com',
+    department: '产品设计部/产品经理组',
+    departmentId: 'dept-2-2',
+    tokens: 45000, 
+    requests: 350, 
+    avgLatency: 2.1,
+    activeDays: 12,
+    totalDays: 30,
+    mostUsedTerminal: 'Web 控制台',
+    lastActive: '2024-03-20 11:30',
+    modelPreference: [
+      { model: 'Kimi-K2 (长文档解析)', percentage: 60 },
+      { model: 'GLM-4 (代码审查)', percentage: 25 },
+      { model: 'DeepSeek-V3.2 (代码补全)', percentage: 15 },
+    ]
+  },
+  { 
+    id: 'm23', 
+    name: '赵敏', 
+    email: 'zhaomin@tech.com',
+    department: '产品设计部/产品经理组',
+    departmentId: 'dept-2-2',
+    tokens: 42000, 
+    requests: 320, 
+    avgLatency: 2.0,
+    activeDays: 11,
+    totalDays: 30,
+    mostUsedTerminal: 'Web 控制台',
+    lastActive: '2024-03-19 16:45',
+    modelPreference: [
+      { model: 'Kimi-K2 (长文档解析)', percentage: 65 },
+      { model: 'GLM-4 (代码审查)', percentage: 20 },
+      { model: 'DeepSeek-V3.2 (代码补全)', percentage: 15 },
+    ]
+  },
+  // 市场运营部 - 内容运营组 (3人)
+  { 
+    id: 'm24', 
+    name: '钱丽', 
+    email: 'qianli@tech.com',
+    department: '市场运营部/内容运营组',
+    departmentId: 'dept-3-1',
+    tokens: 45000, 
+    requests: 380, 
+    avgLatency: 1.7,
+    activeDays: 12,
+    totalDays: 30,
+    mostUsedTerminal: 'Web 控制台',
+    lastActive: '2024-03-20 09:30',
+    modelPreference: [
+      { model: 'Kimi-K2 (长文档解析)', percentage: 70 },
+      { model: '文心一言 (营销文案)', percentage: 20 },
+      { model: 'Qwen3-Coder (重构/注释)', percentage: 10 },
+    ]
+  },
+  { 
+    id: 'm25', 
+    name: '周媛', 
+    email: 'zhouyuan@tech.com',
+    department: '市场运营部/内容运营组',
+    departmentId: 'dept-3-1',
+    tokens: 38000, 
+    requests: 320, 
+    avgLatency: 1.8,
+    activeDays: 11,
+    totalDays: 30,
+    mostUsedTerminal: 'Web 控制台',
+    lastActive: '2024-03-19 14:20',
+    modelPreference: [
+      { model: '文心一言 (营销文案)', percentage: 60 },
+      { model: 'Kimi-K2 (长文档解析)', percentage: 30 },
+      { model: 'Qwen3-Coder (重构/注释)', percentage: 10 },
+    ]
+  },
+  { 
+    id: 'm26', 
+    name: '陈思', 
+    email: 'chensi@tech.com',
+    department: '市场运营部/内容运营组',
+    departmentId: 'dept-3-1',
+    tokens: 35000, 
+    requests: 290, 
+    avgLatency: 1.6,
+    activeDays: 10,
+    totalDays: 30,
+    mostUsedTerminal: 'Web 控制台',
+    lastActive: '2024-03-18 16:00',
+    modelPreference: [
+      { model: '文心一言 (营销文案)', percentage: 55 },
+      { model: 'Kimi-K2 (长文档解析)', percentage: 35 },
+      { model: 'Qwen3-Coder (重构/注释)', percentage: 10 },
+    ]
+  },
+  // 市场运营部 - 推广运营组 (3人)
+  { 
+    id: 'm27', 
     name: '吴敏', 
     email: 'wumin@tech.com',
     department: '市场运营部/推广运营组',
@@ -602,23 +971,65 @@ const mockMemberUsage = [
       { model: 'Qwen3-Coder (重构/注释)', percentage: 10 },
     ]
   },
+  { 
+    id: 'm28', 
+    name: '李强', 
+    email: 'liqiang@tech.com',
+    department: '市场运营部/推广运营组',
+    departmentId: 'dept-3-2',
+    tokens: 32000, 
+    requests: 260, 
+    avgLatency: 1.8,
+    activeDays: 9,
+    totalDays: 30,
+    mostUsedTerminal: 'Web 控制台',
+    lastActive: '2024-03-20 11:00',
+    modelPreference: [
+      { model: '文心一言 (营销文案)', percentage: 60 },
+      { model: 'Kimi-K2 (长文档解析)', percentage: 30 },
+      { model: 'Qwen3-Coder (重构/注释)', percentage: 10 },
+    ]
+  },
+  { 
+    id: 'm29', 
+    name: '张琳', 
+    email: 'zhanglin@tech.com',
+    department: '市场运营部/推广运营组',
+    departmentId: 'dept-3-2',
+    tokens: 28000, 
+    requests: 220, 
+    avgLatency: 1.7,
+    activeDays: 8,
+    totalDays: 30,
+    mostUsedTerminal: 'Web 控制台',
+    lastActive: '2024-03-19 10:30',
+    modelPreference: [
+      { model: '文心一言 (营销文案)', percentage: 65 },
+      { model: 'Kimi-K2 (长文档解析)', percentage: 25 },
+      { model: 'Qwen3-Coder (重构/注释)', percentage: 10 },
+    ]
+  },
 ];
 
-// Helper function to check if a member belongs to a department (including parent departments)
+// Helper function to get all descendant department IDs
+const getAllDescendantDeptIds = (deptId: string): string[] => {
+  const descendants: string[] = [];
+  const children = mockDepartmentUsage.filter(d => d.parentId === deptId);
+  children.forEach(child => {
+    descendants.push(child.id);
+    descendants.push(...getAllDescendantDeptIds(child.id));
+  });
+  return descendants;
+};
+
+// Helper function to check if a member belongs to a department (including all child departments)
 const memberBelongsToDepartment = (member: typeof mockMemberUsage[0], deptId: string): boolean => {
   // Direct match
   if (member.departmentId === deptId) return true;
   
-  // Check if member's department is a child of the given department
-  let currentDeptId = member.departmentId;
-  while (currentDeptId) {
-    const dept = mockDepartmentUsage.find(d => d.id === currentDeptId);
-    if (!dept) break;
-    if (dept.parentId === deptId) return true;
-    currentDeptId = dept.parentId || '';
-  }
-  
-  return false;
+  // Check if member's department is any descendant of the given department
+  const descendantIds = getAllDescendantDeptIds(deptId);
+  return descendantIds.includes(member.departmentId);
 };
 
 // Mock model average latency data
