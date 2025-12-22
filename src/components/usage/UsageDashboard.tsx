@@ -11,7 +11,11 @@ import {
   ChevronRight,
   Building2,
   User,
+  Search,
+  ArrowLeft,
+  ExternalLink,
 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -444,16 +448,116 @@ const getDepartmentsByLevel = (level: number) => {
   return mockDepartmentUsage.filter(d => d.level === level);
 };
 
-// Mock member usage data
+// Mock member usage data with detailed info
 const mockMemberUsage = [
-  { name: '张三', department: '技术中心', tokens: 280000, requests: 1200, avgLatency: 1.8 },
-  { name: '李四', department: '技术中心', tokens: 250000, requests: 1100, avgLatency: 1.6 },
-  { name: '王五', department: '产品设计部', tokens: 180000, requests: 850, avgLatency: 2.1 },
-  { name: '赵六', department: '技术中心', tokens: 160000, requests: 720, avgLatency: 1.9 },
-  { name: '钱七', department: '市场运营部', tokens: 140000, requests: 680, avgLatency: 1.7 },
-  { name: '孙八', department: '产品设计部', tokens: 120000, requests: 580, avgLatency: 2.0 },
-  { name: '周九', department: '技术中心', tokens: 110000, requests: 520, avgLatency: 1.5 },
-  { name: '吴十', department: '市场运营部', tokens: 95000, requests: 450, avgLatency: 2.2 },
+  { 
+    id: 'm1', 
+    name: '张伟', 
+    email: 'zhangwei@tech.com',
+    department: '研发中心/平台部/后端组', 
+    tokens: 145208, 
+    requests: 1200, 
+    avgLatency: 1.8,
+    activeDays: 18,
+    totalDays: 30,
+    mostUsedTerminal: 'VS Code Extension',
+    lastActive: '2024-03-23 09:45',
+    modelPreference: [
+      { model: 'DeepSeek-V3.2 (代码补全)', percentage: 75 },
+      { model: 'Qwen3-Coder (重构/注释)', percentage: 20 },
+      { model: 'Kimi-K2 (长文档解析)', percentage: 5 },
+    ]
+  },
+  { 
+    id: 'm2', 
+    name: '李明', 
+    email: 'liming@tech.com',
+    department: '研发中心/平台部/前端组', 
+    tokens: 98500, 
+    requests: 850, 
+    avgLatency: 1.6,
+    activeDays: 22,
+    totalDays: 30,
+    mostUsedTerminal: 'WebStorm Plugin',
+    lastActive: '2024-03-22 16:30',
+    modelPreference: [
+      { model: 'Qwen3-Coder (重构/注释)', percentage: 60 },
+      { model: 'DeepSeek-V3.2 (代码补全)', percentage: 30 },
+      { model: 'GLM-4 (代码审查)', percentage: 10 },
+    ]
+  },
+  { 
+    id: 'm3', 
+    name: '王芳', 
+    email: 'wangfang@tech.com',
+    department: '产品设计部/UI设计组', 
+    tokens: 76000, 
+    requests: 620, 
+    avgLatency: 2.1,
+    activeDays: 15,
+    totalDays: 30,
+    mostUsedTerminal: 'Web 控制台',
+    lastActive: '2024-03-21 14:20',
+    modelPreference: [
+      { model: 'Kimi-K2 (长文档解析)', percentage: 45 },
+      { model: 'Qwen3-Coder (重构/注释)', percentage: 35 },
+      { model: 'DeepSeek-V3.2 (代码补全)', percentage: 20 },
+    ]
+  },
+  { 
+    id: 'm4', 
+    name: '赵强', 
+    email: 'zhaoqiang@tech.com',
+    department: '研发中心/基础架构组', 
+    tokens: 125000, 
+    requests: 980, 
+    avgLatency: 1.9,
+    activeDays: 20,
+    totalDays: 30,
+    mostUsedTerminal: 'VS Code Extension',
+    lastActive: '2024-03-23 11:15',
+    modelPreference: [
+      { model: 'DeepSeek-V3.2 (代码补全)', percentage: 55 },
+      { model: 'GLM-4 (代码审查)', percentage: 25 },
+      { model: 'Qwen3-Coder (重构/注释)', percentage: 20 },
+    ]
+  },
+  { 
+    id: 'm5', 
+    name: '钱丽', 
+    email: 'qianli@tech.com',
+    department: '市场运营部/内容运营组', 
+    tokens: 45000, 
+    requests: 380, 
+    avgLatency: 1.7,
+    activeDays: 12,
+    totalDays: 30,
+    mostUsedTerminal: 'Web 控制台',
+    lastActive: '2024-03-20 09:30',
+    modelPreference: [
+      { model: 'Kimi-K2 (长文档解析)', percentage: 70 },
+      { model: '文心一言 (营销文案)', percentage: 20 },
+      { model: 'Qwen3-Coder (重构/注释)', percentage: 10 },
+    ]
+  },
+  { 
+    id: 'm6', 
+    name: '孙浩', 
+    email: 'sunhao@tech.com',
+    department: '产品设计部/产品经理组', 
+    tokens: 52000, 
+    requests: 420, 
+    avgLatency: 2.0,
+    activeDays: 14,
+    totalDays: 30,
+    mostUsedTerminal: 'Web 控制台',
+    lastActive: '2024-03-22 10:45',
+    modelPreference: [
+      { model: 'Kimi-K2 (长文档解析)', percentage: 50 },
+      { model: 'GLM-4 (代码审查)', percentage: 30 },
+      { model: 'DeepSeek-V3.2 (代码补全)', percentage: 20 },
+    ]
+  },
 ];
 
 // Mock model average latency data
@@ -487,6 +591,20 @@ export function UsageDashboard() {
   ]);
   // View mode for organization: 'department' or 'member'
   const [orgViewMode, setOrgViewMode] = useState<'department' | 'member'>('department');
+  
+  // Member search state for organization member view
+  const [memberSearchQuery, setMemberSearchQuery] = useState('');
+  const [selectedMemberDetail, setSelectedMemberDetail] = useState<typeof mockMemberUsage[0] | null>(null);
+  
+  // Filter members by search query
+  const filteredSearchMembers = useMemo(() => {
+    if (!memberSearchQuery.trim()) return [];
+    const query = memberSearchQuery.toLowerCase();
+    return mockMemberUsage.filter(m => 
+      m.name.toLowerCase().includes(query) || 
+      m.email.toLowerCase().includes(query)
+    );
+  }, [memberSearchQuery]);
 
   // Prepare options for multi-select
   const modelOptions = mockModels.map(m => ({ id: m.id, name: m.name }));
@@ -1041,51 +1159,129 @@ export function UsageDashboard() {
         </div>
       )}
 
-      {/* Member View within Organization */}
+      {/* Member Search View within Organization */}
       {orgViewMode === 'member' && (
-        <div className="enterprise-card p-5">
-          <h3 className="font-semibold text-foreground mb-4">成员用量</h3>
-          {currentDepartmentMembers.length > 0 ? (
-            <div className="border border-border rounded-lg overflow-hidden">
-              <table className="w-full">
-                <thead>
-                  <tr className="bg-muted/30">
-                    <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">排名</th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">成员</th>
-                    <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">Token消耗</th>
-                    <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">请求数</th>
-                    <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">平均耗时</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {currentDepartmentMembers.map((member, index) => (
-                    <tr key={member.name} className="border-t border-border hover:bg-muted/20 transition-colors">
-                      <td className="px-4 py-3">
-                        <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-medium ${
-                          index < 3 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
-                        }`}>
-                          {index + 1}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
-                            <span className="text-xs font-medium text-primary-foreground">{member.name[0]}</span>
-                          </div>
-                          <span className="font-medium text-foreground">{member.name}</span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-right text-foreground">{(member.tokens / 1000).toFixed(0)}K</td>
-                      <td className="px-4 py-3 text-right text-foreground">{member.requests.toLocaleString()}</td>
-                      <td className="px-4 py-3 text-right text-foreground">{member.avgLatency}s</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+        <div className="space-y-4">
+          {/* Search Input */}
+          <div className="enterprise-card p-5">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="输入成员姓名或邮箱查询详细用量..."
+                value={memberSearchQuery}
+                onChange={(e) => {
+                  setMemberSearchQuery(e.target.value);
+                  setSelectedMemberDetail(null);
+                }}
+                className="pl-10 h-11"
+              />
             </div>
-          ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              该组织暂无成员数据
+            
+            {/* Search Results Dropdown */}
+            {memberSearchQuery && !selectedMemberDetail && filteredSearchMembers.length > 0 && (
+              <div className="mt-3 border border-border rounded-lg overflow-hidden">
+                {filteredSearchMembers.map((member) => (
+                  <div
+                    key={member.id}
+                    className="flex items-center gap-3 p-3 hover:bg-muted/50 cursor-pointer transition-colors border-b border-border last:border-b-0"
+                    onClick={() => setSelectedMemberDetail(member)}
+                  >
+                    <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center shrink-0">
+                      <span className="text-sm font-medium text-primary-foreground">{member.name[0]}</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-foreground">{member.name}</span>
+                        <span className="text-xs text-muted-foreground">{member.department}</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground">{member.email}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            {memberSearchQuery && !selectedMemberDetail && filteredSearchMembers.length === 0 && (
+              <div className="mt-3 text-center py-6 text-muted-foreground">
+                未找到匹配的成员
+              </div>
+            )}
+          </div>
+
+          {/* Selected Member Detail View */}
+          {selectedMemberDetail && (
+            <div className="enterprise-card p-5">
+              {/* Back button and Member Header */}
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center">
+                    <span className="text-lg font-medium text-primary-foreground">{selectedMemberDetail.name[0]}</span>
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-lg font-semibold text-foreground">{selectedMemberDetail.name}</h3>
+                      <span className="text-sm text-muted-foreground">{selectedMemberDetail.department}</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      {selectedMemberDetail.email} · 最近活跃: {selectedMemberDetail.lastActive}
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1"
+                  onClick={() => {
+                    setSelectedMemberDetail(null);
+                    setMemberSearchQuery('');
+                  }}
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  返回列表
+                </Button>
+              </div>
+
+              {/* Stats Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div className="p-4 bg-muted/30 rounded-lg">
+                  <p className="text-sm text-primary font-medium mb-2">个人累计消耗 (Tokens)</p>
+                  <p className="text-3xl font-semibold text-foreground text-right">{selectedMemberDetail.tokens.toLocaleString()}</p>
+                </div>
+                <div className="p-4 bg-muted/30 rounded-lg">
+                  <p className="text-sm text-primary font-medium mb-2">本月活跃天数</p>
+                  <p className="text-3xl font-semibold text-foreground text-right">
+                    {selectedMemberDetail.activeDays} <span className="text-lg text-muted-foreground">/ {selectedMemberDetail.totalDays}</span>
+                  </p>
+                </div>
+                <div className="p-4 bg-muted/30 rounded-lg">
+                  <p className="text-sm text-primary font-medium mb-2">最常使用终端</p>
+                  <div className="flex items-center justify-end gap-2 mt-2">
+                    <ExternalLink className="w-4 h-4 text-muted-foreground" />
+                    <span className="text-lg font-medium text-foreground">{selectedMemberDetail.mostUsedTerminal}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Model Preference Distribution */}
+              <div>
+                <p className="text-sm text-primary font-medium mb-4">模型偏好分布</p>
+                <div className="space-y-4">
+                  {selectedMemberDetail.modelPreference.map((pref, index) => (
+                    <div key={index} className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-foreground">{pref.model}</span>
+                        <span className="text-sm text-muted-foreground">{pref.percentage}%</span>
+                      </div>
+                      <div className="h-2 bg-muted rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-primary rounded-full transition-all"
+                          style={{ width: `${pref.percentage}%` }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           )}
         </div>
