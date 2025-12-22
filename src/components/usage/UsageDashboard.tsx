@@ -448,13 +448,14 @@ const getDepartmentsByLevel = (level: number) => {
   return mockDepartmentUsage.filter(d => d.level === level);
 };
 
-// Mock member usage data with detailed info
+// Mock member usage data with detailed info - linked to department IDs
 const mockMemberUsage = [
   { 
     id: 'm1', 
     name: '张伟', 
     email: 'zhangwei@tech.com',
-    department: '研发中心/平台部/后端组', 
+    department: '技术中心/后端开发组/Java 小组',
+    departmentId: 'dept-1-2-1',
     tokens: 145208, 
     requests: 1200, 
     avgLatency: 1.8,
@@ -472,7 +473,8 @@ const mockMemberUsage = [
     id: 'm2', 
     name: '李明', 
     email: 'liming@tech.com',
-    department: '研发中心/平台部/前端组', 
+    department: '技术中心/前端开发组',
+    departmentId: 'dept-1-1',
     tokens: 98500, 
     requests: 850, 
     avgLatency: 1.6,
@@ -490,7 +492,8 @@ const mockMemberUsage = [
     id: 'm3', 
     name: '王芳', 
     email: 'wangfang@tech.com',
-    department: '产品设计部/UI设计组', 
+    department: '产品设计部/UI/UX 设计组',
+    departmentId: 'dept-2-1',
     tokens: 76000, 
     requests: 620, 
     avgLatency: 2.1,
@@ -508,7 +511,8 @@ const mockMemberUsage = [
     id: 'm4', 
     name: '赵强', 
     email: 'zhaoqiang@tech.com',
-    department: '研发中心/基础架构组', 
+    department: '技术中心/后端开发组/Go 小组',
+    departmentId: 'dept-1-2-2',
     tokens: 125000, 
     requests: 980, 
     avgLatency: 1.9,
@@ -526,7 +530,8 @@ const mockMemberUsage = [
     id: 'm5', 
     name: '钱丽', 
     email: 'qianli@tech.com',
-    department: '市场运营部/内容运营组', 
+    department: '市场运营部/内容运营组',
+    departmentId: 'dept-3-1',
     tokens: 45000, 
     requests: 380, 
     avgLatency: 1.7,
@@ -544,7 +549,8 @@ const mockMemberUsage = [
     id: 'm6', 
     name: '孙浩', 
     email: 'sunhao@tech.com',
-    department: '产品设计部/产品经理组', 
+    department: '产品设计部/产品经理组',
+    departmentId: 'dept-2-2',
     tokens: 52000, 
     requests: 420, 
     avgLatency: 2.0,
@@ -558,7 +564,62 @@ const mockMemberUsage = [
       { model: 'DeepSeek-V3.2 (代码补全)', percentage: 20 },
     ]
   },
+  { 
+    id: 'm7', 
+    name: '周杰', 
+    email: 'zhoujie@tech.com',
+    department: '技术中心/DevOps 组',
+    departmentId: 'dept-1-3',
+    tokens: 88000, 
+    requests: 720, 
+    avgLatency: 1.5,
+    activeDays: 19,
+    totalDays: 30,
+    mostUsedTerminal: 'Terminal',
+    lastActive: '2024-03-23 08:30',
+    modelPreference: [
+      { model: 'DeepSeek-V3.2 (代码补全)', percentage: 60 },
+      { model: 'Qwen3-Coder (重构/注释)', percentage: 30 },
+      { model: 'GLM-4 (代码审查)', percentage: 10 },
+    ]
+  },
+  { 
+    id: 'm8', 
+    name: '吴敏', 
+    email: 'wumin@tech.com',
+    department: '市场运营部/推广运营组',
+    departmentId: 'dept-3-2',
+    tokens: 38000, 
+    requests: 310, 
+    avgLatency: 1.9,
+    activeDays: 10,
+    totalDays: 30,
+    mostUsedTerminal: 'Web 控制台',
+    lastActive: '2024-03-21 15:20',
+    modelPreference: [
+      { model: '文心一言 (营销文案)', percentage: 55 },
+      { model: 'Kimi-K2 (长文档解析)', percentage: 35 },
+      { model: 'Qwen3-Coder (重构/注释)', percentage: 10 },
+    ]
+  },
 ];
+
+// Helper function to check if a member belongs to a department (including parent departments)
+const memberBelongsToDepartment = (member: typeof mockMemberUsage[0], deptId: string): boolean => {
+  // Direct match
+  if (member.departmentId === deptId) return true;
+  
+  // Check if member's department is a child of the given department
+  let currentDeptId = member.departmentId;
+  while (currentDeptId) {
+    const dept = mockDepartmentUsage.find(d => d.id === currentDeptId);
+    if (!dept) break;
+    if (dept.parentId === deptId) return true;
+    currentDeptId = dept.parentId || '';
+  }
+  
+  return false;
+};
 
 // Mock model average latency data
 const mockModelLatency = [
@@ -713,15 +774,9 @@ export function UsageDashboard() {
 
   // Get members for current department (when viewing members)
   const currentDepartmentMembers = useMemo(() => {
-    if (!currentParentId) return [];
-    const currentDept = mockDepartmentUsage.find(d => d.id === currentParentId);
-    if (!currentDept) return [];
-    // Filter mock members that belong to this department or its parents
-    return mockMemberUsage.filter(m => {
-      // Simple matching based on department name
-      return m.department.includes(currentDept.name.split(' ')[0]) || 
-             currentDept.name.includes(m.department);
-    });
+    if (!currentParentId) return mockMemberUsage; // Show all members at root level
+    // Filter members that belong to this department or its children
+    return mockMemberUsage.filter(m => memberBelongsToDepartment(m, currentParentId));
   }, [currentParentId]);
 
   // Handle drill-down into a department
@@ -766,25 +821,6 @@ export function UsageDashboard() {
           placeholder="全部模型"
         />
 
-
-        {/* Department Filter - Show for member tab only */}
-        {activeTab === 'member' && (
-          <CascadingDepartmentSelect
-            selected={selectedDepartments}
-            onChange={setSelectedDepartments}
-            placeholder="全部部门"
-          />
-        )}
-
-        {/* Member Filter - Show only for member tab */}
-        {activeTab === 'member' && (
-          <MultiSelectDropdown
-            options={memberOptions}
-            selected={selectedMembers}
-            onChange={setSelectedMembers}
-            placeholder="全部成员"
-          />
-        )}
 
         {hasActiveFilters && (
           <Button variant="ghost" size="sm" onClick={clearFilters} className="gap-1 text-muted-foreground">
@@ -1289,9 +1325,9 @@ export function UsageDashboard() {
     </div>
   );
 
-  // Member tab search state
+  // Member tab - default to first member
   const [memberTabSearchQuery, setMemberTabSearchQuery] = useState('');
-  const [memberTabSelectedDetail, setMemberTabSelectedDetail] = useState<typeof mockMemberUsage[0] | null>(null);
+  const [memberTabSelectedDetail, setMemberTabSelectedDetail] = useState<typeof mockMemberUsage[0] | null>(mockMemberUsage[0]);
   
   // Filter members by search query for member tab
   const memberTabFilteredMembers = useMemo(() => {
@@ -1303,86 +1339,92 @@ export function UsageDashboard() {
     );
   }, [memberTabSearchQuery]);
 
-  // Render Member Tab Content - Search based
-  const renderMemberContent = () => (
-    <div className="space-y-4">
-      {/* Search Input */}
-      <div className="enterprise-card p-5">
-        <div className="relative">
+  // Render Member Tab Filter Bar (simplified - only search and date)
+  const renderMemberFilterBar = () => (
+    <div className="enterprise-card p-4 mb-6">
+      <div className="flex flex-wrap items-center gap-3">
+        {/* Search Input */}
+        <div className="relative flex-1 max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
-            placeholder="输入成员姓名或邮箱查询详细用量..."
+            placeholder="输入成员姓名或邮箱查询..."
             value={memberTabSearchQuery}
             onChange={(e) => {
               setMemberTabSearchQuery(e.target.value);
-              setMemberTabSelectedDetail(null);
+              if (e.target.value.trim() === '') {
+                setMemberTabSelectedDetail(mockMemberUsage[0]);
+              } else {
+                setMemberTabSelectedDetail(null);
+              }
             }}
-            className="pl-10 h-11"
+            className="pl-10 h-9"
           />
         </div>
-        
-        {/* Search Results Dropdown */}
-        {memberTabSearchQuery && !memberTabSelectedDetail && memberTabFilteredMembers.length > 0 && (
-          <div className="mt-3 border border-border rounded-lg overflow-hidden">
-            {memberTabFilteredMembers.map((member) => (
-              <div
-                key={member.id}
-                className="flex items-center gap-3 p-3 hover:bg-muted/50 cursor-pointer transition-colors border-b border-border last:border-b-0"
-                onClick={() => setMemberTabSelectedDetail(member)}
-              >
-                <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center shrink-0">
-                  <span className="text-sm font-medium text-primary-foreground">{member.name[0]}</span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium text-foreground">{member.name}</span>
-                    <span className="text-xs text-muted-foreground">{member.department}</span>
-                  </div>
-                  <p className="text-sm text-muted-foreground">{member.email}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-        
-        {memberTabSearchQuery && !memberTabSelectedDetail && memberTabFilteredMembers.length === 0 && (
-          <div className="mt-3 text-center py-6 text-muted-foreground">
-            未找到匹配的成员
-          </div>
-        )}
-      </div>
 
-      {/* Selected Member Detail View */}
-      {memberTabSelectedDetail && (
-        <div className="enterprise-card p-5">
-          {/* Back button and Member Header */}
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center">
-                <span className="text-lg font-medium text-primary-foreground">{memberTabSelectedDetail.name[0]}</span>
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="text-lg font-semibold text-foreground">{memberTabSelectedDetail.name}</h3>
-                  <span className="text-sm text-muted-foreground">{memberTabSelectedDetail.department}</span>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  {memberTabSelectedDetail.email} · 最近活跃: {memberTabSelectedDetail.lastActive}
-                </p>
-              </div>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-1"
+        {/* Date Range */}
+        <DateRangePicker
+          dateRangeType={dateRangeType}
+          setDateRangeType={setDateRangeType}
+          customDateRange={customDateRange}
+          setCustomDateRange={setCustomDateRange}
+        />
+      </div>
+      
+      {/* Search Results Dropdown */}
+      {memberTabSearchQuery && !memberTabSelectedDetail && memberTabFilteredMembers.length > 0 && (
+        <div className="mt-3 border border-border rounded-lg overflow-hidden">
+          {memberTabFilteredMembers.map((member) => (
+            <div
+              key={member.id}
+              className="flex items-center gap-3 p-3 hover:bg-muted/50 cursor-pointer transition-colors border-b border-border last:border-b-0"
               onClick={() => {
-                setMemberTabSelectedDetail(null);
+                setMemberTabSelectedDetail(member);
                 setMemberTabSearchQuery('');
               }}
             >
-              <ArrowLeft className="w-4 h-4" />
-              返回列表
-            </Button>
+              <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center shrink-0">
+                <span className="text-sm font-medium text-primary-foreground">{member.name[0]}</span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="font-medium text-foreground">{member.name}</span>
+                  <span className="text-xs text-muted-foreground">{member.department}</span>
+                </div>
+                <p className="text-sm text-muted-foreground">{member.email}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      
+      {memberTabSearchQuery && !memberTabSelectedDetail && memberTabFilteredMembers.length === 0 && (
+        <div className="mt-3 text-center py-4 text-muted-foreground">
+          未找到匹配的成员
+        </div>
+      )}
+    </div>
+  );
+
+  // Render Member Tab Content - Show selected member detail directly
+  const renderMemberContent = () => (
+    <div className="space-y-4">
+      {/* Member Detail View - Always shown */}
+      {memberTabSelectedDetail && (
+        <div className="enterprise-card p-5">
+          {/* Member Header */}
+          <div className="flex items-center gap-4 mb-6">
+            <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center">
+              <span className="text-lg font-medium text-primary-foreground">{memberTabSelectedDetail.name[0]}</span>
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-lg font-semibold text-foreground">{memberTabSelectedDetail.name}</h3>
+                <span className="text-sm text-muted-foreground">{memberTabSelectedDetail.department}</span>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                {memberTabSelectedDetail.email} · 最近活跃: {memberTabSelectedDetail.lastActive}
+              </p>
+            </div>
           </div>
 
           {/* Two Column Layout: Stats on left, Model Preference on right */}
@@ -1454,7 +1496,7 @@ export function UsageDashboard() {
         </TabsContent>
 
         <TabsContent value="member" className="mt-0">
-          {renderFilterBar()}
+          {renderMemberFilterBar()}
           {renderMemberContent()}
         </TabsContent>
       </Tabs>
