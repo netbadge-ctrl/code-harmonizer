@@ -1608,57 +1608,35 @@ export function UsageDashboard() {
         </div>
       )}
 
-      {/* Member Search View within Organization */}
+      {/* Member List View within Organization */}
       {orgViewMode === 'member' && (
         <div className="space-y-4">
           {/* Search Input */}
-          <div className="enterprise-card p-5">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="输入成员姓名或邮箱查询详细用量..."
-                value={memberSearchQuery}
-                onChange={(e) => {
-                  setMemberSearchQuery(e.target.value);
-                  setSelectedMemberDetail(null);
-                }}
-                className="pl-10 h-11"
+          <div className="enterprise-card p-4">
+            <div className="flex items-center gap-3">
+              <div className="relative flex-1 max-w-md">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="输入成员姓名或邮箱查询..."
+                  value={memberSearchQuery}
+                  onChange={(e) => {
+                    setMemberSearchQuery(e.target.value);
+                    setSelectedMemberDetail(null);
+                  }}
+                  className="pl-10 h-9"
+                />
+              </div>
+              <DateRangePicker
+                dateRangeType={dateRangeType}
+                setDateRangeType={setDateRangeType}
+                customDateRange={customDateRange}
+                setCustomDateRange={setCustomDateRange}
               />
             </div>
-            
-            {/* Search Results Dropdown */}
-            {memberSearchQuery && !selectedMemberDetail && filteredSearchMembers.length > 0 && (
-              <div className="mt-3 border border-border rounded-lg overflow-hidden">
-                {filteredSearchMembers.map((member) => (
-                  <div
-                    key={member.id}
-                    className="flex items-center gap-3 p-3 hover:bg-muted/50 cursor-pointer transition-colors border-b border-border last:border-b-0"
-                    onClick={() => setSelectedMemberDetail(member)}
-                  >
-                    <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center shrink-0">
-                      <span className="text-sm font-medium text-primary-foreground">{member.name[0]}</span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium text-foreground">{member.name}</span>
-                        <span className="text-xs text-muted-foreground">{member.department}</span>
-                      </div>
-                      <p className="text-sm text-muted-foreground">{member.email}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-            
-            {memberSearchQuery && !selectedMemberDetail && filteredSearchMembers.length === 0 && (
-              <div className="mt-3 text-center py-6 text-muted-foreground">
-                未找到匹配的成员
-              </div>
-            )}
           </div>
 
-          {/* Selected Member Detail View */}
-          {selectedMemberDetail && (
+          {/* Member Detail View */}
+          {selectedMemberDetail ? (
             <div className="enterprise-card p-5">
               {/* Back button and Member Header */}
               <div className="flex items-center justify-between mb-6">
@@ -1731,6 +1709,83 @@ export function UsageDashboard() {
                   ))}
                 </div>
               </div>
+            </div>
+          ) : (
+            /* Member List Table */
+            <div className="enterprise-card p-5">
+              <h3 className="font-semibold text-foreground mb-4">成员用量列表</h3>
+              {(() => {
+                const displayMembers = memberSearchQuery.trim()
+                  ? currentDepartmentMembers.filter(m => 
+                      m.name.toLowerCase().includes(memberSearchQuery.toLowerCase()) || 
+                      m.email.toLowerCase().includes(memberSearchQuery.toLowerCase())
+                    )
+                  : currentDepartmentMembers;
+                
+                return displayMembers.length > 0 ? (
+                  <div className="border border-border rounded-lg overflow-hidden">
+                    <table className="w-full">
+                      <thead>
+                        <tr className="bg-muted/30">
+                          <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">排名</th>
+                          <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">姓名</th>
+                          <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">部门</th>
+                          <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">Token消耗</th>
+                          <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">请求数</th>
+                          <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">平均耗时</th>
+                          <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">活跃天数</th>
+                          <th className="px-4 py-3 text-center text-sm font-medium text-muted-foreground">操作</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {displayMembers
+                          .sort((a, b) => b.tokens - a.tokens)
+                          .map((member, index) => (
+                          <tr key={member.id} className="border-t border-border hover:bg-muted/20 transition-colors">
+                            <td className="px-4 py-3">
+                              <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-medium ${
+                                index < 3 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+                              }`}>
+                                {index + 1}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="flex items-center gap-2">
+                                <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                                  <span className="text-xs font-medium text-primary">{member.name[0]}</span>
+                                </div>
+                                <span className="font-medium text-foreground">{member.name}</span>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 text-sm text-muted-foreground">{member.department}</td>
+                            <td className="px-4 py-3 text-right text-foreground">{(member.tokens / 1000).toFixed(1)}K</td>
+                            <td className="px-4 py-3 text-right text-foreground">{member.requests.toLocaleString()}</td>
+                            <td className="px-4 py-3 text-right text-foreground">{member.avgLatency}s</td>
+                            <td className="px-4 py-3 text-right text-foreground">{member.activeDays}/{member.totalDays}</td>
+                            <td className="px-4 py-3">
+                              <div className="flex items-center justify-center">
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  className="h-7 text-xs gap-1"
+                                  onClick={() => setSelectedMemberDetail(member)}
+                                >
+                                  <User className="w-3 h-3" />
+                                  详情
+                                </Button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    {memberSearchQuery.trim() ? '未找到匹配的成员' : '该部门暂无成员数据'}
+                  </div>
+                );
+              })()}
             </div>
           )}
         </div>
