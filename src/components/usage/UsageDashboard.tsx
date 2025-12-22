@@ -4,7 +4,6 @@ import {
   Zap, 
   Users, 
   Clock,
-  Download,
   Calendar,
   Filter,
   X,
@@ -24,6 +23,13 @@ import {
 } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { mockUsageStats, mockModels, mockDepartments, mockMembers } from '@/data/mockData';
 import { format, subDays, startOfDay, endOfDay } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
@@ -40,22 +46,23 @@ import {
   Pie,
   Cell,
   Legend,
-  BarChart,
-  Bar,
 } from 'recharts';
 
 const COLORS = ['hsl(217, 91%, 60%)', 'hsl(142, 76%, 36%)', 'hsl(38, 92%, 50%)', 'hsl(215, 16%, 47%)', 'hsl(280, 67%, 50%)'];
 
 // Flatten departments for display names
-const flattenDepartmentsHelper = (depts: Department[], prefix = ''): { id: string; name: string }[] => {
-  const result: { id: string; name: string }[] = [];
-  depts.forEach(dept => {
-    const displayName = prefix ? `${prefix} / ${dept.name}` : dept.name;
-    result.push({ id: dept.id, name: displayName });
-    if (dept.children && dept.children.length > 0) {
-      result.push(...flattenDepartmentsHelper(dept.children, displayName));
-    }
-  });
+const flattenDepartmentsHelper = (depts: Department[], prefix = ''): { id: string; name: string; level: number }[] => {
+  const result: { id: string; name: string; level: number }[] = [];
+  const processLevel = (departments: Department[], currentPrefix: string, level: number) => {
+    departments.forEach(dept => {
+      const displayName = currentPrefix ? `${currentPrefix} / ${dept.name}` : dept.name;
+      result.push({ id: dept.id, name: displayName, level });
+      if (dept.children && dept.children.length > 0) {
+        processLevel(dept.children, displayName, level + 1);
+      }
+    });
+  };
+  processLevel(depts, prefix, 1);
   return result;
 };
 
@@ -415,13 +422,20 @@ function DateRangePicker({
   );
 }
 
-// Mock department usage data
+// Mock department usage data - all departments
 const mockDepartmentUsage = [
-  { name: '技术中心', tokens: 1200000, requests: 5800, users: 15, percentage: 46 },
-  { name: '产品设计部', tokens: 780000, requests: 3200, users: 8, percentage: 30 },
-  { name: '市场运营部', tokens: 380000, requests: 1800, users: 6, percentage: 15 },
-  { name: '行政人事部', tokens: 120000, requests: 600, users: 4, percentage: 5 },
-  { name: '财务部', tokens: 100000, requests: 500, users: 3, percentage: 4 },
+  { name: '技术中心', tokens: 1200000, requests: 5800, users: 15, percentage: 46, level: 1 },
+  { name: '前端开发组', tokens: 480000, requests: 2200, users: 6, percentage: 18, level: 2 },
+  { name: '后端开发组', tokens: 520000, requests: 2500, users: 5, percentage: 20, level: 2 },
+  { name: '测试组', tokens: 200000, requests: 1100, users: 4, percentage: 8, level: 2 },
+  { name: '产品设计部', tokens: 780000, requests: 3200, users: 8, percentage: 30, level: 1 },
+  { name: '产品经理组', tokens: 420000, requests: 1800, users: 4, percentage: 16, level: 2 },
+  { name: 'UI设计组', tokens: 360000, requests: 1400, users: 4, percentage: 14, level: 2 },
+  { name: '市场运营部', tokens: 380000, requests: 1800, users: 6, percentage: 15, level: 1 },
+  { name: '内容运营组', tokens: 200000, requests: 900, users: 3, percentage: 8, level: 2 },
+  { name: '推广运营组', tokens: 180000, requests: 900, users: 3, percentage: 7, level: 2 },
+  { name: '行政人事部', tokens: 120000, requests: 600, users: 4, percentage: 5, level: 1 },
+  { name: '财务部', tokens: 100000, requests: 500, users: 3, percentage: 4, level: 1 },
 ];
 
 // Mock member usage data
@@ -434,6 +448,15 @@ const mockMemberUsage = [
   { name: '孙八', department: '产品设计部', tokens: 120000, requests: 580, avgLatency: 2.0 },
   { name: '周九', department: '技术中心', tokens: 110000, requests: 520, avgLatency: 1.5 },
   { name: '吴十', department: '市场运营部', tokens: 95000, requests: 450, avgLatency: 2.2 },
+];
+
+// Mock model average latency data
+const mockModelLatency = [
+  { model: 'Kimi', avgLatency: 1.8, requests: 4200 },
+  { model: 'Qwen 2.5', avgLatency: 1.5, requests: 3800 },
+  { model: 'DeepSeek V3', avgLatency: 2.1, requests: 2500 },
+  { model: 'GLM-4', avgLatency: 1.9, requests: 1200 },
+  { model: '文心一言', avgLatency: 2.4, requests: 750 },
 ];
 
 export function UsageDashboard() {
@@ -449,9 +472,22 @@ export function UsageDashboard() {
   const [selectedDepartments, setSelectedDepartments] = useState<string[]>([]);
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
 
+  // Trend chart data selection - default all selected
+  const [selectedTrendMetrics, setSelectedTrendMetrics] = useState<string[]>(['users', 'tokens', 'requests']);
+
+  // Department level filter for organization tab
+  const [selectedDepartmentLevel, setSelectedDepartmentLevel] = useState<string>('all');
+
   // Prepare options for multi-select
   const modelOptions = mockModels.map(m => ({ id: m.id, name: m.name }));
   const memberOptions = mockMembers.map(m => ({ id: m.id, name: m.name }));
+
+  // Trend metrics options
+  const trendMetricOptions = [
+    { id: 'users', name: '活跃用户数' },
+    { id: 'tokens', name: 'Token量' },
+    { id: 'requests', name: '调用次数' },
+  ];
 
   // Get date range based on selection
   const getDateRange = () => {
@@ -513,38 +549,36 @@ export function UsageDashboard() {
       if (selectedMembers.length > 0) multiplier *= (selectedMembers.length / mockMembers.length) * 0.5;
 
       data.push({
-        date: format(date, 'MM-dd'),
+        date: format(date, 'MM/dd'),
         tokens: Math.round(baseTokens * multiplier),
         requests: Math.round(baseRequests * multiplier),
         users: Math.round(baseUsers * multiplier),
-        latency: +(1.5 + Math.random() * 0.8).toFixed(2),
       });
     }
+
     return data;
   }, [dateRangeType, selectedModels, selectedDepartments, selectedMembers]);
 
-  // Check if any filter is active based on tab
-  const hasActiveFilters = useMemo(() => {
-    if (activeTab === 'global') {
-      return selectedModels.length > 0;
-    } else if (activeTab === 'organization') {
-      return selectedModels.length > 0 || selectedDepartments.length > 0;
-    } else {
-      return selectedModels.length > 0 || selectedDepartments.length > 0 || selectedMembers.length > 0;
-    }
-  }, [activeTab, selectedModels, selectedDepartments, selectedMembers]);
+  // Check if any filters are active
+  const hasActiveFilters = selectedModels.length > 0 || 
+    (selectedDepartments.length > 0 && (activeTab === 'organization' || activeTab === 'member')) ||
+    (selectedMembers.length > 0 && activeTab === 'member');
 
   const clearFilters = () => {
     setSelectedModels([]);
-    if (activeTab === 'organization' || activeTab === 'member') {
-      setSelectedDepartments([]);
-    }
-    if (activeTab === 'member') {
-      setSelectedMembers([]);
-    }
+    setSelectedDepartments([]);
+    setSelectedMembers([]);
   };
 
-  // Render filter bar based on active tab
+  // Filter department usage based on selected level
+  const filteredDepartmentUsage = useMemo(() => {
+    if (selectedDepartmentLevel === 'all') {
+      return mockDepartmentUsage;
+    }
+    const level = parseInt(selectedDepartmentLevel);
+    return mockDepartmentUsage.filter(dept => dept.level === level);
+  }, [selectedDepartmentLevel]);
+
   const renderFilterBar = () => (
     <div className="enterprise-card p-4 mb-6">
       <div className="flex flex-wrap items-center gap-3">
@@ -591,11 +625,6 @@ export function UsageDashboard() {
         )}
 
         <div className="flex-1" />
-
-        <Button variant="outline" size="sm" className="gap-2">
-          <Download className="w-4 h-4" />
-          导出报告
-        </Button>
       </div>
 
       {/* Active Filters Display */}
@@ -688,7 +717,15 @@ export function UsageDashboard() {
       {/* Trend Chart */}
       {showTrendChart && (
         <div className="enterprise-card p-5">
-          <h3 className="font-semibold text-foreground mb-4">使用趋势</h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="font-semibold text-foreground">使用趋势</h3>
+            <MultiSelectDropdown
+              options={trendMetricOptions}
+              selected={selectedTrendMetrics}
+              onChange={setSelectedTrendMetrics}
+              placeholder="选择数据项"
+            />
+          </div>
           <div className="h-80">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={trendData}>
@@ -718,9 +755,8 @@ export function UsageDashboard() {
                   }}
                   formatter={(value: number, name: string) => {
                     if (name === 'tokens') return [`${(value / 1000).toFixed(1)}K`, 'Token量'];
-                    if (name === 'requests') return [value, '请求数'];
-                    if (name === 'users') return [value, '用户数'];
-                    if (name === 'latency') return [`${value}s`, '平均耗时'];
+                    if (name === 'requests') return [value, '调用次数'];
+                    if (name === 'users') return [value, '活跃用户数'];
                     return [value, name];
                   }}
                 />
@@ -728,52 +764,49 @@ export function UsageDashboard() {
                   formatter={(value) => {
                     const labels: Record<string, string> = {
                       tokens: 'Token量',
-                      requests: '请求数',
-                      users: '用户数',
-                      latency: '平均耗时',
+                      requests: '调用次数',
+                      users: '活跃用户数',
                     };
                     return labels[value] || value;
                   }}
                 />
-                <Line 
-                  yAxisId="right"
-                  type="monotone" 
-                  dataKey="tokens" 
-                  stroke="hsl(var(--primary))" 
-                  strokeWidth={2}
-                  dot={{ fill: 'hsl(var(--primary))', strokeWidth: 0, r: 3 }}
-                />
-                <Line 
-                  yAxisId="left"
-                  type="monotone" 
-                  dataKey="requests" 
-                  stroke="hsl(142, 76%, 36%)" 
-                  strokeWidth={2}
-                  dot={{ fill: 'hsl(142, 76%, 36%)', strokeWidth: 0, r: 3 }}
-                />
-                <Line 
-                  yAxisId="left"
-                  type="monotone" 
-                  dataKey="users" 
-                  stroke="hsl(38, 92%, 50%)" 
-                  strokeWidth={2}
-                  dot={{ fill: 'hsl(38, 92%, 50%)', strokeWidth: 0, r: 3 }}
-                />
-                <Line 
-                  yAxisId="left"
-                  type="monotone" 
-                  dataKey="latency" 
-                  stroke="hsl(280, 67%, 50%)" 
-                  strokeWidth={2}
-                  dot={{ fill: 'hsl(280, 67%, 50%)', strokeWidth: 0, r: 3 }}
-                />
+                {selectedTrendMetrics.includes('tokens') && (
+                  <Line 
+                    yAxisId="right"
+                    type="monotone" 
+                    dataKey="tokens" 
+                    stroke="hsl(var(--primary))" 
+                    strokeWidth={2}
+                    dot={{ fill: 'hsl(var(--primary))', strokeWidth: 0, r: 3 }}
+                  />
+                )}
+                {selectedTrendMetrics.includes('requests') && (
+                  <Line 
+                    yAxisId="left"
+                    type="monotone" 
+                    dataKey="requests" 
+                    stroke="hsl(142, 76%, 36%)" 
+                    strokeWidth={2}
+                    dot={{ fill: 'hsl(142, 76%, 36%)', strokeWidth: 0, r: 3 }}
+                  />
+                )}
+                {selectedTrendMetrics.includes('users') && (
+                  <Line 
+                    yAxisId="left"
+                    type="monotone" 
+                    dataKey="users" 
+                    stroke="hsl(38, 92%, 50%)" 
+                    strokeWidth={2}
+                    dot={{ fill: 'hsl(38, 92%, 50%)', strokeWidth: 0, r: 3 }}
+                  />
+                )}
               </LineChart>
             </ResponsiveContainer>
           </div>
         </div>
       )}
 
-      {/* Model Distribution */}
+      {/* Model Distribution & Model Average Latency */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="enterprise-card p-5">
           <h3 className="font-semibold text-foreground mb-4">模型分布</h3>
@@ -820,31 +853,28 @@ export function UsageDashboard() {
           </div>
         </div>
 
-        {/* Quick Overview */}
+        {/* Model Average Latency */}
         <div className="enterprise-card p-5">
-          <h3 className="font-semibold text-foreground mb-4">快速概览</h3>
+          <h3 className="font-semibold text-foreground mb-4">按模型的平均耗时</h3>
           <div className="space-y-4">
-            <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-              <div className="flex items-center gap-3">
-                <Building2 className="w-5 h-5 text-muted-foreground" />
-                <span className="text-sm text-foreground">部门数量</span>
+            {mockModelLatency.map((item, index) => (
+              <div key={item.model} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <div 
+                    className="w-3 h-3 rounded-full"
+                    style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                  />
+                  <div>
+                    <span className="text-sm font-medium text-foreground">{item.model}</span>
+                    <span className="text-xs text-muted-foreground ml-2">({item.requests.toLocaleString()} 次请求)</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-muted-foreground" />
+                  <span className="font-semibold text-foreground">{item.avgLatency}s</span>
+                </div>
               </div>
-              <span className="font-semibold text-foreground">{allDepartmentsFlat.length}</span>
-            </div>
-            <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-              <div className="flex items-center gap-3">
-                <Users className="w-5 h-5 text-muted-foreground" />
-                <span className="text-sm text-foreground">成员总数</span>
-              </div>
-              <span className="font-semibold text-foreground">{mockMembers.length}</span>
-            </div>
-            <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-              <div className="flex items-center gap-3">
-                <Zap className="w-5 h-5 text-muted-foreground" />
-                <span className="text-sm text-foreground">可用模型</span>
-              </div>
-              <span className="font-semibold text-foreground">{mockModels.filter(m => m.enabled).length}</span>
-            </div>
+            ))}
           </div>
         </div>
       </div>
@@ -887,32 +917,21 @@ export function UsageDashboard() {
         </div>
       </div>
 
-      {/* Department Usage Chart */}
-      <div className="enterprise-card p-5">
-        <h3 className="font-semibold text-foreground mb-4">部门用量对比</h3>
-        <div className="h-72">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={mockDepartmentUsage} layout="vertical">
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-              <XAxis type="number" stroke="hsl(var(--muted-foreground))" fontSize={12} tickFormatter={(value) => `${(value / 1000).toFixed(0)}K`} />
-              <YAxis dataKey="name" type="category" stroke="hsl(var(--muted-foreground))" fontSize={12} width={100} />
-              <Tooltip 
-                contentStyle={{
-                  backgroundColor: 'hsl(var(--card))',
-                  border: '1px solid hsl(var(--border))',
-                  borderRadius: '8px',
-                }}
-                formatter={(value: number) => [`${(value / 1000).toFixed(1)}K Tokens`, 'Token消耗']}
-              />
-              <Bar dataKey="tokens" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
       {/* Department Usage Table */}
       <div className="enterprise-card p-5">
-        <h3 className="font-semibold text-foreground mb-4">部门用量排行</h3>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-semibold text-foreground">部门用量</h3>
+          <Select value={selectedDepartmentLevel} onValueChange={setSelectedDepartmentLevel}>
+            <SelectTrigger className="w-[140px] h-9">
+              <SelectValue placeholder="选择层级" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">全部层级</SelectItem>
+              <SelectItem value="1">一级部门</SelectItem>
+              <SelectItem value="2">二级部门</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
         <div className="border border-border rounded-lg overflow-hidden">
           <table className="w-full">
             <thead>
@@ -926,7 +945,7 @@ export function UsageDashboard() {
               </tr>
             </thead>
             <tbody>
-              {mockDepartmentUsage.map((dept, index) => (
+              {filteredDepartmentUsage.map((dept, index) => (
                 <tr key={dept.name} className="border-t border-border hover:bg-muted/20 transition-colors">
                   <td className="px-4 py-3">
                     <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-medium ${
