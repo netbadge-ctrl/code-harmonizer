@@ -427,20 +427,20 @@ function DateRangePicker({
 
 // Mock department usage data - all departments with 3 levels
 const mockDepartmentUsage = [
-  { id: 'dept-1', name: '技术中心', tokens: 1200000, requests: 5800, users: 15, percentage: 46, level: 1, parentId: null },
-  { id: 'dept-1-1', name: '前端开发组', tokens: 480000, requests: 2200, users: 6, percentage: 18, level: 2, parentId: 'dept-1' },
-  { id: 'dept-1-2', name: '后端开发组', tokens: 520000, requests: 2500, users: 5, percentage: 20, level: 2, parentId: 'dept-1' },
-  { id: 'dept-1-2-1', name: 'Java 小组', tokens: 280000, requests: 1300, users: 3, percentage: 11, level: 3, parentId: 'dept-1-2' },
-  { id: 'dept-1-2-2', name: 'Go 小组', tokens: 240000, requests: 1200, users: 2, percentage: 9, level: 3, parentId: 'dept-1-2' },
-  { id: 'dept-1-3', name: 'DevOps 组', tokens: 200000, requests: 1100, users: 4, percentage: 8, level: 2, parentId: 'dept-1' },
-  { id: 'dept-2', name: '产品设计部', tokens: 780000, requests: 3200, users: 8, percentage: 30, level: 1, parentId: null },
-  { id: 'dept-2-1', name: 'UI/UX 设计组', tokens: 420000, requests: 1800, users: 4, percentage: 16, level: 2, parentId: 'dept-2' },
-  { id: 'dept-2-2', name: '产品经理组', tokens: 360000, requests: 1400, users: 4, percentage: 14, level: 2, parentId: 'dept-2' },
-  { id: 'dept-3', name: '市场运营部', tokens: 380000, requests: 1800, users: 6, percentage: 15, level: 1, parentId: null },
-  { id: 'dept-3-1', name: '内容运营组', tokens: 200000, requests: 900, users: 3, percentage: 8, level: 2, parentId: 'dept-3' },
-  { id: 'dept-3-2', name: '推广运营组', tokens: 180000, requests: 900, users: 3, percentage: 7, level: 2, parentId: 'dept-3' },
-  { id: 'dept-4', name: '行政人事部', tokens: 120000, requests: 600, users: 4, percentage: 5, level: 1, parentId: null },
-  { id: 'dept-5', name: '财务部', tokens: 100000, requests: 500, users: 3, percentage: 4, level: 1, parentId: null },
+  { id: 'dept-1', name: '技术中心', tokens: 1200000, requests: 5800, totalMembers: 20, activeUsers: 15, percentage: 46, level: 1, parentId: null },
+  { id: 'dept-1-1', name: '前端开发组', tokens: 480000, requests: 2200, totalMembers: 8, activeUsers: 6, percentage: 18, level: 2, parentId: 'dept-1' },
+  { id: 'dept-1-2', name: '后端开发组', tokens: 520000, requests: 2500, totalMembers: 7, activeUsers: 5, percentage: 20, level: 2, parentId: 'dept-1' },
+  { id: 'dept-1-2-1', name: 'Java 小组', tokens: 280000, requests: 1300, totalMembers: 4, activeUsers: 3, percentage: 11, level: 3, parentId: 'dept-1-2' },
+  { id: 'dept-1-2-2', name: 'Go 小组', tokens: 240000, requests: 1200, totalMembers: 3, activeUsers: 2, percentage: 9, level: 3, parentId: 'dept-1-2' },
+  { id: 'dept-1-3', name: 'DevOps 组', tokens: 200000, requests: 1100, totalMembers: 5, activeUsers: 4, percentage: 8, level: 2, parentId: 'dept-1' },
+  { id: 'dept-2', name: '产品设计部', tokens: 780000, requests: 3200, totalMembers: 10, activeUsers: 8, percentage: 30, level: 1, parentId: null },
+  { id: 'dept-2-1', name: 'UI/UX 设计组', tokens: 420000, requests: 1800, totalMembers: 5, activeUsers: 4, percentage: 16, level: 2, parentId: 'dept-2' },
+  { id: 'dept-2-2', name: '产品经理组', tokens: 360000, requests: 1400, totalMembers: 5, activeUsers: 4, percentage: 14, level: 2, parentId: 'dept-2' },
+  { id: 'dept-3', name: '市场运营部', tokens: 380000, requests: 1800, totalMembers: 8, activeUsers: 6, percentage: 15, level: 1, parentId: null },
+  { id: 'dept-3-1', name: '内容运营组', tokens: 200000, requests: 900, totalMembers: 4, activeUsers: 3, percentage: 8, level: 2, parentId: 'dept-3' },
+  { id: 'dept-3-2', name: '推广运营组', tokens: 180000, requests: 900, totalMembers: 4, activeUsers: 3, percentage: 7, level: 2, parentId: 'dept-3' },
+  { id: 'dept-4', name: '行政人事部', tokens: 120000, requests: 600, totalMembers: 6, activeUsers: 4, percentage: 5, level: 1, parentId: null },
+  { id: 'dept-5', name: '财务部', tokens: 100000, requests: 500, totalMembers: 4, activeUsers: 3, percentage: 4, level: 1, parentId: null },
 ];
 
 // Get departments by level for the dropdown
@@ -1128,7 +1128,8 @@ export function UsageDashboard() {
                     <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">组织名称</th>
                     <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">Token消耗</th>
                     <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">请求数</th>
-                    <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">用户数</th>
+                    <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">成员总数</th>
+                    <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">活跃用户数</th>
                     <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">占比</th>
                     <th className="px-4 py-3 text-center text-sm font-medium text-muted-foreground">操作</th>
                   </tr>
@@ -1146,7 +1147,8 @@ export function UsageDashboard() {
                       <td className="px-4 py-3 font-medium text-foreground">{dept.name}</td>
                       <td className="px-4 py-3 text-right text-foreground">{(dept.tokens / 1000).toFixed(0)}K</td>
                       <td className="px-4 py-3 text-right text-foreground">{dept.requests.toLocaleString()}</td>
-                      <td className="px-4 py-3 text-right text-foreground">{dept.users}</td>
+                      <td className="px-4 py-3 text-right text-foreground">{dept.totalMembers}</td>
+                      <td className="px-4 py-3 text-right text-foreground">{dept.activeUsers}</td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-2">
                           <div className="w-16 h-2 bg-muted rounded-full overflow-hidden">
