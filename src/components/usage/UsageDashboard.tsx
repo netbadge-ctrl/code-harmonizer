@@ -5,8 +5,6 @@ import {
   Users, 
   Clock,
   Calendar,
-  Filter,
-  X,
   ChevronDown,
   ChevronRight,
   Building2,
@@ -17,7 +15,6 @@ import {
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
@@ -27,13 +24,6 @@ import {
 } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { mockUsageStats, mockModels, mockDepartments, mockMembers } from '@/data/mockData';
 import { format, subDays, startOfDay, endOfDay } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
@@ -70,275 +60,6 @@ const flattenDepartmentsHelper = (depts: Department[], prefix = ''): { id: strin
 };
 
 const allDepartmentsFlat = flattenDepartmentsHelper(mockDepartments);
-
-// Get all descendant IDs of a department
-const getDescendantIds = (dept: Department): string[] => {
-  const ids: string[] = [];
-  if (dept.children) {
-    dept.children.forEach(child => {
-      ids.push(child.id);
-      ids.push(...getDescendantIds(child));
-    });
-  }
-  return ids;
-};
-
-// Cascading Department Tree Node
-function DepartmentTreeNode({
-  dept,
-  selected,
-  onChange,
-  expanded,
-  onToggleExpand,
-  level = 0,
-}: {
-  dept: Department;
-  selected: string[];
-  onChange: (selected: string[]) => void;
-  expanded: string[];
-  onToggleExpand: (id: string) => void;
-  level?: number;
-}) {
-  const hasChildren = dept.children && dept.children.length > 0;
-  const isExpanded = expanded.includes(dept.id);
-  const isSelected = selected.includes(dept.id);
-  
-  // Check if all children are selected
-  const allChildrenSelected = hasChildren && dept.children!.every(child => {
-    const descendantIds = [child.id, ...getDescendantIds(child)];
-    return descendantIds.every(id => selected.includes(id));
-  });
-  
-  // Check if some children are selected
-  const someChildrenSelected = hasChildren && dept.children!.some(child => {
-    const descendantIds = [child.id, ...getDescendantIds(child)];
-    return descendantIds.some(id => selected.includes(id));
-  });
-
-  const handleToggle = () => {
-    const descendantIds = getDescendantIds(dept);
-    const allIds = [dept.id, ...descendantIds];
-    
-    if (isSelected || allChildrenSelected) {
-      // Deselect this and all descendants
-      onChange(selected.filter(id => !allIds.includes(id)));
-    } else {
-      // Select this and all descendants
-      onChange([...new Set([...selected, ...allIds])]);
-    }
-  };
-
-  return (
-    <div>
-      <div
-        className="flex items-center gap-1 px-2 py-1.5 rounded-md hover:bg-accent cursor-pointer"
-        style={{ paddingLeft: `${level * 16 + 8}px` }}
-      >
-        {hasChildren ? (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onToggleExpand(dept.id);
-            }}
-            className="p-0.5 hover:bg-muted rounded"
-          >
-            {isExpanded ? (
-              <ChevronDown className="w-3 h-3 text-muted-foreground" />
-            ) : (
-              <ChevronRight className="w-3 h-3 text-muted-foreground" />
-            )}
-          </button>
-        ) : (
-          <div className="w-4" />
-        )}
-        <div
-          className="flex items-center gap-2 flex-1"
-          onClick={handleToggle}
-        >
-          <Checkbox 
-            checked={isSelected || allChildrenSelected}
-            className={`pointer-events-none ${someChildrenSelected && !allChildrenSelected ? 'data-[state=checked]:bg-primary/50' : ''}`}
-          />
-          <span className="text-sm">{dept.name}</span>
-          <span className="text-xs text-muted-foreground">({dept.memberCount}人)</span>
-        </div>
-      </div>
-      {hasChildren && isExpanded && (
-        <div>
-          {dept.children!.map(child => (
-            <DepartmentTreeNode
-              key={child.id}
-              dept={child}
-              selected={selected}
-              onChange={onChange}
-              expanded={expanded}
-              onToggleExpand={onToggleExpand}
-              level={level + 1}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// Cascading Department Multi-Select
-function CascadingDepartmentSelect({
-  selected,
-  onChange,
-  placeholder,
-}: {
-  selected: string[];
-  onChange: (selected: string[]) => void;
-  placeholder: string;
-}) {
-  const [open, setOpen] = useState(false);
-  const [expanded, setExpanded] = useState<string[]>(['dept-1', 'dept-2']);
-
-  const toggleExpand = (id: string) => {
-    setExpanded(prev => 
-      prev.includes(id) ? prev.filter(e => e !== id) : [...prev, id]
-    );
-  };
-
-  const selectAll = () => {
-    onChange(allDepartmentsFlat.map(d => d.id));
-  };
-
-  const clearAll = () => {
-    onChange([]);
-  };
-
-  const getDisplayText = () => {
-    if (selected.length === 0) return placeholder;
-    if (selected.length === 1) {
-      return allDepartmentsFlat.find(d => d.id === selected[0])?.name || placeholder;
-    }
-    return `已选 ${selected.length} 个部门`;
-  };
-
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          className="h-9 gap-2 min-w-[140px] justify-between"
-        >
-          <span className="truncate">{getDisplayText()}</span>
-          <ChevronDown className="w-4 h-4 shrink-0 opacity-50" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-72 p-0 bg-popover border border-border shadow-lg z-50" align="start">
-        <div className="p-2 border-b border-border flex gap-2">
-          <Button variant="ghost" size="sm" className="h-7 text-xs flex-1" onClick={selectAll}>
-            全选
-          </Button>
-          <Button variant="ghost" size="sm" className="h-7 text-xs flex-1" onClick={clearAll}>
-            清空
-          </Button>
-        </div>
-        <ScrollArea className="h-[280px]">
-          <div className="p-1">
-            {mockDepartments.map(dept => (
-              <DepartmentTreeNode
-                key={dept.id}
-                dept={dept}
-                selected={selected}
-                onChange={onChange}
-                expanded={expanded}
-                onToggleExpand={toggleExpand}
-              />
-            ))}
-          </div>
-        </ScrollArea>
-      </PopoverContent>
-    </Popover>
-  );
-}
-
-// Multi-select dropdown component (for models and members)
-function MultiSelectDropdown({
-  options,
-  selected,
-  onChange,
-  placeholder,
-}: {
-  options: { id: string; name: string }[];
-  selected: string[];
-  onChange: (selected: string[]) => void;
-  placeholder: string;
-}) {
-  const [open, setOpen] = useState(false);
-
-  const toggleOption = (id: string) => {
-    if (selected.includes(id)) {
-      onChange(selected.filter(s => s !== id));
-    } else {
-      onChange([...selected, id]);
-    }
-  };
-
-  const selectAll = () => {
-    onChange(options.map(o => o.id));
-  };
-
-  const clearAll = () => {
-    onChange([]);
-  };
-
-  const getDisplayText = () => {
-    if (selected.length === 0) return placeholder;
-    if (selected.length === 1) {
-      return options.find(o => o.id === selected[0])?.name || placeholder;
-    }
-    return `已选 ${selected.length} 项`;
-  };
-
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button 
-          variant="outline" 
-          size="sm" 
-          className="h-9 gap-2 min-w-[140px] justify-between"
-        >
-          <span className="truncate">{getDisplayText()}</span>
-          <ChevronDown className="w-4 h-4 shrink-0 opacity-50" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-56 p-0 bg-popover border border-border shadow-lg z-50" align="start">
-        <div className="p-2 border-b border-border flex gap-2">
-          <Button variant="ghost" size="sm" className="h-7 text-xs flex-1" onClick={selectAll}>
-            全选
-          </Button>
-          <Button variant="ghost" size="sm" className="h-7 text-xs flex-1" onClick={clearAll}>
-            清空
-          </Button>
-        </div>
-        <ScrollArea className="h-[200px]">
-          <div className="p-2 space-y-1">
-            {options.map(option => (
-              <div
-                key={option.id}
-                className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-accent cursor-pointer"
-                onClick={() => toggleOption(option.id)}
-              >
-                <Checkbox 
-                  checked={selected.includes(option.id)}
-                  onCheckedChange={() => toggleOption(option.id)}
-                  className="pointer-events-none"
-                />
-                <span className="text-sm truncate">{option.name}</span>
-              </div>
-            ))}
-          </div>
-        </ScrollArea>
-      </PopoverContent>
-    </Popover>
-  );
-}
-
 const allDepartments = allDepartmentsFlat;
 
 type DateRangeType = 'today' | 'yesterday' | '7days' | '30days' | 'custom';
@@ -425,6 +146,88 @@ function DateRangePicker({
   );
 }
 
+// Multi-select dropdown component (for trend metrics)
+function MultiSelectDropdown({
+  options,
+  selected,
+  onChange,
+  placeholder,
+}: {
+  options: { id: string; name: string }[];
+  selected: string[];
+  onChange: (selected: string[]) => void;
+  placeholder: string;
+}) {
+  const [open, setOpen] = useState(false);
+
+  const toggleOption = (id: string) => {
+    if (selected.includes(id)) {
+      onChange(selected.filter(s => s !== id));
+    } else {
+      onChange([...selected, id]);
+    }
+  };
+
+  const selectAll = () => {
+    onChange(options.map(o => o.id));
+  };
+
+  const clearAll = () => {
+    onChange([]);
+  };
+
+  const getDisplayText = () => {
+    if (selected.length === 0) return placeholder;
+    if (selected.length === 1) {
+      return options.find(o => o.id === selected[0])?.name || placeholder;
+    }
+    return `已选 ${selected.length} 项`;
+  };
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="h-9 gap-2 min-w-[140px] justify-between"
+        >
+          <span className="truncate">{getDisplayText()}</span>
+          <ChevronDown className="w-4 h-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-56 p-0 bg-popover border border-border shadow-lg z-50" align="start">
+        <div className="p-2 border-b border-border flex gap-2">
+          <Button variant="ghost" size="sm" className="h-7 text-xs flex-1" onClick={selectAll}>
+            全选
+          </Button>
+          <Button variant="ghost" size="sm" className="h-7 text-xs flex-1" onClick={clearAll}>
+            清空
+          </Button>
+        </div>
+        <ScrollArea className="h-[200px]">
+          <div className="p-2 space-y-1">
+            {options.map(option => (
+              <div
+                key={option.id}
+                className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-accent cursor-pointer"
+                onClick={() => toggleOption(option.id)}
+              >
+                <Checkbox 
+                  checked={selected.includes(option.id)}
+                  onCheckedChange={() => toggleOption(option.id)}
+                  className="pointer-events-none"
+                />
+                <span className="text-sm truncate">{option.name}</span>
+              </div>
+            ))}
+          </div>
+        </ScrollArea>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 // Mock department usage data - all departments with 3 levels
 const mockDepartmentUsage = [
   { id: 'dept-1', name: '技术中心', tokens: 1200000, requests: 5800, totalMembers: 20, activeUsers: 15, percentage: 46, level: 1, parentId: null },
@@ -442,11 +245,6 @@ const mockDepartmentUsage = [
   { id: 'dept-4', name: '行政人事部', tokens: 120000, requests: 600, totalMembers: 6, activeUsers: 4, percentage: 5, level: 1, parentId: null },
   { id: 'dept-5', name: '财务部', tokens: 100000, requests: 500, totalMembers: 4, activeUsers: 3, percentage: 4, level: 1, parentId: null },
 ];
-
-// Get departments by level for the dropdown
-const getDepartmentsByLevel = (level: number) => {
-  return mockDepartmentUsage.filter(d => d.level === level);
-};
 
 // Mock member usage data with detailed info - linked to department IDs
 const mockMemberUsage = [
@@ -1024,10 +822,7 @@ const getAllDescendantDeptIds = (deptId: string): string[] => {
 
 // Helper function to check if a member belongs to a department (including all child departments)
 const memberBelongsToDepartment = (member: typeof mockMemberUsage[0], deptId: string): boolean => {
-  // Direct match
   if (member.departmentId === deptId) return true;
-  
-  // Check if member's department is any descendant of the given department
   const descendantIds = getAllDescendantDeptIds(deptId);
   return descendantIds.includes(member.departmentId);
 };
@@ -1044,43 +839,20 @@ const mockModelLatency = [
 export function UsageDashboard() {
   const [activeTab, setActiveTab] = useState('global');
   
-  // Filter states
+  // Global date range state (shared between tabs)
   const [dateRangeType, setDateRangeType] = useState<DateRangeType>('7days');
   const [customDateRange, setCustomDateRange] = useState<{ from: Date | undefined; to: Date | undefined }>({
     from: undefined,
     to: undefined,
   });
-  const [selectedModels, setSelectedModels] = useState<string[]>([]);
-  const [selectedDepartments, setSelectedDepartments] = useState<string[]>([]);
-  const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
 
   // Trend chart data selection - default all selected
   const [selectedTrendMetrics, setSelectedTrendMetrics] = useState<string[]>(['users', 'tokens', 'requests']);
 
-  // Organization drill-down state
-  const [orgBreadcrumb, setOrgBreadcrumb] = useState<{ id: string | null; name: string }[]>([
-    { id: null, name: '全部组织' }
-  ]);
-  // View mode for organization: 'department' or 'member'
-  const [orgViewMode, setOrgViewMode] = useState<'department' | 'member'>('department');
-  
-  // Member search state for organization member view
-  const [memberSearchQuery, setMemberSearchQuery] = useState('');
+  // Organization view state
+  const [selectedDeptId, setSelectedDeptId] = useState<string | null>(null);
   const [selectedMemberDetail, setSelectedMemberDetail] = useState<typeof mockMemberUsage[0] | null>(null);
-  
-  // Filter members by search query
-  const filteredSearchMembers = useMemo(() => {
-    if (!memberSearchQuery.trim()) return [];
-    const query = memberSearchQuery.toLowerCase();
-    return mockMemberUsage.filter(m => 
-      m.name.toLowerCase().includes(query) || 
-      m.email.toLowerCase().includes(query)
-    );
-  }, [memberSearchQuery]);
-
-  // Prepare options for multi-select
-  const modelOptions = mockModels.map(m => ({ id: m.id, name: m.name }));
-  const memberOptions = mockMembers.map(m => ({ id: m.id, name: m.name }));
+  const [memberSearchQuery, setMemberSearchQuery] = useState('');
 
   // Trend metrics options
   const trendMetricOptions = [
@@ -1089,47 +861,21 @@ export function UsageDashboard() {
     { id: 'requests', name: '调用次数' },
   ];
 
-  // Get date range based on selection
-  const getDateRange = () => {
-    const now = new Date();
-    switch (dateRangeType) {
-      case 'today':
-        return { from: startOfDay(now), to: endOfDay(now) };
-      case 'yesterday':
-        const yesterday = subDays(now, 1);
-        return { from: startOfDay(yesterday), to: endOfDay(yesterday) };
-      case '7days':
-        return { from: startOfDay(subDays(now, 6)), to: endOfDay(now) };
-      case '30days':
-        return { from: startOfDay(subDays(now, 29)), to: endOfDay(now) };
-      case 'custom':
-        return { from: customDateRange.from, to: customDateRange.to };
-      default:
-        return { from: startOfDay(subDays(now, 6)), to: endOfDay(now) };
-    }
-  };
-
   const showTrendChart = dateRangeType !== 'today' && dateRangeType !== 'yesterday';
 
-  // Generate mock data based on filters
+  // Generate mock data based on date range
   const filteredStats = useMemo(() => {
-    let multiplier = 1;
-    
-    if (selectedModels.length > 0) multiplier *= (selectedModels.length / mockModels.length) * 0.8;
-    if (selectedDepartments.length > 0) multiplier *= (selectedDepartments.length / allDepartments.length) * 0.8;
-    if (selectedMembers.length > 0) multiplier *= (selectedMembers.length / mockMembers.length) * 0.5;
-
     const dayCount = dateRangeType === 'today' || dateRangeType === 'yesterday' ? 1 : 
                      dateRangeType === '7days' ? 7 : 
                      dateRangeType === '30days' ? 30 : 7;
 
     return {
-      userCount: Math.round(mockUsageStats.activeUsers * multiplier * (selectedMembers.length > 0 ? 0.3 : 1)),
-      totalTokens: Math.round(mockUsageStats.totalTokens * multiplier * (dayCount / 7)),
-      totalRequests: Math.round(mockUsageStats.totalRequests * multiplier * (dayCount / 7)),
+      userCount: Math.round(mockUsageStats.activeUsers * (dayCount / 7)),
+      totalTokens: Math.round(mockUsageStats.totalTokens * (dayCount / 7)),
+      totalRequests: Math.round(mockUsageStats.totalRequests * (dayCount / 7)),
       avgLatency: mockUsageStats.avgLatency,
     };
-  }, [dateRangeType, selectedModels, selectedDepartments, selectedMembers]);
+  }, [dateRangeType]);
 
   // Generate trend data based on date range
   const trendData = useMemo(() => {
@@ -1143,137 +889,53 @@ export function UsageDashboard() {
       const baseRequests = 1500 + Math.random() * 800;
       const baseUsers = 25 + Math.random() * 20;
 
-      let multiplier = 1;
-      if (selectedModels.length > 0) multiplier *= (selectedModels.length / mockModels.length) * 0.8;
-      if (selectedDepartments.length > 0) multiplier *= (selectedDepartments.length / allDepartments.length) * 0.8;
-      if (selectedMembers.length > 0) multiplier *= (selectedMembers.length / mockMembers.length) * 0.5;
-
       data.push({
         date: format(date, 'MM/dd'),
-        tokens: Math.round(baseTokens * multiplier),
-        requests: Math.round(baseRequests * multiplier),
-        users: Math.round(baseUsers * multiplier),
+        tokens: Math.round(baseTokens),
+        requests: Math.round(baseRequests),
+        users: Math.round(baseUsers),
       });
     }
 
     return data;
-  }, [dateRangeType, selectedModels, selectedDepartments, selectedMembers]);
+  }, [dateRangeType]);
 
-  // Check if any filters are active
-  const hasActiveFilters = selectedModels.length > 0 || 
-    (selectedDepartments.length > 0 && activeTab === 'member') ||
-    (selectedMembers.length > 0 && activeTab === 'member');
+  // Get selected department data
+  const selectedDept = useMemo(() => {
+    if (!selectedDeptId) return null;
+    return mockDepartmentUsage.find(d => d.id === selectedDeptId);
+  }, [selectedDeptId]);
 
-  const clearFilters = () => {
-    setSelectedModels([]);
-    setSelectedDepartments([]);
-    setSelectedMembers([]);
-  };
-
-  // Get current parent id from breadcrumb for drill-down
-  const currentParentId = orgBreadcrumb[orgBreadcrumb.length - 1].id;
-
-  // Get departments for current drill-down level
-  const currentDepartments = useMemo(() => {
-    if (currentParentId === null) {
-      // Show level 1 departments
-      return mockDepartmentUsage.filter(dept => dept.level === 1);
-    }
-    // Show children of current parent
-    return mockDepartmentUsage.filter(dept => dept.parentId === currentParentId);
-  }, [currentParentId]);
-
-  // Get members for current department (when viewing members)
-  const currentDepartmentMembers = useMemo(() => {
-    if (!currentParentId) return mockMemberUsage; // Show all members at root level
-    // Filter members that belong to this department or its children
-    return mockMemberUsage.filter(m => memberBelongsToDepartment(m, currentParentId));
-  }, [currentParentId]);
-
-  // Handle drill-down into a department
-  const handleDrillDown = (deptId: string, deptName: string) => {
-    setOrgBreadcrumb(prev => [...prev, { id: deptId, name: deptName }]);
-    setOrgViewMode('department');
-  };
-
-  // Handle breadcrumb navigation
-  const handleBreadcrumbClick = (index: number) => {
-    setOrgBreadcrumb(prev => prev.slice(0, index + 1));
-    setOrgViewMode('department');
-  };
-
-  // Handle view members of a department
-  const handleViewMembers = (deptId: string, deptName: string) => {
-    setOrgBreadcrumb(prev => [...prev, { id: deptId, name: deptName }]);
-    setOrgViewMode('member');
-  };
+  // Get members for selected department
+  const departmentMembers = useMemo(() => {
+    if (!selectedDeptId) return [];
+    return mockMemberUsage.filter(m => memberBelongsToDepartment(m, selectedDeptId));
+  }, [selectedDeptId]);
 
   // Check if department has children
   const hasChildren = (deptId: string) => {
     return mockDepartmentUsage.some(d => d.parentId === deptId);
   };
 
-  const renderFilterBar = () => (
+  // Get child departments
+  const getChildDepartments = (deptId: string | null) => {
+    if (deptId === null) {
+      return mockDepartmentUsage.filter(d => d.level === 1);
+    }
+    return mockDepartmentUsage.filter(d => d.parentId === deptId);
+  };
+
+  // Render Global Date Range Picker Bar
+  const renderGlobalDatePicker = () => (
     <div className="enterprise-card p-4 mb-6">
       <div className="flex flex-wrap items-center gap-3">
-        {/* Date Range - Always show */}
         <DateRangePicker
           dateRangeType={dateRangeType}
           setDateRangeType={setDateRangeType}
           customDateRange={customDateRange}
           setCustomDateRange={setCustomDateRange}
         />
-
-        {/* Model Filter - Always show */}
-        <MultiSelectDropdown
-          options={modelOptions}
-          selected={selectedModels}
-          onChange={setSelectedModels}
-          placeholder="全部模型"
-        />
-
-
-        {hasActiveFilters && (
-          <Button variant="ghost" size="sm" onClick={clearFilters} className="gap-1 text-muted-foreground">
-            <X className="w-4 h-4" />
-            清除筛选
-          </Button>
-        )}
-
-        <div className="flex-1" />
       </div>
-
-      {/* Active Filters Display */}
-      {hasActiveFilters && (
-        <div className="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-border">
-          <Filter className="w-4 h-4 text-muted-foreground" />
-          <span className="text-sm text-muted-foreground">当前筛选：</span>
-          {selectedModels.length > 0 && (
-            <Badge variant="secondary" className="gap-1">
-              模型: {selectedModels.length === 1 
-                ? mockModels.find(m => m.id === selectedModels[0])?.name 
-                : `${selectedModels.length} 个`}
-              <X className="w-3 h-3 cursor-pointer" onClick={() => setSelectedModels([])} />
-            </Badge>
-          )}
-          {selectedDepartments.length > 0 && activeTab === 'member' && (
-            <Badge variant="secondary" className="gap-1">
-              部门: {selectedDepartments.length === 1 
-                ? allDepartments.find(d => d.id === selectedDepartments[0])?.name 
-                : `${selectedDepartments.length} 个`}
-              <X className="w-3 h-3 cursor-pointer" onClick={() => setSelectedDepartments([])} />
-            </Badge>
-          )}
-          {selectedMembers.length > 0 && activeTab === 'member' && (
-            <Badge variant="secondary" className="gap-1">
-              成员: {selectedMembers.length === 1 
-                ? mockMembers.find(m => m.id === selectedMembers[0])?.name 
-                : `${selectedMembers.length} 人`}
-              <X className="w-3 h-3 cursor-pointer" onClick={() => setSelectedMembers([])} />
-            </Badge>
-          )}
-        </div>
-      )}
     </div>
   );
 
@@ -1445,7 +1107,7 @@ export function UsageDashboard() {
                   dataKey="model" 
                   stroke="hsl(var(--muted-foreground))"
                   fontSize={12}
-                  width={70}
+                  width={75}
                 />
                 <Tooltip 
                   contentStyle={{
@@ -1453,145 +1115,169 @@ export function UsageDashboard() {
                     border: '1px solid hsl(var(--border))',
                     borderRadius: '8px',
                   }}
-                  formatter={(value: number) => [`${(value / 1000).toFixed(0)}K`, 'Token消耗']}
+                  formatter={(value: number) => [`${(value / 1000).toFixed(1)}K tokens`, 'Token消耗']}
                 />
-                <Bar 
-                  dataKey="tokens" 
-                  fill="hsl(var(--primary))" 
-                  radius={[0, 4, 4, 0]}
-                  barSize={24}
-                />
+                <Bar dataKey="tokens" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        {/* Model Average Latency */}
         <div className="enterprise-card p-5">
-          <h3 className="font-semibold text-foreground mb-4">按模型的平均耗时</h3>
-          <div className="space-y-4">
-            {mockModelLatency.map((item, index) => (
-              <div key={item.model} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <div 
-                    className="w-3 h-3 rounded-full"
-                    style={{ backgroundColor: COLORS[index % COLORS.length] }}
-                  />
-                  <div>
-                    <span className="text-sm font-medium text-foreground">{item.model}</span>
-                    <span className="text-xs text-muted-foreground ml-2">({item.requests.toLocaleString()} 次请求)</span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-muted-foreground" />
-                  <span className="font-semibold text-foreground">{item.avgLatency}s</span>
-                </div>
-              </div>
-            ))}
+          <h3 className="font-semibold text-foreground mb-4">模型平均耗时</h3>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart 
+                data={mockModelLatency} 
+                layout="vertical"
+                margin={{ top: 5, right: 30, left: 80, bottom: 5 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis 
+                  type="number" 
+                  stroke="hsl(var(--muted-foreground))"
+                  fontSize={12}
+                  tickFormatter={(value) => `${value}s`}
+                  domain={[0, 3]}
+                />
+                <YAxis 
+                  type="category" 
+                  dataKey="model" 
+                  stroke="hsl(var(--muted-foreground))"
+                  fontSize={12}
+                  width={75}
+                />
+                <Tooltip 
+                  contentStyle={{
+                    backgroundColor: 'hsl(var(--card))',
+                    border: '1px solid hsl(var(--border))',
+                    borderRadius: '8px',
+                  }}
+                  formatter={(value: number, name: string, props: any) => [
+                    `${value}s (${props.payload.requests.toLocaleString()} 次调用)`,
+                    '平均耗时'
+                  ]}
+                />
+                <Bar dataKey="avgLatency" fill="hsl(38, 92%, 50%)" radius={[0, 4, 4, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
         </div>
       </div>
     </div>
   );
 
-  // Render Organization Tab Content
-  const renderOrganizationContent = () => (
-    <div className="space-y-6">
-      {/* Breadcrumb Navigation */}
-      <div className="enterprise-card p-4">
-        <div className="flex items-center gap-2 flex-wrap">
-          {orgBreadcrumb.map((item, index) => (
-            <div key={index} className="flex items-center">
-              {index > 0 && <ChevronRight className="w-4 h-4 text-muted-foreground mx-1" />}
-              <button
-                onClick={() => handleBreadcrumbClick(index)}
-                className={`text-sm px-2 py-1 rounded hover:bg-muted transition-colors ${
-                  index === orgBreadcrumb.length - 1 
-                    ? 'font-medium text-foreground' 
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
+  // Render Organization Department Detail View
+  const renderDepartmentDetail = () => {
+    if (!selectedDept) return null;
+
+    const childDepts = getChildDepartments(selectedDeptId);
+    const filteredMembers = memberSearchQuery.trim()
+      ? departmentMembers.filter(m => 
+          m.name.toLowerCase().includes(memberSearchQuery.toLowerCase()) || 
+          m.email.toLowerCase().includes(memberSearchQuery.toLowerCase())
+        )
+      : departmentMembers;
+
+    return (
+      <div className="space-y-6">
+        {/* Back Button and Header */}
+        <div className="enterprise-card p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="gap-1"
+                onClick={() => {
+                  setSelectedDeptId(null);
+                  setSelectedMemberDetail(null);
+                  setMemberSearchQuery('');
+                }}
               >
-                {item.name}
-              </button>
+                <ArrowLeft className="w-4 h-4" />
+                返回
+              </Button>
+              <div className="flex items-center gap-2">
+                <Building2 className="w-5 h-5 text-primary" />
+                <h2 className="text-lg font-semibold text-foreground">{selectedDept.name}</h2>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Department Stats Overview */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[
+            { 
+              label: 'Token 消耗', 
+              value: selectedDept.tokens >= 1000000 
+                ? `${(selectedDept.tokens / 1000000).toFixed(2)}M`
+                : `${(selectedDept.tokens / 1000).toFixed(0)}K`,
+              icon: Zap,
+            },
+            { 
+              label: '请求数', 
+              value: selectedDept.requests.toLocaleString(),
+              icon: TrendingUp,
+            },
+            { 
+              label: '成员总数', 
+              value: selectedDept.totalMembers.toString(),
+              icon: Users,
+            },
+            { 
+              label: '活跃用户', 
+              value: selectedDept.activeUsers.toString(),
+              icon: User,
+            },
+          ].map((stat, index) => (
+            <div key={index} className="enterprise-card p-5">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-sm text-muted-foreground">{stat.label}</span>
+                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <stat.icon className="w-4 h-4 text-primary" />
+                </div>
+              </div>
+              <p className="text-2xl font-semibold text-foreground">{stat.value}</p>
             </div>
           ))}
-          {orgViewMode === 'member' && (
-            <>
-              <ChevronRight className="w-4 h-4 text-muted-foreground mx-1" />
-              <span className="text-sm font-medium text-primary px-2 py-1">成员用量</span>
-            </>
-          )}
         </div>
-      </div>
 
-      {/* Department View */}
-      {orgViewMode === 'department' && (
-        <div className="enterprise-card p-5">
-          <h3 className="font-semibold text-foreground mb-4">
-            {currentParentId ? '下级组织' : '一级组织'}用量
-          </h3>
-          {currentDepartments.length > 0 ? (
+        {/* Child Departments (if any) */}
+        {childDepts.length > 0 && (
+          <div className="enterprise-card p-5">
+            <h3 className="font-semibold text-foreground mb-4">下级组织</h3>
             <div className="border border-border rounded-lg overflow-hidden">
               <table className="w-full">
                 <thead>
                   <tr className="bg-muted/30">
-                    <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">排名</th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">组织名称</th>
                     <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">Token消耗</th>
                     <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">请求数</th>
                     <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">成员总数</th>
                     <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">活跃用户数</th>
-                    <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">占比</th>
                     <th className="px-4 py-3 text-center text-sm font-medium text-muted-foreground">操作</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {currentDepartments.map((dept, index) => (
+                  {childDepts.map((dept) => (
                     <tr key={dept.id} className="border-t border-border hover:bg-muted/20 transition-colors">
-                      <td className="px-4 py-3">
-                        <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-medium ${
-                          index < 3 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
-                        }`}>
-                          {index + 1}
-                        </span>
-                      </td>
                       <td className="px-4 py-3 font-medium text-foreground">{dept.name}</td>
                       <td className="px-4 py-3 text-right text-foreground">{(dept.tokens / 1000).toFixed(0)}K</td>
                       <td className="px-4 py-3 text-right text-foreground">{dept.requests.toLocaleString()}</td>
                       <td className="px-4 py-3 text-right text-foreground">{dept.totalMembers}</td>
                       <td className="px-4 py-3 text-right text-foreground">{dept.activeUsers}</td>
-                      <td className="px-4 py-3 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <div className="w-16 h-2 bg-muted rounded-full overflow-hidden">
-                            <div 
-                              className="h-full bg-primary rounded-full"
-                              style={{ width: `${dept.percentage}%` }}
-                            />
-                          </div>
-                          <span className="text-sm text-muted-foreground w-10 text-right">{dept.percentage}%</span>
-                        </div>
-                      </td>
                       <td className="px-4 py-3">
-                        <div className="flex items-center justify-center gap-2">
-                          {hasChildren(dept.id) && (
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="h-7 text-xs gap-1"
-                              onClick={() => handleDrillDown(dept.id, dept.name)}
-                            >
-                              <ChevronRight className="w-3 h-3" />
-                              下钻
-                            </Button>
-                          )}
+                        <div className="flex items-center justify-center">
                           <Button 
                             variant="ghost" 
                             size="sm" 
                             className="h-7 text-xs gap-1"
-                            onClick={() => handleViewMembers(dept.id, dept.name)}
+                            onClick={() => setSelectedDeptId(dept.id)}
                           >
-                            <Users className="w-3 h-3" />
-                            成员
+                            <ChevronRight className="w-3 h-3" />
+                            查看详情
                           </Button>
                         </div>
                       </td>
@@ -1600,329 +1286,65 @@ export function UsageDashboard() {
                 </tbody>
               </table>
             </div>
-          ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              该组织暂无下级组织
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Member List View within Organization */}
-      {orgViewMode === 'member' && (
-        <div className="space-y-4">
-          {/* Search Input */}
-          <div className="enterprise-card p-4">
-            <div className="flex items-center gap-3">
-              <div className="relative flex-1 max-w-md">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  placeholder="输入成员姓名或邮箱查询..."
-                  value={memberSearchQuery}
-                  onChange={(e) => {
-                    setMemberSearchQuery(e.target.value);
-                    setSelectedMemberDetail(null);
-                  }}
-                  className="pl-10 h-9"
-                />
-              </div>
-              <DateRangePicker
-                dateRangeType={dateRangeType}
-                setDateRangeType={setDateRangeType}
-                customDateRange={customDateRange}
-                setCustomDateRange={setCustomDateRange}
-              />
-            </div>
           </div>
+        )}
 
-          {/* Member Detail View */}
-          {selectedMemberDetail ? (
-            <div className="enterprise-card p-5">
-              {/* Back button and Member Header */}
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center">
-                    <span className="text-lg font-medium text-primary-foreground">{selectedMemberDetail.name[0]}</span>
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-lg font-semibold text-foreground">{selectedMemberDetail.name}</h3>
-                      <span className="text-sm text-muted-foreground">{selectedMemberDetail.department}</span>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      {selectedMemberDetail.email} · 最近活跃: {selectedMemberDetail.lastActive}
-                    </p>
-                  </div>
+        {/* Member Detail View */}
+        {selectedMemberDetail ? (
+          <div className="enterprise-card p-5">
+            {/* Back button and Member Header */}
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center">
+                  <span className="text-lg font-medium text-primary-foreground">{selectedMemberDetail.name[0]}</span>
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="gap-1"
-                  onClick={() => {
-                    setSelectedMemberDetail(null);
-                    setMemberSearchQuery('');
-                  }}
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                  返回列表
-                </Button>
-              </div>
-
-              {/* Stats Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                <div className="p-4 bg-muted/30 rounded-lg">
-                  <p className="text-sm text-primary font-medium mb-2">个人累计消耗 (Tokens)</p>
-                  <p className="text-3xl font-semibold text-foreground text-right">{selectedMemberDetail.tokens.toLocaleString()}</p>
-                </div>
-                <div className="p-4 bg-muted/30 rounded-lg">
-                  <p className="text-sm text-primary font-medium mb-2">本月活跃天数</p>
-                  <p className="text-3xl font-semibold text-foreground text-right">
-                    {selectedMemberDetail.activeDays} <span className="text-lg text-muted-foreground">/ {selectedMemberDetail.totalDays}</span>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-lg font-semibold text-foreground">{selectedMemberDetail.name}</h3>
+                    <span className="text-sm text-muted-foreground">{selectedMemberDetail.department}</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {selectedMemberDetail.email} · 最近活跃: {selectedMemberDetail.lastActive}
                   </p>
                 </div>
-                <div className="p-4 bg-muted/30 rounded-lg">
-                  <p className="text-sm text-primary font-medium mb-2">最常使用终端</p>
-                  <div className="flex items-center justify-end gap-2 mt-2">
-                    <ExternalLink className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-lg font-medium text-foreground">{selectedMemberDetail.mostUsedTerminal}</span>
-                  </div>
-                </div>
               </div>
-
-              {/* Model Preference Distribution */}
-              <div>
-                <p className="text-sm text-primary font-medium mb-4">模型偏好分布</p>
-                <div className="space-y-4">
-                  {selectedMemberDetail.modelPreference.map((pref, index) => (
-                    <div key={index} className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium text-foreground">{pref.model}</span>
-                        <span className="text-sm text-muted-foreground">{pref.percentage}%</span>
-                      </div>
-                      <div className="h-2 bg-muted rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-primary rounded-full transition-all"
-                          style={{ width: `${pref.percentage}%` }}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1"
+                onClick={() => setSelectedMemberDetail(null)}
+              >
+                <ArrowLeft className="w-4 h-4" />
+                返回成员列表
+              </Button>
             </div>
-          ) : (
-            /* Member List Table */
-            <div className="enterprise-card p-5">
-              <h3 className="font-semibold text-foreground mb-4">成员用量列表</h3>
-              {(() => {
-                const displayMembers = memberSearchQuery.trim()
-                  ? currentDepartmentMembers.filter(m => 
-                      m.name.toLowerCase().includes(memberSearchQuery.toLowerCase()) || 
-                      m.email.toLowerCase().includes(memberSearchQuery.toLowerCase())
-                    )
-                  : currentDepartmentMembers;
-                
-                return displayMembers.length > 0 ? (
-                  <div className="border border-border rounded-lg overflow-hidden">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="bg-muted/30">
-                          <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">排名</th>
-                          <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">姓名</th>
-                          <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">部门</th>
-                          <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">Token消耗</th>
-                          <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">请求数</th>
-                          <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">平均耗时</th>
-                          <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">活跃天数</th>
-                          <th className="px-4 py-3 text-center text-sm font-medium text-muted-foreground">操作</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {displayMembers
-                          .sort((a, b) => b.tokens - a.tokens)
-                          .map((member, index) => (
-                          <tr key={member.id} className="border-t border-border hover:bg-muted/20 transition-colors">
-                            <td className="px-4 py-3">
-                              <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-medium ${
-                                index < 3 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
-                              }`}>
-                                {index + 1}
-                              </span>
-                            </td>
-                            <td className="px-4 py-3">
-                              <div className="flex items-center gap-2">
-                                <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
-                                  <span className="text-xs font-medium text-primary">{member.name[0]}</span>
-                                </div>
-                                <span className="font-medium text-foreground">{member.name}</span>
-                              </div>
-                            </td>
-                            <td className="px-4 py-3 text-sm text-muted-foreground">{member.department}</td>
-                            <td className="px-4 py-3 text-right text-foreground">{(member.tokens / 1000).toFixed(1)}K</td>
-                            <td className="px-4 py-3 text-right text-foreground">{member.requests.toLocaleString()}</td>
-                            <td className="px-4 py-3 text-right text-foreground">{member.avgLatency}s</td>
-                            <td className="px-4 py-3 text-right text-foreground">{member.activeDays}/{member.totalDays}</td>
-                            <td className="px-4 py-3">
-                              <div className="flex items-center justify-center">
-                                <Button 
-                                  variant="ghost" 
-                                  size="sm" 
-                                  className="h-7 text-xs gap-1"
-                                  onClick={() => setSelectedMemberDetail(member)}
-                                >
-                                  <User className="w-3 h-3" />
-                                  详情
-                                </Button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : (
-                  <div className="text-center py-8 text-muted-foreground">
-                    {memberSearchQuery.trim() ? '未找到匹配的成员' : '该部门暂无成员数据'}
-                  </div>
-                );
-              })()}
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
 
-  // Member tab - default to first member
-  const [memberTabSearchQuery, setMemberTabSearchQuery] = useState('');
-  const [memberTabSelectedDetail, setMemberTabSelectedDetail] = useState<typeof mockMemberUsage[0] | null>(mockMemberUsage[0]);
-  
-  // Filter members by search query for member tab
-  const memberTabFilteredMembers = useMemo(() => {
-    if (!memberTabSearchQuery.trim()) return [];
-    const query = memberTabSearchQuery.toLowerCase();
-    return mockMemberUsage.filter(m => 
-      m.name.toLowerCase().includes(query) || 
-      m.email.toLowerCase().includes(query)
-    );
-  }, [memberTabSearchQuery]);
-
-  // Render Member Tab Filter Bar (simplified - only search and date)
-  const renderMemberFilterBar = () => (
-    <div className="enterprise-card p-4 mb-6">
-      <div className="flex flex-wrap items-center gap-3">
-        {/* Search Input */}
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="输入成员姓名或邮箱查询..."
-            value={memberTabSearchQuery}
-            onChange={(e) => {
-              setMemberTabSearchQuery(e.target.value);
-              if (e.target.value.trim() === '') {
-                setMemberTabSelectedDetail(mockMemberUsage[0]);
-              } else {
-                setMemberTabSelectedDetail(null);
-              }
-            }}
-            className="pl-10 h-9"
-          />
-        </div>
-
-        {/* Date Range */}
-        <DateRangePicker
-          dateRangeType={dateRangeType}
-          setDateRangeType={setDateRangeType}
-          customDateRange={customDateRange}
-          setCustomDateRange={setCustomDateRange}
-        />
-      </div>
-      
-      {/* Search Results Dropdown */}
-      {memberTabSearchQuery && !memberTabSelectedDetail && memberTabFilteredMembers.length > 0 && (
-        <div className="mt-3 border border-border rounded-lg overflow-hidden">
-          {memberTabFilteredMembers.map((member) => (
-            <div
-              key={member.id}
-              className="flex items-center gap-3 p-3 hover:bg-muted/50 cursor-pointer transition-colors border-b border-border last:border-b-0"
-              onClick={() => {
-                setMemberTabSelectedDetail(member);
-                setMemberTabSearchQuery('');
-              }}
-            >
-              <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center shrink-0">
-                <span className="text-sm font-medium text-primary-foreground">{member.name[0]}</span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="font-medium text-foreground">{member.name}</span>
-                  <span className="text-xs text-muted-foreground">{member.department}</span>
-                </div>
-                <p className="text-sm text-muted-foreground">{member.email}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-      
-      {memberTabSearchQuery && !memberTabSelectedDetail && memberTabFilteredMembers.length === 0 && (
-        <div className="mt-3 text-center py-4 text-muted-foreground">
-          未找到匹配的成员
-        </div>
-      )}
-    </div>
-  );
-
-  // Render Member Tab Content - Show selected member detail directly
-  const renderMemberContent = () => (
-    <div className="space-y-4">
-      {/* Member Detail View - Always shown */}
-      {memberTabSelectedDetail && (
-        <div className="enterprise-card p-5">
-          {/* Member Header */}
-          <div className="flex items-center gap-4 mb-6">
-            <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center">
-              <span className="text-lg font-medium text-primary-foreground">{memberTabSelectedDetail.name[0]}</span>
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-lg font-semibold text-foreground">{memberTabSelectedDetail.name}</h3>
-                <span className="text-sm text-muted-foreground">{memberTabSelectedDetail.department}</span>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                {memberTabSelectedDetail.email} · 最近活跃: {memberTabSelectedDetail.lastActive}
-              </p>
-            </div>
-          </div>
-
-          {/* Two Column Layout: Stats on left, Model Preference on right */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Left Column - Stats Cards */}
-            <div className="space-y-4">
+            {/* Stats Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
               <div className="p-4 bg-muted/30 rounded-lg">
                 <p className="text-sm text-primary font-medium mb-2">个人累计消耗 (Tokens)</p>
-                <p className="text-3xl font-semibold text-foreground text-right">{memberTabSelectedDetail.tokens.toLocaleString()}</p>
+                <p className="text-3xl font-semibold text-foreground text-right">{selectedMemberDetail.tokens.toLocaleString()}</p>
               </div>
               <div className="p-4 bg-muted/30 rounded-lg">
                 <p className="text-sm text-primary font-medium mb-2">本月活跃天数</p>
                 <p className="text-3xl font-semibold text-foreground text-right">
-                  {memberTabSelectedDetail.activeDays} <span className="text-lg text-muted-foreground">/ {memberTabSelectedDetail.totalDays}</span>
+                  {selectedMemberDetail.activeDays} <span className="text-lg text-muted-foreground">/ {selectedMemberDetail.totalDays}</span>
                 </p>
               </div>
               <div className="p-4 bg-muted/30 rounded-lg">
                 <p className="text-sm text-primary font-medium mb-2">最常使用终端</p>
                 <div className="flex items-center justify-end gap-2 mt-2">
                   <ExternalLink className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-lg font-medium text-foreground">{memberTabSelectedDetail.mostUsedTerminal}</span>
+                  <span className="text-lg font-medium text-foreground">{selectedMemberDetail.mostUsedTerminal}</span>
                 </div>
               </div>
             </div>
 
-            {/* Right Column - Model Preference Distribution */}
+            {/* Model Preference Distribution */}
             <div>
               <p className="text-sm text-primary font-medium mb-4">模型偏好分布</p>
               <div className="space-y-4">
-                {memberTabSelectedDetail.modelPreference.map((pref, index) => (
+                {selectedMemberDetail.modelPreference.map((pref, index) => (
                   <div key={index} className="space-y-2">
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-medium text-foreground">{pref.model}</span>
@@ -1939,33 +1361,192 @@ export function UsageDashboard() {
               </div>
             </div>
           </div>
+        ) : (
+          /* Member List */
+          <div className="enterprise-card p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-foreground">成员用量</h3>
+              <div className="relative max-w-xs">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="搜索成员..."
+                  value={memberSearchQuery}
+                  onChange={(e) => setMemberSearchQuery(e.target.value)}
+                  className="pl-10 h-9"
+                />
+              </div>
+            </div>
+            {filteredMembers.length > 0 ? (
+              <div className="border border-border rounded-lg overflow-hidden">
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-muted/30">
+                      <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">排名</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">姓名</th>
+                      <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">部门</th>
+                      <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">Token消耗</th>
+                      <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">请求数</th>
+                      <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">平均耗时</th>
+                      <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">活跃天数</th>
+                      <th className="px-4 py-3 text-center text-sm font-medium text-muted-foreground">操作</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredMembers
+                      .sort((a, b) => b.tokens - a.tokens)
+                      .map((member, index) => (
+                      <tr key={member.id} className="border-t border-border hover:bg-muted/20 transition-colors">
+                        <td className="px-4 py-3">
+                          <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-medium ${
+                            index < 3 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+                          }`}>
+                            {index + 1}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                              <span className="text-xs font-medium text-primary">{member.name[0]}</span>
+                            </div>
+                            <span className="font-medium text-foreground">{member.name}</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-sm text-muted-foreground">{member.department}</td>
+                        <td className="px-4 py-3 text-right text-foreground">{(member.tokens / 1000).toFixed(1)}K</td>
+                        <td className="px-4 py-3 text-right text-foreground">{member.requests.toLocaleString()}</td>
+                        <td className="px-4 py-3 text-right text-foreground">{member.avgLatency}s</td>
+                        <td className="px-4 py-3 text-right text-foreground">{member.activeDays}/{member.totalDays}</td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center justify-center">
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="h-7 text-xs gap-1"
+                              onClick={() => setSelectedMemberDetail(member)}
+                            >
+                              <User className="w-3 h-3" />
+                              详情
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                {memberSearchQuery.trim() ? '未找到匹配的成员' : '该部门暂无成员数据'}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // Render Organization List View
+  const renderOrganizationList = () => {
+    const departments = getChildDepartments(null);
+
+    return (
+      <div className="enterprise-card p-5">
+        <h3 className="font-semibold text-foreground mb-4">组织用量概览</h3>
+        <div className="border border-border rounded-lg overflow-hidden">
+          <table className="w-full">
+            <thead>
+              <tr className="bg-muted/30">
+                <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">排名</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">组织名称</th>
+                <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">Token消耗</th>
+                <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">请求数</th>
+                <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">成员总数</th>
+                <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">活跃用户数</th>
+                <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">占比</th>
+                <th className="px-4 py-3 text-center text-sm font-medium text-muted-foreground">操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              {departments.map((dept, index) => (
+                <tr key={dept.id} className="border-t border-border hover:bg-muted/20 transition-colors">
+                  <td className="px-4 py-3">
+                    <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-medium ${
+                      index < 3 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+                    }`}>
+                      {index + 1}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 font-medium text-foreground">{dept.name}</td>
+                  <td className="px-4 py-3 text-right text-foreground">{(dept.tokens / 1000).toFixed(0)}K</td>
+                  <td className="px-4 py-3 text-right text-foreground">{dept.requests.toLocaleString()}</td>
+                  <td className="px-4 py-3 text-right text-foreground">{dept.totalMembers}</td>
+                  <td className="px-4 py-3 text-right text-foreground">{dept.activeUsers}</td>
+                  <td className="px-4 py-3 text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      <div className="w-16 h-2 bg-muted rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-primary rounded-full"
+                          style={{ width: `${dept.percentage}%` }}
+                        />
+                      </div>
+                      <span className="text-sm text-muted-foreground w-10 text-right">{dept.percentage}%</span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center justify-center">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-7 text-xs gap-1"
+                        onClick={() => setSelectedDeptId(dept.id)}
+                      >
+                        <ChevronRight className="w-3 h-3" />
+                        查看详情
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
-      )}
-    </div>
-  );
+      </div>
+    );
+  };
+
+  // Render Organization Tab Content
+  const renderOrganizationContent = () => {
+    if (selectedDeptId) {
+      return renderDepartmentDetail();
+    }
+    return renderOrganizationList();
+  };
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+      {/* Global Date Range Picker */}
+      {renderGlobalDatePicker()}
+
+      <Tabs value={activeTab} onValueChange={(value) => {
+        setActiveTab(value);
+        // Reset organization view state when switching tabs
+        if (value !== 'organization') {
+          setSelectedDeptId(null);
+          setSelectedMemberDetail(null);
+          setMemberSearchQuery('');
+        }
+      }} className="w-full">
         <TabsList className="mb-6">
           <TabsTrigger value="global">全局</TabsTrigger>
           <TabsTrigger value="organization">组织</TabsTrigger>
-          <TabsTrigger value="member">成员</TabsTrigger>
         </TabsList>
 
         <TabsContent value="global" className="mt-0">
-          {renderFilterBar()}
           {renderGlobalContent()}
         </TabsContent>
 
         <TabsContent value="organization" className="mt-0">
-          {renderFilterBar()}
           {renderOrganizationContent()}
-        </TabsContent>
-
-        <TabsContent value="member" className="mt-0">
-          {renderMemberFilterBar()}
-          {renderMemberContent()}
         </TabsContent>
       </Tabs>
     </div>
