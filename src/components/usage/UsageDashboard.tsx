@@ -42,9 +42,8 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
+  BarChart,
+  Bar,
   Legend,
 } from 'recharts';
 
@@ -482,10 +481,12 @@ export function UsageDashboard() {
   // Trend chart data selection - default all selected
   const [selectedTrendMetrics, setSelectedTrendMetrics] = useState<string[]>(['users', 'tokens', 'requests']);
 
-  // Department level filter for organization tab (default to level 1, no "all" option)
-  const [selectedDepartmentLevel, setSelectedDepartmentLevel] = useState<string>('1');
-  // Selected department in organization tab (for filtering within that level)
-  const [selectedOrgDepartment, setSelectedOrgDepartment] = useState<string>('all');
+  // Organization drill-down state
+  const [orgBreadcrumb, setOrgBreadcrumb] = useState<{ id: string | null; name: string }[]>([
+    { id: null, name: '全部组织' }
+  ]);
+  // View mode for organization: 'department' or 'member'
+  const [orgViewMode, setOrgViewMode] = useState<'department' | 'member'>('department');
 
   // Prepare options for multi-select
   const modelOptions = mockModels.map(m => ({ id: m.id, name: m.name }));
@@ -571,39 +572,61 @@ export function UsageDashboard() {
   // Check if any filters are active
   const hasActiveFilters = selectedModels.length > 0 || 
     (selectedDepartments.length > 0 && activeTab === 'member') ||
-    (selectedMembers.length > 0 && activeTab === 'member') ||
-    (activeTab === 'organization' && selectedOrgDepartment !== 'all');
+    (selectedMembers.length > 0 && activeTab === 'member');
 
   const clearFilters = () => {
     setSelectedModels([]);
     setSelectedDepartments([]);
     setSelectedMembers([]);
-    setSelectedOrgDepartment('all');
   };
 
-  // Filter department usage based on selected level and department
-  const filteredDepartmentUsage = useMemo(() => {
-    const level = parseInt(selectedDepartmentLevel);
-    let filtered = mockDepartmentUsage.filter(dept => dept.level === level);
-    
-    // If a specific department is selected, filter by it
-    if (selectedOrgDepartment !== 'all') {
-      filtered = filtered.filter(dept => dept.id === selectedOrgDepartment);
+  // Get current parent id from breadcrumb for drill-down
+  const currentParentId = orgBreadcrumb[orgBreadcrumb.length - 1].id;
+
+  // Get departments for current drill-down level
+  const currentDepartments = useMemo(() => {
+    if (currentParentId === null) {
+      // Show level 1 departments
+      return mockDepartmentUsage.filter(dept => dept.level === 1);
     }
-    
-    return filtered;
-  }, [selectedDepartmentLevel, selectedOrgDepartment]);
+    // Show children of current parent
+    return mockDepartmentUsage.filter(dept => dept.parentId === currentParentId);
+  }, [currentParentId]);
 
-  // Get available departments for the current level
-  const availableDepartmentsForLevel = useMemo(() => {
-    const level = parseInt(selectedDepartmentLevel);
-    return getDepartmentsByLevel(level);
-  }, [selectedDepartmentLevel]);
+  // Get members for current department (when viewing members)
+  const currentDepartmentMembers = useMemo(() => {
+    if (!currentParentId) return [];
+    const currentDept = mockDepartmentUsage.find(d => d.id === currentParentId);
+    if (!currentDept) return [];
+    // Filter mock members that belong to this department or its parents
+    return mockMemberUsage.filter(m => {
+      // Simple matching based on department name
+      return m.department.includes(currentDept.name.split(' ')[0]) || 
+             currentDept.name.includes(m.department);
+    });
+  }, [currentParentId]);
 
-  // Reset department selection when level changes
-  const handleLevelChange = (level: string) => {
-    setSelectedDepartmentLevel(level);
-    setSelectedOrgDepartment('all');
+  // Handle drill-down into a department
+  const handleDrillDown = (deptId: string, deptName: string) => {
+    setOrgBreadcrumb(prev => [...prev, { id: deptId, name: deptName }]);
+    setOrgViewMode('department');
+  };
+
+  // Handle breadcrumb navigation
+  const handleBreadcrumbClick = (index: number) => {
+    setOrgBreadcrumb(prev => prev.slice(0, index + 1));
+    setOrgViewMode('department');
+  };
+
+  // Handle view members of a department
+  const handleViewMembers = (deptId: string, deptName: string) => {
+    setOrgBreadcrumb(prev => [...prev, { id: deptId, name: deptName }]);
+    setOrgViewMode('member');
+  };
+
+  // Check if department has children
+  const hasChildren = (deptId: string) => {
+    return mockDepartmentUsage.some(d => d.parentId === deptId);
   };
 
   const renderFilterBar = () => (
@@ -625,32 +648,6 @@ export function UsageDashboard() {
           placeholder="全部模型"
         />
 
-        {/* Organization Tab: Level Filter + Department Filter */}
-        {activeTab === 'organization' && (
-          <>
-            <Select value={selectedDepartmentLevel} onValueChange={handleLevelChange}>
-              <SelectTrigger className="w-[120px] h-9">
-                <SelectValue placeholder="选择层级" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="1">一级组织</SelectItem>
-                <SelectItem value="2">二级组织</SelectItem>
-                <SelectItem value="3">三级组织</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={selectedOrgDepartment} onValueChange={setSelectedOrgDepartment}>
-              <SelectTrigger className="w-[160px] h-9">
-                <SelectValue placeholder="全部部门" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">全部部门</SelectItem>
-                {availableDepartmentsForLevel.map(dept => (
-                  <SelectItem key={dept.id} value={dept.id}>{dept.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </>
-        )}
 
         {/* Department Filter - Show for member tab only */}
         {activeTab === 'member' && (
@@ -700,12 +697,6 @@ export function UsageDashboard() {
                 ? allDepartments.find(d => d.id === selectedDepartments[0])?.name 
                 : `${selectedDepartments.length} 个`}
               <X className="w-3 h-3 cursor-pointer" onClick={() => setSelectedDepartments([])} />
-            </Badge>
-          )}
-          {selectedOrgDepartment !== 'all' && activeTab === 'organization' && (
-            <Badge variant="secondary" className="gap-1">
-              部门: {mockDepartmentUsage.find(d => d.id === selectedOrgDepartment)?.name}
-              <X className="w-3 h-3 cursor-pointer" onClick={() => setSelectedOrgDepartment('all')} />
             </Badge>
           )}
           {selectedMembers.length > 0 && activeTab === 'member' && (
@@ -866,50 +857,47 @@ export function UsageDashboard() {
         </div>
       )}
 
-      {/* Model Distribution & Model Average Latency */}
+      {/* Model Consumption & Model Average Latency */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="enterprise-card p-5">
-          <h3 className="font-semibold text-foreground mb-4">模型分布</h3>
-          <div className="h-48">
+          <h3 className="font-semibold text-foreground mb-4">模型消耗</h3>
+          <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={mockUsageStats.modelDistribution}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={40}
-                  outerRadius={70}
-                  paddingAngle={4}
-                  dataKey="tokens"
-                >
-                  {mockUsageStats.modelDistribution.map((_, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
+              <BarChart 
+                data={mockUsageStats.modelDistribution} 
+                layout="vertical"
+                margin={{ top: 5, right: 30, left: 80, bottom: 5 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis 
+                  type="number" 
+                  stroke="hsl(var(--muted-foreground))"
+                  fontSize={12}
+                  tickFormatter={(value) => `${(value / 1000).toFixed(0)}K`}
+                />
+                <YAxis 
+                  type="category" 
+                  dataKey="model" 
+                  stroke="hsl(var(--muted-foreground))"
+                  fontSize={12}
+                  width={70}
+                />
                 <Tooltip 
                   contentStyle={{
                     backgroundColor: 'hsl(var(--card))',
                     border: '1px solid hsl(var(--border))',
                     borderRadius: '8px',
                   }}
-                  formatter={(value: number) => [`${(value / 1000).toFixed(0)}K`, 'Tokens']}
+                  formatter={(value: number) => [`${(value / 1000).toFixed(0)}K`, 'Token消耗']}
                 />
-              </PieChart>
+                <Bar 
+                  dataKey="tokens" 
+                  fill="hsl(var(--primary))" 
+                  radius={[0, 4, 4, 0]}
+                  barSize={24}
+                />
+              </BarChart>
             </ResponsiveContainer>
-          </div>
-          <div className="space-y-2 mt-4">
-            {mockUsageStats.modelDistribution.map((item, index) => (
-              <div key={item.model} className="flex items-center justify-between text-sm">
-                <div className="flex items-center gap-2">
-                  <div 
-                    className="w-3 h-3 rounded-full"
-                    style={{ backgroundColor: COLORS[index % COLORS.length] }}
-                  />
-                  <span className="text-foreground">{item.model}</span>
-                </div>
-                <span className="text-muted-foreground">{item.percentage}%</span>
-              </div>
-            ))}
           </div>
         </div>
 
@@ -944,85 +932,164 @@ export function UsageDashboard() {
   // Render Organization Tab Content
   const renderOrganizationContent = () => (
     <div className="space-y-6">
-      {/* Department Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="enterprise-card p-5">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-sm text-muted-foreground">部门总数</span>
-            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-              <Building2 className="w-4 h-4 text-primary" />
+      {/* Breadcrumb Navigation */}
+      <div className="enterprise-card p-4">
+        <div className="flex items-center gap-2 flex-wrap">
+          {orgBreadcrumb.map((item, index) => (
+            <div key={index} className="flex items-center">
+              {index > 0 && <ChevronRight className="w-4 h-4 text-muted-foreground mx-1" />}
+              <button
+                onClick={() => handleBreadcrumbClick(index)}
+                className={`text-sm px-2 py-1 rounded hover:bg-muted transition-colors ${
+                  index === orgBreadcrumb.length - 1 
+                    ? 'font-medium text-foreground' 
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {item.name}
+              </button>
             </div>
-          </div>
-          <p className="text-2xl font-semibold text-foreground">{allDepartmentsFlat.length}</p>
-        </div>
-        <div className="enterprise-card p-5">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-sm text-muted-foreground">活跃部门</span>
-            <div className="w-8 h-8 rounded-lg bg-success/10 flex items-center justify-center">
-              <TrendingUp className="w-4 h-4 text-success" />
-            </div>
-          </div>
-          <p className="text-2xl font-semibold text-foreground">{mockDepartmentUsage.length}</p>
-        </div>
-        <div className="enterprise-card p-5">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-sm text-muted-foreground">部门总用量</span>
-            <div className="w-8 h-8 rounded-lg bg-warning/10 flex items-center justify-center">
-              <Zap className="w-4 h-4 text-warning" />
-            </div>
-          </div>
-          <p className="text-2xl font-semibold text-foreground">
-            {(mockDepartmentUsage.reduce((sum, d) => sum + d.tokens, 0) / 1000000).toFixed(2)}M
-          </p>
+          ))}
+          {orgViewMode === 'member' && (
+            <>
+              <ChevronRight className="w-4 h-4 text-muted-foreground mx-1" />
+              <span className="text-sm font-medium text-primary px-2 py-1">成员用量</span>
+            </>
+          )}
         </div>
       </div>
 
-      {/* Department Usage Table */}
-      <div className="enterprise-card p-5">
-        <h3 className="font-semibold text-foreground mb-4">部门用量</h3>
-        <div className="border border-border rounded-lg overflow-hidden">
-          <table className="w-full">
-            <thead>
-              <tr className="bg-muted/30">
-                <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">排名</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">部门名称</th>
-                <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">Token消耗</th>
-                <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">请求数</th>
-                <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">用户数</th>
-                <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">占比</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredDepartmentUsage.map((dept, index) => (
-                <tr key={dept.name} className="border-t border-border hover:bg-muted/20 transition-colors">
-                  <td className="px-4 py-3">
-                    <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-medium ${
-                      index < 3 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
-                    }`}>
-                      {index + 1}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 font-medium text-foreground">{dept.name}</td>
-                  <td className="px-4 py-3 text-right text-foreground">{(dept.tokens / 1000).toFixed(0)}K</td>
-                  <td className="px-4 py-3 text-right text-foreground">{dept.requests.toLocaleString()}</td>
-                  <td className="px-4 py-3 text-right text-foreground">{dept.users}</td>
-                  <td className="px-4 py-3 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <div className="w-16 h-2 bg-muted rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-primary rounded-full"
-                          style={{ width: `${dept.percentage}%` }}
-                        />
-                      </div>
-                      <span className="text-sm text-muted-foreground w-10 text-right">{dept.percentage}%</span>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      {/* Department View */}
+      {orgViewMode === 'department' && (
+        <div className="enterprise-card p-5">
+          <h3 className="font-semibold text-foreground mb-4">
+            {currentParentId ? '下级组织' : '一级组织'}用量
+          </h3>
+          {currentDepartments.length > 0 ? (
+            <div className="border border-border rounded-lg overflow-hidden">
+              <table className="w-full">
+                <thead>
+                  <tr className="bg-muted/30">
+                    <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">排名</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">组织名称</th>
+                    <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">Token消耗</th>
+                    <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">请求数</th>
+                    <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">用户数</th>
+                    <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">占比</th>
+                    <th className="px-4 py-3 text-center text-sm font-medium text-muted-foreground">操作</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {currentDepartments.map((dept, index) => (
+                    <tr key={dept.id} className="border-t border-border hover:bg-muted/20 transition-colors">
+                      <td className="px-4 py-3">
+                        <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-medium ${
+                          index < 3 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+                        }`}>
+                          {index + 1}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 font-medium text-foreground">{dept.name}</td>
+                      <td className="px-4 py-3 text-right text-foreground">{(dept.tokens / 1000).toFixed(0)}K</td>
+                      <td className="px-4 py-3 text-right text-foreground">{dept.requests.toLocaleString()}</td>
+                      <td className="px-4 py-3 text-right text-foreground">{dept.users}</td>
+                      <td className="px-4 py-3 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <div className="w-16 h-2 bg-muted rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-primary rounded-full"
+                              style={{ width: `${dept.percentage}%` }}
+                            />
+                          </div>
+                          <span className="text-sm text-muted-foreground w-10 text-right">{dept.percentage}%</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center justify-center gap-2">
+                          {hasChildren(dept.id) && (
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="h-7 text-xs gap-1"
+                              onClick={() => handleDrillDown(dept.id, dept.name)}
+                            >
+                              <ChevronRight className="w-3 h-3" />
+                              下钻
+                            </Button>
+                          )}
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-7 text-xs gap-1"
+                            onClick={() => handleViewMembers(dept.id, dept.name)}
+                          >
+                            <Users className="w-3 h-3" />
+                            成员
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              该组织暂无下级组织
+            </div>
+          )}
         </div>
-      </div>
+      )}
+
+      {/* Member View within Organization */}
+      {orgViewMode === 'member' && (
+        <div className="enterprise-card p-5">
+          <h3 className="font-semibold text-foreground mb-4">成员用量</h3>
+          {currentDepartmentMembers.length > 0 ? (
+            <div className="border border-border rounded-lg overflow-hidden">
+              <table className="w-full">
+                <thead>
+                  <tr className="bg-muted/30">
+                    <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">排名</th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">成员</th>
+                    <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">Token消耗</th>
+                    <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">请求数</th>
+                    <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">平均耗时</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {currentDepartmentMembers.map((member, index) => (
+                    <tr key={member.name} className="border-t border-border hover:bg-muted/20 transition-colors">
+                      <td className="px-4 py-3">
+                        <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-medium ${
+                          index < 3 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+                        }`}>
+                          {index + 1}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
+                            <span className="text-xs font-medium text-primary-foreground">{member.name[0]}</span>
+                          </div>
+                          <span className="font-medium text-foreground">{member.name}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-right text-foreground">{(member.tokens / 1000).toFixed(0)}K</td>
+                      <td className="px-4 py-3 text-right text-foreground">{member.requests.toLocaleString()}</td>
+                      <td className="px-4 py-3 text-right text-foreground">{member.avgLatency}s</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              该组织暂无成员数据
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 
