@@ -10,11 +10,13 @@ import {
   X,
   ChevronDown,
   ChevronRight,
-  Check,
+  Building2,
+  User,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Popover,
   PopoverContent,
@@ -38,9 +40,11 @@ import {
   Pie,
   Cell,
   Legend,
+  BarChart,
+  Bar,
 } from 'recharts';
 
-const COLORS = ['hsl(217, 91%, 60%)', 'hsl(142, 76%, 36%)', 'hsl(38, 92%, 50%)', 'hsl(215, 16%, 47%)'];
+const COLORS = ['hsl(217, 91%, 60%)', 'hsl(142, 76%, 36%)', 'hsl(38, 92%, 50%)', 'hsl(215, 16%, 47%)', 'hsl(280, 67%, 50%)'];
 
 // Flatten departments for display names
 const flattenDepartmentsHelper = (depts: Department[], prefix = ''): { id: string; name: string }[] => {
@@ -245,13 +249,11 @@ function CascadingDepartmentSelect({
 
 // Multi-select dropdown component (for models and members)
 function MultiSelectDropdown({
-  label,
   options,
   selected,
   onChange,
   placeholder,
 }: {
-  label: string;
   options: { id: string; name: string }[];
   selected: string[];
   onChange: (selected: string[]) => void;
@@ -331,7 +333,112 @@ const allDepartments = allDepartmentsFlat;
 
 type DateRangeType = 'today' | 'yesterday' | '7days' | '30days' | 'custom';
 
+// Date Range Picker Component
+function DateRangePicker({
+  dateRangeType,
+  setDateRangeType,
+  customDateRange,
+  setCustomDateRange,
+}: {
+  dateRangeType: DateRangeType;
+  setDateRangeType: (type: DateRangeType) => void;
+  customDateRange: { from: Date | undefined; to: Date | undefined };
+  setCustomDateRange: (range: { from: Date | undefined; to: Date | undefined }) => void;
+}) {
+  const [calendarOpen, setCalendarOpen] = useState(false);
+
+  const getDateRangeLabel = () => {
+    switch (dateRangeType) {
+      case 'today': return '今日';
+      case 'yesterday': return '昨日';
+      case '7days': return '最近 7 天';
+      case '30days': return '最近 30 天';
+      case 'custom': 
+        if (customDateRange.from && customDateRange.to) {
+          return `${format(customDateRange.from, 'MM/dd')} - ${format(customDateRange.to, 'MM/dd')}`;
+        }
+        return '自定义日期';
+      default: return '最近 7 天';
+    }
+  };
+
+  return (
+    <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+      <PopoverTrigger asChild>
+        <Button variant="outline" size="sm" className="gap-2">
+          <Calendar className="w-4 h-4" />
+          {getDateRangeLabel()}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-auto p-0" align="start">
+        <div className="p-3 border-b border-border">
+          <div className="flex flex-wrap gap-2">
+            {[
+              { value: 'today', label: '今日' },
+              { value: 'yesterday', label: '昨日' },
+              { value: '7days', label: '最近7天' },
+              { value: '30days', label: '最近30天' },
+            ].map(item => (
+              <Button
+                key={item.value}
+                variant={dateRangeType === item.value ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => {
+                  setDateRangeType(item.value as DateRangeType);
+                  setCalendarOpen(false);
+                }}
+              >
+                {item.label}
+              </Button>
+            ))}
+          </div>
+        </div>
+        <div className="p-3">
+          <p className="text-sm text-muted-foreground mb-2">自定义日期范围</p>
+          <CalendarComponent
+            mode="range"
+            selected={{ from: customDateRange.from, to: customDateRange.to }}
+            onSelect={(range) => {
+              setCustomDateRange({ from: range?.from, to: range?.to });
+              if (range?.from && range?.to) {
+                setDateRangeType('custom');
+                setCalendarOpen(false);
+              }
+            }}
+            numberOfMonths={2}
+            className="pointer-events-auto"
+            locale={zhCN}
+          />
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+// Mock department usage data
+const mockDepartmentUsage = [
+  { name: '技术中心', tokens: 1200000, requests: 5800, users: 15, percentage: 46 },
+  { name: '产品设计部', tokens: 780000, requests: 3200, users: 8, percentage: 30 },
+  { name: '市场运营部', tokens: 380000, requests: 1800, users: 6, percentage: 15 },
+  { name: '行政人事部', tokens: 120000, requests: 600, users: 4, percentage: 5 },
+  { name: '财务部', tokens: 100000, requests: 500, users: 3, percentage: 4 },
+];
+
+// Mock member usage data
+const mockMemberUsage = [
+  { name: '张三', department: '技术中心', tokens: 280000, requests: 1200, avgLatency: 1.8 },
+  { name: '李四', department: '技术中心', tokens: 250000, requests: 1100, avgLatency: 1.6 },
+  { name: '王五', department: '产品设计部', tokens: 180000, requests: 850, avgLatency: 2.1 },
+  { name: '赵六', department: '技术中心', tokens: 160000, requests: 720, avgLatency: 1.9 },
+  { name: '钱七', department: '市场运营部', tokens: 140000, requests: 680, avgLatency: 1.7 },
+  { name: '孙八', department: '产品设计部', tokens: 120000, requests: 580, avgLatency: 2.0 },
+  { name: '周九', department: '技术中心', tokens: 110000, requests: 520, avgLatency: 1.5 },
+  { name: '吴十', department: '市场运营部', tokens: 95000, requests: 450, avgLatency: 2.2 },
+];
+
 export function UsageDashboard() {
+  const [activeTab, setActiveTab] = useState('global');
+  
   // Filter states
   const [dateRangeType, setDateRangeType] = useState<DateRangeType>('7days');
   const [customDateRange, setCustomDateRange] = useState<{ from: Date | undefined; to: Date | undefined }>({
@@ -341,7 +448,6 @@ export function UsageDashboard() {
   const [selectedModels, setSelectedModels] = useState<string[]>([]);
   const [selectedDepartments, setSelectedDepartments] = useState<string[]>([]);
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
-  const [calendarOpen, setCalendarOpen] = useState(false);
 
   // Prepare options for multi-select
   const modelOptions = mockModels.map(m => ({ id: m.id, name: m.name }));
@@ -367,12 +473,10 @@ export function UsageDashboard() {
     }
   };
 
-  const dateRange = getDateRange();
   const showTrendChart = dateRangeType !== 'today' && dateRangeType !== 'yesterday';
 
-  // Generate mock data based on filters (in real app, this would be API call)
+  // Generate mock data based on filters
   const filteredStats = useMemo(() => {
-    // Mock filtering logic - in real app this would filter actual data
     let multiplier = 1;
     
     if (selectedModels.length > 0) multiplier *= (selectedModels.length / mockModels.length) * 0.8;
@@ -419,165 +523,123 @@ export function UsageDashboard() {
     return data;
   }, [dateRangeType, selectedModels, selectedDepartments, selectedMembers]);
 
-  // Get label for date range
-  const getDateRangeLabel = () => {
-    switch (dateRangeType) {
-      case 'today': return '今日';
-      case 'yesterday': return '昨日';
-      case '7days': return '最近 7 天';
-      case '30days': return '最近 30 天';
-      case 'custom': 
-        if (customDateRange.from && customDateRange.to) {
-          return `${format(customDateRange.from, 'MM/dd')} - ${format(customDateRange.to, 'MM/dd')}`;
-        }
-        return '自定义日期';
-      default: return '最近 7 天';
+  // Check if any filter is active based on tab
+  const hasActiveFilters = useMemo(() => {
+    if (activeTab === 'global') {
+      return selectedModels.length > 0;
+    } else if (activeTab === 'organization') {
+      return selectedModels.length > 0 || selectedDepartments.length > 0;
+    } else {
+      return selectedModels.length > 0 || selectedDepartments.length > 0 || selectedMembers.length > 0;
     }
-  };
-
-  // Check if any filter is active
-  const hasActiveFilters = selectedModels.length > 0 || selectedDepartments.length > 0 || selectedMembers.length > 0;
+  }, [activeTab, selectedModels, selectedDepartments, selectedMembers]);
 
   const clearFilters = () => {
     setSelectedModels([]);
-    setSelectedDepartments([]);
-    setSelectedMembers([]);
+    if (activeTab === 'organization' || activeTab === 'member') {
+      setSelectedDepartments([]);
+    }
+    if (activeTab === 'member') {
+      setSelectedMembers([]);
+    }
   };
 
-  return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Filter Bar */}
-      <div className="enterprise-card p-4">
-        <div className="flex flex-wrap items-center gap-3">
-          {/* Date Range */}
-          <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
-            <PopoverTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-2">
-                <Calendar className="w-4 h-4" />
-                {getDateRangeLabel()}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <div className="p-3 border-b border-border">
-                <div className="flex flex-wrap gap-2">
-                  {[
-                    { value: 'today', label: '今日' },
-                    { value: 'yesterday', label: '昨日' },
-                    { value: '7days', label: '最近7天' },
-                    { value: '30days', label: '最近30天' },
-                  ].map(item => (
-                    <Button
-                      key={item.value}
-                      variant={dateRangeType === item.value ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => {
-                        setDateRangeType(item.value as DateRangeType);
-                        setCalendarOpen(false);
-                      }}
-                    >
-                      {item.label}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-              <div className="p-3">
-                <p className="text-sm text-muted-foreground mb-2">自定义日期范围</p>
-                <CalendarComponent
-                  mode="range"
-                  selected={{ from: customDateRange.from, to: customDateRange.to }}
-                  onSelect={(range) => {
-                    setCustomDateRange({ from: range?.from, to: range?.to });
-                    if (range?.from && range?.to) {
-                      setDateRangeType('custom');
-                      setCalendarOpen(false);
-                    }
-                  }}
-                  numberOfMonths={2}
-                  className="pointer-events-auto"
-                  locale={zhCN}
-                />
-              </div>
-            </PopoverContent>
-          </Popover>
+  // Render filter bar based on active tab
+  const renderFilterBar = () => (
+    <div className="enterprise-card p-4 mb-6">
+      <div className="flex flex-wrap items-center gap-3">
+        {/* Date Range - Always show */}
+        <DateRangePicker
+          dateRangeType={dateRangeType}
+          setDateRangeType={setDateRangeType}
+          customDateRange={customDateRange}
+          setCustomDateRange={setCustomDateRange}
+        />
 
-          {/* Model Filter */}
-          <MultiSelectDropdown
-            label="模型"
-            options={modelOptions}
-            selected={selectedModels}
-            onChange={setSelectedModels}
-            placeholder="全部模型"
-          />
+        {/* Model Filter - Always show */}
+        <MultiSelectDropdown
+          options={modelOptions}
+          selected={selectedModels}
+          onChange={setSelectedModels}
+          placeholder="全部模型"
+        />
 
-          {/* Department Filter - Cascading */}
+        {/* Department Filter - Show for organization and member tabs */}
+        {(activeTab === 'organization' || activeTab === 'member') && (
           <CascadingDepartmentSelect
             selected={selectedDepartments}
             onChange={setSelectedDepartments}
             placeholder="全部部门"
           />
+        )}
 
-          {/* Member Filter */}
+        {/* Member Filter - Show only for member tab */}
+        {activeTab === 'member' && (
           <MultiSelectDropdown
-            label="成员"
             options={memberOptions}
             selected={selectedMembers}
             onChange={setSelectedMembers}
             placeholder="全部成员"
           />
-
-          {hasActiveFilters && (
-            <Button variant="ghost" size="sm" onClick={clearFilters} className="gap-1 text-muted-foreground">
-              <X className="w-4 h-4" />
-              清除筛选
-            </Button>
-          )}
-
-          <div className="flex-1" />
-
-          <Button variant="outline" size="sm" className="gap-2">
-            <Download className="w-4 h-4" />
-            导出报告
-          </Button>
-        </div>
-
-        {/* Active Filters Display */}
-        {hasActiveFilters && (
-          <div className="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-border">
-            <Filter className="w-4 h-4 text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">当前筛选：</span>
-            {selectedModels.length > 0 && (
-              <Badge variant="secondary" className="gap-1">
-                模型: {selectedModels.length === 1 
-                  ? mockModels.find(m => m.id === selectedModels[0])?.name 
-                  : `${selectedModels.length} 个`}
-                <X className="w-3 h-3 cursor-pointer" onClick={() => setSelectedModels([])} />
-              </Badge>
-            )}
-            {selectedDepartments.length > 0 && (
-              <Badge variant="secondary" className="gap-1">
-                部门: {selectedDepartments.length === 1 
-                  ? allDepartments.find(d => d.id === selectedDepartments[0])?.name 
-                  : `${selectedDepartments.length} 个`}
-                <X className="w-3 h-3 cursor-pointer" onClick={() => setSelectedDepartments([])} />
-              </Badge>
-            )}
-            {selectedMembers.length > 0 && (
-              <Badge variant="secondary" className="gap-1">
-                成员: {selectedMembers.length === 1 
-                  ? mockMembers.find(m => m.id === selectedMembers[0])?.name 
-                  : `${selectedMembers.length} 人`}
-                <X className="w-3 h-3 cursor-pointer" onClick={() => setSelectedMembers([])} />
-              </Badge>
-            )}
-          </div>
         )}
+
+        {hasActiveFilters && (
+          <Button variant="ghost" size="sm" onClick={clearFilters} className="gap-1 text-muted-foreground">
+            <X className="w-4 h-4" />
+            清除筛选
+          </Button>
+        )}
+
+        <div className="flex-1" />
+
+        <Button variant="outline" size="sm" className="gap-2">
+          <Download className="w-4 h-4" />
+          导出报告
+        </Button>
       </div>
 
+      {/* Active Filters Display */}
+      {hasActiveFilters && (
+        <div className="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-border">
+          <Filter className="w-4 h-4 text-muted-foreground" />
+          <span className="text-sm text-muted-foreground">当前筛选：</span>
+          {selectedModels.length > 0 && (
+            <Badge variant="secondary" className="gap-1">
+              模型: {selectedModels.length === 1 
+                ? mockModels.find(m => m.id === selectedModels[0])?.name 
+                : `${selectedModels.length} 个`}
+              <X className="w-3 h-3 cursor-pointer" onClick={() => setSelectedModels([])} />
+            </Badge>
+          )}
+          {selectedDepartments.length > 0 && (activeTab === 'organization' || activeTab === 'member') && (
+            <Badge variant="secondary" className="gap-1">
+              部门: {selectedDepartments.length === 1 
+                ? allDepartments.find(d => d.id === selectedDepartments[0])?.name 
+                : `${selectedDepartments.length} 个`}
+              <X className="w-3 h-3 cursor-pointer" onClick={() => setSelectedDepartments([])} />
+            </Badge>
+          )}
+          {selectedMembers.length > 0 && activeTab === 'member' && (
+            <Badge variant="secondary" className="gap-1">
+              成员: {selectedMembers.length === 1 
+                ? mockMembers.find(m => m.id === selectedMembers[0])?.name 
+                : `${selectedMembers.length} 人`}
+              <X className="w-3 h-3 cursor-pointer" onClick={() => setSelectedMembers([])} />
+            </Badge>
+          )}
+        </div>
+      )}
+    </div>
+  );
+
+  // Render Global Tab Content
+  const renderGlobalContent = () => (
+    <div className="space-y-6">
       {/* Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {[
           { 
-            label: '用户数', 
+            label: '活跃用户', 
             value: filteredStats.userCount.toLocaleString(),
             icon: Users,
             change: '+3',
@@ -623,7 +685,7 @@ export function UsageDashboard() {
         ))}
       </div>
 
-      {/* Trend Chart - Only show when date range > 1 day */}
+      {/* Trend Chart */}
       {showTrendChart && (
         <div className="enterprise-card p-5">
           <h3 className="font-semibold text-foreground mb-4">使用趋势</h3>
@@ -711,9 +773,8 @@ export function UsageDashboard() {
         </div>
       )}
 
-      {/* Charts Row */}
+      {/* Model Distribution */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Model Distribution */}
         <div className="enterprise-card p-5">
           <h3 className="font-semibold text-foreground mb-4">模型分布</h3>
           <div className="h-48">
@@ -759,35 +820,273 @@ export function UsageDashboard() {
           </div>
         </div>
 
-        {/* Department Distribution */}
+        {/* Quick Overview */}
         <div className="enterprise-card p-5">
-          <h3 className="font-semibold text-foreground mb-4">部门用量分布</h3>
-          <div className="space-y-3">
-            {[
-              { name: '技术中心', tokens: 1200000, percentage: 46 },
-              { name: '产品设计部', tokens: 780000, percentage: 30 },
-              { name: '市场运营部', tokens: 380000, percentage: 15 },
-              { name: '其他', tokens: 220000, percentage: 9 },
-            ].map((dept, index) => (
-              <div key={dept.name} className="space-y-1">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-foreground">{dept.name}</span>
-                  <span className="text-muted-foreground">{(dept.tokens / 1000).toFixed(0)}K ({dept.percentage}%)</span>
-                </div>
-                <div className="h-2 bg-muted rounded-full overflow-hidden">
-                  <div 
-                    className="h-full rounded-full transition-all duration-500"
-                    style={{ 
-                      width: `${dept.percentage}%`,
-                      backgroundColor: COLORS[index % COLORS.length]
-                    }}
-                  />
-                </div>
+          <h3 className="font-semibold text-foreground mb-4">快速概览</h3>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+              <div className="flex items-center gap-3">
+                <Building2 className="w-5 h-5 text-muted-foreground" />
+                <span className="text-sm text-foreground">部门数量</span>
               </div>
-            ))}
+              <span className="font-semibold text-foreground">{allDepartmentsFlat.length}</span>
+            </div>
+            <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+              <div className="flex items-center gap-3">
+                <Users className="w-5 h-5 text-muted-foreground" />
+                <span className="text-sm text-foreground">成员总数</span>
+              </div>
+              <span className="font-semibold text-foreground">{mockMembers.length}</span>
+            </div>
+            <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+              <div className="flex items-center gap-3">
+                <Zap className="w-5 h-5 text-muted-foreground" />
+                <span className="text-sm text-foreground">可用模型</span>
+              </div>
+              <span className="font-semibold text-foreground">{mockModels.filter(m => m.enabled).length}</span>
+            </div>
           </div>
         </div>
       </div>
+    </div>
+  );
+
+  // Render Organization Tab Content
+  const renderOrganizationContent = () => (
+    <div className="space-y-6">
+      {/* Department Stats Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="enterprise-card p-5">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-sm text-muted-foreground">部门总数</span>
+            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Building2 className="w-4 h-4 text-primary" />
+            </div>
+          </div>
+          <p className="text-2xl font-semibold text-foreground">{allDepartmentsFlat.length}</p>
+        </div>
+        <div className="enterprise-card p-5">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-sm text-muted-foreground">活跃部门</span>
+            <div className="w-8 h-8 rounded-lg bg-success/10 flex items-center justify-center">
+              <TrendingUp className="w-4 h-4 text-success" />
+            </div>
+          </div>
+          <p className="text-2xl font-semibold text-foreground">{mockDepartmentUsage.length}</p>
+        </div>
+        <div className="enterprise-card p-5">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-sm text-muted-foreground">部门总用量</span>
+            <div className="w-8 h-8 rounded-lg bg-warning/10 flex items-center justify-center">
+              <Zap className="w-4 h-4 text-warning" />
+            </div>
+          </div>
+          <p className="text-2xl font-semibold text-foreground">
+            {(mockDepartmentUsage.reduce((sum, d) => sum + d.tokens, 0) / 1000000).toFixed(2)}M
+          </p>
+        </div>
+      </div>
+
+      {/* Department Usage Chart */}
+      <div className="enterprise-card p-5">
+        <h3 className="font-semibold text-foreground mb-4">部门用量对比</h3>
+        <div className="h-72">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={mockDepartmentUsage} layout="vertical">
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+              <XAxis type="number" stroke="hsl(var(--muted-foreground))" fontSize={12} tickFormatter={(value) => `${(value / 1000).toFixed(0)}K`} />
+              <YAxis dataKey="name" type="category" stroke="hsl(var(--muted-foreground))" fontSize={12} width={100} />
+              <Tooltip 
+                contentStyle={{
+                  backgroundColor: 'hsl(var(--card))',
+                  border: '1px solid hsl(var(--border))',
+                  borderRadius: '8px',
+                }}
+                formatter={(value: number) => [`${(value / 1000).toFixed(1)}K Tokens`, 'Token消耗']}
+              />
+              <Bar dataKey="tokens" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* Department Usage Table */}
+      <div className="enterprise-card p-5">
+        <h3 className="font-semibold text-foreground mb-4">部门用量排行</h3>
+        <div className="border border-border rounded-lg overflow-hidden">
+          <table className="w-full">
+            <thead>
+              <tr className="bg-muted/30">
+                <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">排名</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">部门名称</th>
+                <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">Token消耗</th>
+                <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">请求数</th>
+                <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">用户数</th>
+                <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">占比</th>
+              </tr>
+            </thead>
+            <tbody>
+              {mockDepartmentUsage.map((dept, index) => (
+                <tr key={dept.name} className="border-t border-border hover:bg-muted/20 transition-colors">
+                  <td className="px-4 py-3">
+                    <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-medium ${
+                      index < 3 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+                    }`}>
+                      {index + 1}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 font-medium text-foreground">{dept.name}</td>
+                  <td className="px-4 py-3 text-right text-foreground">{(dept.tokens / 1000).toFixed(0)}K</td>
+                  <td className="px-4 py-3 text-right text-foreground">{dept.requests.toLocaleString()}</td>
+                  <td className="px-4 py-3 text-right text-foreground">{dept.users}</td>
+                  <td className="px-4 py-3 text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      <div className="w-16 h-2 bg-muted rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-primary rounded-full"
+                          style={{ width: `${dept.percentage}%` }}
+                        />
+                      </div>
+                      <span className="text-sm text-muted-foreground w-10 text-right">{dept.percentage}%</span>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Render Member Tab Content
+  const renderMemberContent = () => (
+    <div className="space-y-6">
+      {/* Member Stats Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="enterprise-card p-5">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-sm text-muted-foreground">成员总数</span>
+            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Users className="w-4 h-4 text-primary" />
+            </div>
+          </div>
+          <p className="text-2xl font-semibold text-foreground">{mockMembers.length}</p>
+        </div>
+        <div className="enterprise-card p-5">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-sm text-muted-foreground">活跃成员</span>
+            <div className="w-8 h-8 rounded-lg bg-success/10 flex items-center justify-center">
+              <User className="w-4 h-4 text-success" />
+            </div>
+          </div>
+          <p className="text-2xl font-semibold text-foreground">{mockMemberUsage.length}</p>
+        </div>
+        <div className="enterprise-card p-5">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-sm text-muted-foreground">人均Token</span>
+            <div className="w-8 h-8 rounded-lg bg-warning/10 flex items-center justify-center">
+              <Zap className="w-4 h-4 text-warning" />
+            </div>
+          </div>
+          <p className="text-2xl font-semibold text-foreground">
+            {(mockMemberUsage.reduce((sum, m) => sum + m.tokens, 0) / mockMemberUsage.length / 1000).toFixed(1)}K
+          </p>
+        </div>
+      </div>
+
+      {/* Member Usage Table */}
+      <div className="enterprise-card p-5">
+        <h3 className="font-semibold text-foreground mb-4">成员用量排行</h3>
+        <div className="border border-border rounded-lg overflow-hidden">
+          <table className="w-full">
+            <thead>
+              <tr className="bg-muted/30">
+                <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">排名</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">成员</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">部门</th>
+                <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">Token消耗</th>
+                <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">请求数</th>
+                <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">平均耗时</th>
+              </tr>
+            </thead>
+            <tbody>
+              {mockMemberUsage.map((member, index) => (
+                <tr key={member.name} className="border-t border-border hover:bg-muted/20 transition-colors">
+                  <td className="px-4 py-3">
+                    <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-medium ${
+                      index < 3 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+                    }`}>
+                      {index + 1}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
+                        <span className="text-xs font-medium text-primary-foreground">{member.name[0]}</span>
+                      </div>
+                      <span className="font-medium text-foreground">{member.name}</span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 text-muted-foreground">{member.department}</td>
+                  <td className="px-4 py-3 text-right text-foreground">{(member.tokens / 1000).toFixed(0)}K</td>
+                  <td className="px-4 py-3 text-right text-foreground">{member.requests.toLocaleString()}</td>
+                  <td className="px-4 py-3 text-right text-foreground">{member.avgLatency}s</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* Member Distribution by Department */}
+      <div className="enterprise-card p-5">
+        <h3 className="font-semibold text-foreground mb-4">部门成员分布</h3>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {['技术中心', '产品设计部', '市场运营部', '其他'].map((dept, index) => {
+            const count = mockMemberUsage.filter(m => m.department === dept || (dept === '其他' && !['技术中心', '产品设计部', '市场运营部'].includes(m.department))).length;
+            return (
+              <div key={dept} className="p-4 bg-muted/30 rounded-lg text-center">
+                <div 
+                  className="w-10 h-10 rounded-full mx-auto mb-2 flex items-center justify-center"
+                  style={{ backgroundColor: COLORS[index % COLORS.length] + '20' }}
+                >
+                  <Building2 className="w-5 h-5" style={{ color: COLORS[index % COLORS.length] }} />
+                </div>
+                <p className="text-sm text-muted-foreground">{dept}</p>
+                <p className="text-lg font-semibold text-foreground">{count} 人</p>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="space-y-6 animate-fade-in">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="mb-6">
+          <TabsTrigger value="global">全局</TabsTrigger>
+          <TabsTrigger value="organization">组织</TabsTrigger>
+          <TabsTrigger value="member">成员</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="global" className="mt-0">
+          {renderFilterBar()}
+          {renderGlobalContent()}
+        </TabsContent>
+
+        <TabsContent value="organization" className="mt-0">
+          {renderFilterBar()}
+          {renderOrganizationContent()}
+        </TabsContent>
+
+        <TabsContent value="member" className="mt-0">
+          {renderFilterBar()}
+          {renderMemberContent()}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
