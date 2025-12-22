@@ -1289,107 +1289,148 @@ export function UsageDashboard() {
     </div>
   );
 
-  // Render Member Tab Content
+  // Member tab search state
+  const [memberTabSearchQuery, setMemberTabSearchQuery] = useState('');
+  const [memberTabSelectedDetail, setMemberTabSelectedDetail] = useState<typeof mockMemberUsage[0] | null>(null);
+  
+  // Filter members by search query for member tab
+  const memberTabFilteredMembers = useMemo(() => {
+    if (!memberTabSearchQuery.trim()) return [];
+    const query = memberTabSearchQuery.toLowerCase();
+    return mockMemberUsage.filter(m => 
+      m.name.toLowerCase().includes(query) || 
+      m.email.toLowerCase().includes(query)
+    );
+  }, [memberTabSearchQuery]);
+
+  // Render Member Tab Content - Search based
   const renderMemberContent = () => (
-    <div className="space-y-6">
-      {/* Member Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="enterprise-card p-5">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-sm text-muted-foreground">成员总数</span>
-            <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-              <Users className="w-4 h-4 text-primary" />
-            </div>
-          </div>
-          <p className="text-2xl font-semibold text-foreground">{mockMembers.length}</p>
-        </div>
-        <div className="enterprise-card p-5">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-sm text-muted-foreground">活跃成员</span>
-            <div className="w-8 h-8 rounded-lg bg-success/10 flex items-center justify-center">
-              <User className="w-4 h-4 text-success" />
-            </div>
-          </div>
-          <p className="text-2xl font-semibold text-foreground">{mockMemberUsage.length}</p>
-        </div>
-        <div className="enterprise-card p-5">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-sm text-muted-foreground">人均Token</span>
-            <div className="w-8 h-8 rounded-lg bg-warning/10 flex items-center justify-center">
-              <Zap className="w-4 h-4 text-warning" />
-            </div>
-          </div>
-          <p className="text-2xl font-semibold text-foreground">
-            {(mockMemberUsage.reduce((sum, m) => sum + m.tokens, 0) / mockMemberUsage.length / 1000).toFixed(1)}K
-          </p>
-        </div>
-      </div>
-
-      {/* Member Usage Table */}
+    <div className="space-y-4">
+      {/* Search Input */}
       <div className="enterprise-card p-5">
-        <h3 className="font-semibold text-foreground mb-4">成员用量排行</h3>
-        <div className="border border-border rounded-lg overflow-hidden">
-          <table className="w-full">
-            <thead>
-              <tr className="bg-muted/30">
-                <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">排名</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">成员</th>
-                <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">部门</th>
-                <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">Token消耗</th>
-                <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">请求数</th>
-                <th className="px-4 py-3 text-right text-sm font-medium text-muted-foreground">平均耗时</th>
-              </tr>
-            </thead>
-            <tbody>
-              {mockMemberUsage.map((member, index) => (
-                <tr key={member.name} className="border-t border-border hover:bg-muted/20 transition-colors">
-                  <td className="px-4 py-3">
-                    <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-medium ${
-                      index < 3 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
-                    }`}>
-                      {index + 1}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
-                        <span className="text-xs font-medium text-primary-foreground">{member.name[0]}</span>
-                      </div>
-                      <span className="font-medium text-foreground">{member.name}</span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-muted-foreground">{member.department}</td>
-                  <td className="px-4 py-3 text-right text-foreground">{(member.tokens / 1000).toFixed(0)}K</td>
-                  <td className="px-4 py-3 text-right text-foreground">{member.requests.toLocaleString()}</td>
-                  <td className="px-4 py-3 text-right text-foreground">{member.avgLatency}s</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="输入成员姓名或邮箱查询详细用量..."
+            value={memberTabSearchQuery}
+            onChange={(e) => {
+              setMemberTabSearchQuery(e.target.value);
+              setMemberTabSelectedDetail(null);
+            }}
+            className="pl-10 h-11"
+          />
         </div>
-      </div>
-
-      {/* Member Distribution by Department */}
-      <div className="enterprise-card p-5">
-        <h3 className="font-semibold text-foreground mb-4">部门成员分布</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {['技术中心', '产品设计部', '市场运营部', '其他'].map((dept, index) => {
-            const count = mockMemberUsage.filter(m => m.department === dept || (dept === '其他' && !['技术中心', '产品设计部', '市场运营部'].includes(m.department))).length;
-            return (
-              <div key={dept} className="p-4 bg-muted/30 rounded-lg text-center">
-                <div 
-                  className="w-10 h-10 rounded-full mx-auto mb-2 flex items-center justify-center"
-                  style={{ backgroundColor: COLORS[index % COLORS.length] + '20' }}
-                >
-                  <Building2 className="w-5 h-5" style={{ color: COLORS[index % COLORS.length] }} />
+        
+        {/* Search Results Dropdown */}
+        {memberTabSearchQuery && !memberTabSelectedDetail && memberTabFilteredMembers.length > 0 && (
+          <div className="mt-3 border border-border rounded-lg overflow-hidden">
+            {memberTabFilteredMembers.map((member) => (
+              <div
+                key={member.id}
+                className="flex items-center gap-3 p-3 hover:bg-muted/50 cursor-pointer transition-colors border-b border-border last:border-b-0"
+                onClick={() => setMemberTabSelectedDetail(member)}
+              >
+                <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center shrink-0">
+                  <span className="text-sm font-medium text-primary-foreground">{member.name[0]}</span>
                 </div>
-                <p className="text-sm text-muted-foreground">{dept}</p>
-                <p className="text-lg font-semibold text-foreground">{count} 人</p>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-foreground">{member.name}</span>
+                    <span className="text-xs text-muted-foreground">{member.department}</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground">{member.email}</p>
+                </div>
               </div>
-            );
-          })}
-        </div>
+            ))}
+          </div>
+        )}
+        
+        {memberTabSearchQuery && !memberTabSelectedDetail && memberTabFilteredMembers.length === 0 && (
+          <div className="mt-3 text-center py-6 text-muted-foreground">
+            未找到匹配的成员
+          </div>
+        )}
       </div>
+
+      {/* Selected Member Detail View */}
+      {memberTabSelectedDetail && (
+        <div className="enterprise-card p-5">
+          {/* Back button and Member Header */}
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center">
+                <span className="text-lg font-medium text-primary-foreground">{memberTabSelectedDetail.name[0]}</span>
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-lg font-semibold text-foreground">{memberTabSelectedDetail.name}</h3>
+                  <span className="text-sm text-muted-foreground">{memberTabSelectedDetail.department}</span>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {memberTabSelectedDetail.email} · 最近活跃: {memberTabSelectedDetail.lastActive}
+                </p>
+              </div>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1"
+              onClick={() => {
+                setMemberTabSelectedDetail(null);
+                setMemberTabSearchQuery('');
+              }}
+            >
+              <ArrowLeft className="w-4 h-4" />
+              返回列表
+            </Button>
+          </div>
+
+          {/* Two Column Layout: Stats on left, Model Preference on right */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Left Column - Stats Cards */}
+            <div className="space-y-4">
+              <div className="p-4 bg-muted/30 rounded-lg">
+                <p className="text-sm text-primary font-medium mb-2">个人累计消耗 (Tokens)</p>
+                <p className="text-3xl font-semibold text-foreground text-right">{memberTabSelectedDetail.tokens.toLocaleString()}</p>
+              </div>
+              <div className="p-4 bg-muted/30 rounded-lg">
+                <p className="text-sm text-primary font-medium mb-2">本月活跃天数</p>
+                <p className="text-3xl font-semibold text-foreground text-right">
+                  {memberTabSelectedDetail.activeDays} <span className="text-lg text-muted-foreground">/ {memberTabSelectedDetail.totalDays}</span>
+                </p>
+              </div>
+              <div className="p-4 bg-muted/30 rounded-lg">
+                <p className="text-sm text-primary font-medium mb-2">最常使用终端</p>
+                <div className="flex items-center justify-end gap-2 mt-2">
+                  <ExternalLink className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-lg font-medium text-foreground">{memberTabSelectedDetail.mostUsedTerminal}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column - Model Preference Distribution */}
+            <div>
+              <p className="text-sm text-primary font-medium mb-4">模型偏好分布</p>
+              <div className="space-y-4">
+                {memberTabSelectedDetail.modelPreference.map((pref, index) => (
+                  <div key={index} className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-foreground">{pref.model}</span>
+                      <span className="text-sm text-muted-foreground">{pref.percentage}%</span>
+                    </div>
+                    <div className="h-2 bg-muted rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-primary rounded-full transition-all"
+                        style={{ width: `${pref.percentage}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 
