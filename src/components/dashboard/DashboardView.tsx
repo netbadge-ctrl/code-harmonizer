@@ -108,7 +108,7 @@ export function DashboardView() {
               <p className="text-sm text-muted-foreground flex items-center gap-2">
                 有效期至: {organization.subscription.expiresAt}
                 {organization.subscription.isTrial && (
-                  <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-amber-500/10 text-amber-600 border border-amber-500/20">
+                  <span className="status-badge status-badge-warning">
                     试用中
                   </span>
                 )}
