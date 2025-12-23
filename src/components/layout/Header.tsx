@@ -2,6 +2,7 @@ import React from 'react';
 import { Bell, Search, HelpCircle, ChevronDown, Globe, Headphones } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useNavigate } from 'react-router-dom';
 
 interface HeaderProps {
   title: string;
@@ -9,6 +10,12 @@ interface HeaderProps {
 }
 
 export function Header({ title, description }: HeaderProps) {
+  const navigate = useNavigate();
+
+  const handleUserClick = () => {
+    navigate('/my-cli');
+  };
+
   return (
     <header className="sticky top-0 z-40 bg-card border-b border-border">
       <div className="flex items-center justify-between h-12 px-6">
@@ -41,7 +48,7 @@ export function Header({ title, description }: HeaderProps) {
           {/* User Menu */}
           <button 
             className="flex items-center gap-2 px-2 py-1 rounded hover:bg-muted transition-colors"
-            onClick={() => window.open('/my-cli', '_blank')}
+            onClick={handleUserClick}
             title="打开我的 CLI"
           >
             <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center">
