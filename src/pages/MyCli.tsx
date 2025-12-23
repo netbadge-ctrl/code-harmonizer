@@ -257,10 +257,12 @@ export default function MyCli() {
             <TabsTrigger value="skills" className="gap-2">
               <Brain className="w-4 h-4" />
               Skills 配置
+              <span className="status-badge status-badge-warning text-[10px] px-1 py-0">即将推出</span>
             </TabsTrigger>
             <TabsTrigger value="mcp" className="gap-2">
               <Plug className="w-4 h-4" />
               MCP 管理
+              <span className="status-badge status-badge-warning text-[10px] px-1 py-0">即将推出</span>
             </TabsTrigger>
           </TabsList>
 
