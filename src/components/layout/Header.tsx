@@ -39,7 +39,11 @@ export function Header({ title, description }: HeaderProps) {
           </Button>
 
           {/* User Menu */}
-          <button className="flex items-center gap-2 px-2 py-1 rounded hover:bg-muted transition-colors">
+          <button 
+            className="flex items-center gap-2 px-2 py-1 rounded hover:bg-muted transition-colors"
+            onClick={() => window.open('/my-cli', '_blank')}
+            title="打开我的 CLI"
+          >
             <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center">
               <span className="text-xs font-medium text-primary-foreground">陈</span>
             </div>

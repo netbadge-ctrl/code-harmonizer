@@ -7,30 +7,26 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { 
-  ArrowLeft,
   Zap, 
   Brain, 
-  BookOpen, 
   Plus, 
   Trash2, 
-  Upload,
-  FileText,
-  FolderOpen,
   Clock,
   TrendingUp,
   Activity,
   BarChart3,
   Settings2,
   Check,
-  X,
   RefreshCw,
-  Download,
-  ExternalLink
+  ExternalLink,
+  Server,
+  Plug,
+  AlertCircle,
+  Power,
+  Globe
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import {
   Table,
   TableBody,
@@ -94,22 +90,55 @@ const customSkills = [
   { id: 'custom-2', name: 'API Design Helper', description: '符合RESTful规范的API设计助手', enabled: true, builtIn: false },
 ];
 
-// Mock knowledge base data
-const knowledgeItems = [
-  { id: 'kb-1', name: '前端开发规范.md', type: 'markdown', size: '24 KB', uploadedAt: '2024-12-15', status: 'indexed' },
-  { id: 'kb-2', name: 'API接口文档.pdf', type: 'pdf', size: '1.2 MB', uploadedAt: '2024-12-18', status: 'indexed' },
-  { id: 'kb-3', name: '项目架构说明', type: 'folder', size: '156 KB', uploadedAt: '2024-12-20', status: 'indexed' },
-  { id: 'kb-4', name: '组件库使用指南.docx', type: 'docx', size: '89 KB', uploadedAt: '2024-12-22', status: 'processing' },
+// Mock MCP servers data
+const mcpServers = [
+  { 
+    id: 'mcp-1', 
+    name: 'GitHub MCP', 
+    description: '连接 GitHub 仓库，支持代码搜索、PR管理等功能',
+    endpoint: 'https://mcp.github.com/v1',
+    status: 'connected',
+    lastSync: '2024-12-23 10:30',
+    tools: ['search_code', 'create_pr', 'review_pr', 'list_issues'],
+  },
+  { 
+    id: 'mcp-2', 
+    name: 'Jira MCP', 
+    description: '连接 Jira 项目管理，支持任务查询和创建',
+    endpoint: 'https://mcp.atlassian.com/jira',
+    status: 'connected',
+    lastSync: '2024-12-23 09:15',
+    tools: ['search_issues', 'create_issue', 'update_issue'],
+  },
+  { 
+    id: 'mcp-3', 
+    name: 'Confluence MCP', 
+    description: '连接 Confluence 知识库，支持文档搜索和引用',
+    endpoint: 'https://mcp.atlassian.com/confluence',
+    status: 'disconnected',
+    lastSync: null,
+    tools: ['search_pages', 'get_page', 'create_page'],
+  },
+  { 
+    id: 'mcp-4', 
+    name: 'Database MCP', 
+    description: '连接内部数据库，支持数据查询和分析',
+    endpoint: 'https://internal.company.com/mcp/db',
+    status: 'error',
+    lastSync: '2024-12-22 14:00',
+    tools: ['query', 'schema_info'],
+    error: '认证已过期，请重新配置'
+  },
 ];
 
 export default function MyCli() {
-  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('usage');
   const [skills, setSkills] = useState([...defaultSkills, ...customSkills]);
-  const [knowledge, setKnowledge] = useState(knowledgeItems);
+  const [mcpList, setMcpList] = useState(mcpServers);
   const [isAddSkillOpen, setIsAddSkillOpen] = useState(false);
-  const [isAddKnowledgeOpen, setIsAddKnowledgeOpen] = useState(false);
+  const [isAddMcpOpen, setIsAddMcpOpen] = useState(false);
   const [newSkill, setNewSkill] = useState({ name: '', description: '' });
+  const [newMcp, setNewMcp] = useState({ name: '', endpoint: '', description: '' });
 
   const toggleSkill = (skillId: string) => {
     setSkills(prev => prev.map(s => 
@@ -135,15 +164,64 @@ export default function MyCli() {
     }
   };
 
-  const deleteKnowledge = (id: string) => {
-    setKnowledge(prev => prev.filter(k => k.id !== id));
+  const toggleMcpConnection = (mcpId: string) => {
+    setMcpList(prev => prev.map(m => {
+      if (m.id === mcpId) {
+        if (m.status === 'connected') {
+          return { ...m, status: 'disconnected', lastSync: null };
+        } else {
+          return { ...m, status: 'connected', lastSync: new Date().toLocaleString('zh-CN'), error: undefined };
+        }
+      }
+      return m;
+    }));
   };
 
-  const getFileIcon = (type: string) => {
-    switch (type) {
-      case 'folder': return <FolderOpen className="w-4 h-4 text-amber-500" />;
-      case 'pdf': return <FileText className="w-4 h-4 text-red-500" />;
-      default: return <FileText className="w-4 h-4 text-blue-500" />;
+  const deleteMcp = (mcpId: string) => {
+    setMcpList(prev => prev.filter(m => m.id !== mcpId));
+  };
+
+  const addMcp = () => {
+    if (newMcp.name && newMcp.endpoint) {
+      setMcpList(prev => [...prev, {
+        id: `mcp-${Date.now()}`,
+        name: newMcp.name,
+        endpoint: newMcp.endpoint,
+        description: newMcp.description || '自定义 MCP 服务',
+        status: 'disconnected',
+        lastSync: null,
+        tools: [],
+      }]);
+      setNewMcp({ name: '', endpoint: '', description: '' });
+      setIsAddMcpOpen(false);
+    }
+  };
+
+  const getStatusBadge = (status: string, error?: string) => {
+    switch (status) {
+      case 'connected':
+        return (
+          <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/20">
+            <Check className="w-3 h-3 mr-1" />
+            已连接
+          </Badge>
+        );
+      case 'disconnected':
+        return (
+          <Badge variant="outline" className="bg-muted text-muted-foreground border-border">
+            <Power className="w-3 h-3 mr-1" />
+            未连接
+          </Badge>
+        );
+      case 'error':
+        return (
+          <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20">
+            <AlertCircle className="w-3 h-3 mr-1" />
+            连接错误
+          </Badge>
+        );
+      default:
+        return null;
     }
   };
 
@@ -155,16 +233,6 @@ export default function MyCli() {
       {/* Header */}
       <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="container flex h-14 items-center gap-4 px-6">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={() => navigate('/console')}
-            className="gap-2"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            返回控制台
-          </Button>
-          <Separator orientation="vertical" className="h-6" />
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium text-sm">
               {currentUser.name.charAt(0)}
@@ -189,9 +257,9 @@ export default function MyCli() {
               <Brain className="w-4 h-4" />
               Skills 配置
             </TabsTrigger>
-            <TabsTrigger value="knowledge" className="gap-2">
-              <BookOpen className="w-4 h-4" />
-              知识库
+            <TabsTrigger value="mcp" className="gap-2">
+              <Plug className="w-4 h-4" />
+              MCP 管理
             </TabsTrigger>
           </TabsList>
 
@@ -450,140 +518,184 @@ export default function MyCli() {
             </Card>
           </TabsContent>
 
-          {/* Knowledge Base Tab */}
-          <TabsContent value="knowledge" className="space-y-6">
+          {/* MCP Management Tab */}
+          <TabsContent value="mcp" className="space-y-6">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-lg font-semibold">个人知识库</h2>
-                <p className="text-sm text-muted-foreground">上传文档让 AI 助手更好地理解您的工作上下文</p>
+                <h2 className="text-lg font-semibold">MCP 服务管理</h2>
+                <p className="text-sm text-muted-foreground">配置 Model Context Protocol 服务连接</p>
               </div>
-              <Dialog open={isAddKnowledgeOpen} onOpenChange={setIsAddKnowledgeOpen}>
+              <Dialog open={isAddMcpOpen} onOpenChange={setIsAddMcpOpen}>
                 <DialogTrigger asChild>
                   <Button size="sm" className="gap-2">
-                    <Upload className="w-4 h-4" />
-                    上传文档
+                    <Plus className="w-4 h-4" />
+                    添加 MCP 服务
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle>上传知识库文档</DialogTitle>
+                    <DialogTitle>添加 MCP 服务</DialogTitle>
                     <DialogDescription>
-                      支持 Markdown、PDF、Word、文件夹等格式
+                      连接新的 MCP 服务以扩展 AI 助手的能力
                     </DialogDescription>
                   </DialogHeader>
-                  <div className="py-8">
-                    <div className="border-2 border-dashed rounded-lg p-8 text-center hover:border-primary/50 transition-colors cursor-pointer">
-                      <Upload className="w-10 h-10 mx-auto mb-4 text-muted-foreground" />
-                      <p className="text-sm font-medium">点击或拖拽文件到此处</p>
-                      <p className="text-xs text-muted-foreground mt-1">支持 .md, .pdf, .docx, .txt 等格式</p>
+                  <div className="space-y-4 py-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="mcp-name">服务名称</Label>
+                      <Input 
+                        id="mcp-name" 
+                        placeholder="例如：Notion MCP"
+                        value={newMcp.name}
+                        onChange={(e) => setNewMcp(prev => ({ ...prev, name: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="mcp-endpoint">服务端点</Label>
+                      <Input 
+                        id="mcp-endpoint" 
+                        placeholder="https://mcp.example.com/v1"
+                        value={newMcp.endpoint}
+                        onChange={(e) => setNewMcp(prev => ({ ...prev, endpoint: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="mcp-desc">描述（可选）</Label>
+                      <Textarea 
+                        id="mcp-desc" 
+                        placeholder="描述这个 MCP 服务的功能..."
+                        value={newMcp.description}
+                        onChange={(e) => setNewMcp(prev => ({ ...prev, description: e.target.value }))}
+                      />
                     </div>
                   </div>
                   <DialogFooter>
-                    <Button variant="outline" onClick={() => setIsAddKnowledgeOpen(false)}>取消</Button>
-                    <Button onClick={() => setIsAddKnowledgeOpen(false)}>上传</Button>
+                    <Button variant="outline" onClick={() => setIsAddMcpOpen(false)}>取消</Button>
+                    <Button onClick={addMcp}>添加</Button>
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
             </div>
 
-            {/* Knowledge Stats */}
+            {/* MCP Stats */}
             <div className="grid gap-4 md:grid-cols-3">
               <Card>
                 <CardHeader className="pb-2">
-                  <CardDescription>文档总数</CardDescription>
+                  <CardDescription className="flex items-center gap-2">
+                    <Server className="w-4 h-4" />
+                    服务总数
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{knowledge.length}</div>
+                  <div className="text-2xl font-bold">{mcpList.length}</div>
                 </CardContent>
               </Card>
               <Card>
                 <CardHeader className="pb-2">
-                  <CardDescription>已索引</CardDescription>
+                  <CardDescription className="flex items-center gap-2">
+                    <Check className="w-4 h-4" />
+                    已连接
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-green-600">
-                    {knowledge.filter(k => k.status === 'indexed').length}
+                    {mcpList.filter(m => m.status === 'connected').length}
                   </div>
                 </CardContent>
               </Card>
               <Card>
                 <CardHeader className="pb-2">
-                  <CardDescription>处理中</CardDescription>
+                  <CardDescription className="flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4" />
+                    需要关注
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-amber-500">
-                    {knowledge.filter(k => k.status === 'processing').length}
+                    {mcpList.filter(m => m.status === 'error').length}
                   </div>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Knowledge List */}
+            {/* MCP List */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">文档列表</CardTitle>
+                <CardTitle className="text-base">MCP 服务列表</CardTitle>
               </CardHeader>
               <CardContent>
-                {knowledge.length === 0 ? (
+                {mcpList.length === 0 ? (
                   <div className="text-center py-12 text-muted-foreground">
-                    <BookOpen className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                    <p className="text-sm">知识库为空</p>
-                    <p className="text-xs mt-1">上传文档来增强 AI 助手的上下文理解能力</p>
+                    <Plug className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                    <p className="text-sm">还没有配置 MCP 服务</p>
+                    <p className="text-xs mt-1">添加 MCP 服务来扩展 AI 助手的能力</p>
                   </div>
                 ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>文件名</TableHead>
-                        <TableHead>大小</TableHead>
-                        <TableHead>上传时间</TableHead>
-                        <TableHead>状态</TableHead>
-                        <TableHead className="text-right">操作</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {knowledge.map((item) => (
-                        <TableRow key={item.id}>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              {getFileIcon(item.type)}
-                              <span className="font-medium">{item.name}</span>
+                  <div className="space-y-4">
+                    {mcpList.map((mcp) => (
+                      <div key={mcp.id} className="p-4 rounded-lg border bg-card">
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-start gap-3">
+                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                              mcp.status === 'connected' ? 'bg-green-500/10 text-green-600' : 
+                              mcp.status === 'error' ? 'bg-destructive/10 text-destructive' : 
+                              'bg-muted text-muted-foreground'
+                            }`}>
+                              <Server className="w-5 h-5" />
                             </div>
-                          </TableCell>
-                          <TableCell className="text-muted-foreground">{item.size}</TableCell>
-                          <TableCell className="text-muted-foreground">{item.uploadedAt}</TableCell>
-                          <TableCell>
-                            {item.status === 'indexed' ? (
-                              <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/20">
-                                <Check className="w-3 h-3 mr-1" />
-                                已索引
-                              </Badge>
-                            ) : (
-                              <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/20">
-                                <RefreshCw className="w-3 h-3 mr-1 animate-spin" />
-                                处理中
-                              </Badge>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex items-center justify-end gap-1">
-                              <Button variant="ghost" size="icon" className="h-8 w-8">
-                                <Download className="w-4 h-4" />
-                              </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                className="h-8 w-8 text-destructive hover:text-destructive"
-                                onClick={() => deleteKnowledge(item.id)}
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium">{mcp.name}</span>
+                                {getStatusBadge(mcp.status, mcp.error)}
+                              </div>
+                              <p className="text-sm text-muted-foreground">{mcp.description}</p>
+                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                <Globe className="w-3 h-3" />
+                                <span>{mcp.endpoint}</span>
+                              </div>
+                              {mcp.lastSync && (
+                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                  <RefreshCw className="w-3 h-3" />
+                                  <span>上次同步: {mcp.lastSync}</span>
+                                </div>
+                              )}
+                              {mcp.error && (
+                                <div className="flex items-center gap-2 text-xs text-destructive">
+                                  <AlertCircle className="w-3 h-3" />
+                                  <span>{mcp.error}</span>
+                                </div>
+                              )}
+                              {mcp.tools.length > 0 && (
+                                <div className="flex flex-wrap gap-1 mt-2">
+                                  {mcp.tools.map((tool) => (
+                                    <Badge key={tool} variant="secondary" className="text-xs">
+                                      {tool}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              )}
                             </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button 
+                              variant={mcp.status === 'connected' ? 'outline' : 'default'}
+                              size="sm"
+                              onClick={() => toggleMcpConnection(mcp.id)}
+                            >
+                              {mcp.status === 'connected' ? '断开连接' : '连接'}
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8 text-destructive hover:text-destructive"
+                              onClick={() => deleteMcp(mcp.id)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -593,15 +705,15 @@ export default function MyCli() {
               <CardContent className="pt-6">
                 <div className="flex gap-4">
                   <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <BookOpen className="w-5 h-5 text-primary" />
+                    <Plug className="w-5 h-5 text-primary" />
                   </div>
                   <div>
-                    <h3 className="font-medium mb-1">知识库使用提示</h3>
+                    <h3 className="font-medium mb-1">MCP 使用提示</h3>
                     <ul className="text-sm text-muted-foreground space-y-1">
-                      <li>• 上传项目文档、规范文档可以让 AI 更好地理解项目上下文</li>
-                      <li>• 支持 Markdown、PDF、Word 等多种格式</li>
-                      <li>• 文档索引完成后会自动应用到 AI 对话中</li>
-                      <li>• 建议定期更新知识库以保持信息最新</li>
+                      <li>• MCP (Model Context Protocol) 是一种标准协议，用于连接外部服务和工具</li>
+                      <li>• 连接 MCP 服务后，AI 助手可以访问对应的工具和数据</li>
+                      <li>• 支持 GitHub、Jira、Confluence 等常见开发工具的 MCP 服务</li>
+                      <li>• 如遇连接问题，请检查服务端点和认证信息是否正确</li>
                     </ul>
                   </div>
                 </div>
