@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   Users, 
@@ -9,7 +10,8 @@ import {
   ChevronLeft,
   ChevronDown,
   Sparkles,
-  FileText
+  FileText,
+  Terminal
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -47,6 +49,7 @@ const menuGroups = [
 ];
 
 export function Sidebar({ currentView, onViewChange, collapsed, onToggleCollapse }: SidebarProps) {
+  const navigate = useNavigate();
   const [expandedGroups, setExpandedGroups] = React.useState<string[]>(['statistics', 'service']);
 
   const toggleGroup = (groupId: string) => {
@@ -139,6 +142,21 @@ export function Sidebar({ currentView, onViewChange, collapsed, onToggleCollapse
           </div>
         ))}
       </nav>
+
+      {/* My CLI Button */}
+      <div className="px-2 py-2 border-t border-sidebar-border">
+        <button
+          onClick={() => navigate('/my-cli')}
+          className={cn(
+            "w-full flex items-center gap-2 px-3 py-2 rounded text-sm font-medium transition-colors",
+            "bg-primary/10 text-primary hover:bg-primary/20"
+          )}
+          title={collapsed ? "我的 CLI" : undefined}
+        >
+          <Terminal className="w-4 h-4 flex-shrink-0" />
+          {!collapsed && <span>我的 CLI</span>}
+        </button>
+      </div>
 
       {/* Collapse Toggle */}
       <div className="p-2 border-t border-sidebar-border">
