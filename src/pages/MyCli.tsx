@@ -57,24 +57,25 @@ const currentUser = {
 
 // Mock token usage data
 const tokenUsage = {
-  total: 500000,
-  used: 328450,
-  remaining: 171550,
-  dailyUsage: [
-    { date: '12-17', tokens: 45200 },
-    { date: '12-18', tokens: 52300 },
-    { date: '12-19', tokens: 38900 },
-    { date: '12-20', tokens: 61200 },
-    { date: '12-21', tokens: 48700 },
-    { date: '12-22', tokens: 42150 },
-    { date: '12-23', tokens: 40000 },
-  ],
-  modelBreakdown: [
-    { model: 'Claude 3.5 Sonnet', tokens: 156000, percentage: 47.5 },
-    { model: 'GPT-4o', tokens: 98200, percentage: 29.9 },
-    { model: 'DeepSeek V3', tokens: 74250, percentage: 22.6 },
-  ],
+  todayTokens: 40000,
+  monthlyTokens: 328450,
+  todayChange: -5.1, // percentage change from yesterday
+  monthlyChange: 12.3, // percentage change from last month
 };
+
+// Mock today's call details
+const todayCallDetails = [
+  { id: '1', time: '10:32:15', model: 'Claude 3.5 Sonnet', inputTokens: 1250, outputTokens: 3420, totalTokens: 4670, task: '代码审查 - UserService.java' },
+  { id: '2', time: '10:28:03', model: 'GPT-4o', inputTokens: 890, outputTokens: 2150, totalTokens: 3040, task: '单元测试生成 - AuthController' },
+  { id: '3', time: '10:15:42', model: 'Claude 3.5 Sonnet', inputTokens: 2100, outputTokens: 4800, totalTokens: 6900, task: 'API文档生成' },
+  { id: '4', time: '09:58:21', model: 'DeepSeek V3', inputTokens: 650, outputTokens: 1890, totalTokens: 2540, task: '代码补全 - utils.ts' },
+  { id: '5', time: '09:45:33', model: 'Claude 3.5 Sonnet', inputTokens: 1800, outputTokens: 5200, totalTokens: 7000, task: '重构建议 - PaymentModule' },
+  { id: '6', time: '09:32:18', model: 'GPT-4o', inputTokens: 720, outputTokens: 1650, totalTokens: 2370, task: 'Bug分析 - 订单状态异常' },
+  { id: '7', time: '09:18:55', model: 'Claude 3.5 Sonnet', inputTokens: 1450, outputTokens: 3800, totalTokens: 5250, task: '代码解释 - 算法实现' },
+  { id: '8', time: '09:05:12', model: 'DeepSeek V3', inputTokens: 980, outputTokens: 2250, totalTokens: 3230, task: 'SQL优化建议' },
+  { id: '9', time: '08:52:47', model: 'GPT-4o', inputTokens: 560, outputTokens: 1440, totalTokens: 2000, task: '错误日志分析' },
+  { id: '10', time: '08:38:29', model: 'Claude 3.5 Sonnet', inputTokens: 1100, outputTokens: 2900, totalTokens: 4000, task: '接口设计评审' },
+];
 
 // Mock skills data
 const defaultSkills = [
@@ -225,8 +226,8 @@ export default function MyCli() {
     }
   };
 
-  const usagePercentage = (tokenUsage.used / tokenUsage.total) * 100;
-  const maxDailyTokens = Math.max(...tokenUsage.dailyUsage.map(d => d.tokens));
+  // Calculate total tokens from today's calls
+  const todayTotalFromCalls = todayCallDetails.reduce((sum, call) => sum + call.totalTokens, 0);
 
   return (
     <div className="min-h-screen bg-background">
@@ -266,17 +267,19 @@ export default function MyCli() {
           {/* Token Usage Tab */}
           <TabsContent value="usage" className="space-y-6">
             {/* Usage Overview Cards */}
-            <div className="grid gap-4 md:grid-cols-4">
+            <div className="grid gap-4 md:grid-cols-2">
               <Card>
                 <CardHeader className="pb-2">
                   <CardDescription className="flex items-center gap-2">
-                    <Zap className="w-4 h-4" />
-                    本月总配额
+                    <Clock className="w-4 h-4" />
+                    今日 Token 消耗
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{(tokenUsage.total / 1000).toFixed(0)}K</div>
-                  <p className="text-xs text-muted-foreground">Tokens</p>
+                  <div className="text-2xl font-bold">{(tokenUsage.todayTokens / 1000).toFixed(1)}K</div>
+                  <p className={`text-xs ${tokenUsage.todayChange < 0 ? 'text-green-600' : 'text-destructive'}`}>
+                    较昨日 {tokenUsage.todayChange > 0 ? '+' : ''}{tokenUsage.todayChange}%
+                  </p>
                 </CardContent>
               </Card>
               
@@ -284,101 +287,58 @@ export default function MyCli() {
                 <CardHeader className="pb-2">
                   <CardDescription className="flex items-center gap-2">
                     <Activity className="w-4 h-4" />
-                    已使用
+                    月累计消耗
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-primary">{(tokenUsage.used / 1000).toFixed(1)}K</div>
-                  <p className="text-xs text-muted-foreground">{usagePercentage.toFixed(1)}% 已用</p>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardDescription className="flex items-center gap-2">
-                    <TrendingUp className="w-4 h-4" />
-                    剩余配额
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-green-600">{(tokenUsage.remaining / 1000).toFixed(1)}K</div>
-                  <p className="text-xs text-muted-foreground">预计可用至月底</p>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardDescription className="flex items-center gap-2">
-                    <Clock className="w-4 h-4" />
-                    今日消耗
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{(tokenUsage.dailyUsage[tokenUsage.dailyUsage.length - 1].tokens / 1000).toFixed(1)}K</div>
-                  <p className="text-xs text-muted-foreground">较昨日 -5.1%</p>
+                  <div className="text-2xl font-bold text-primary">{(tokenUsage.monthlyTokens / 1000).toFixed(1)}K</div>
+                  <p className={`text-xs ${tokenUsage.monthlyChange < 0 ? 'text-green-600' : 'text-muted-foreground'}`}>
+                    较上月 {tokenUsage.monthlyChange > 0 ? '+' : ''}{tokenUsage.monthlyChange}%
+                  </p>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Usage Progress */}
+            {/* Today's Call Details */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">配额使用进度</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Progress value={usagePercentage} className="h-3" />
-                <div className="flex justify-between text-sm text-muted-foreground">
-                  <span>已用 {(tokenUsage.used / 1000).toFixed(1)}K tokens</span>
-                  <span>总配额 {(tokenUsage.total / 1000).toFixed(0)}K tokens</span>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Daily Usage Chart */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">近7天使用趋势</CardTitle>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <BarChart3 className="w-4 h-4" />
+                  今日调用明细
+                </CardTitle>
+                <CardDescription>
+                  共 {todayCallDetails.length} 次调用，消耗 {(todayTotalFromCalls / 1000).toFixed(1)}K tokens
+                </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="flex items-end gap-2 h-40">
-                  {tokenUsage.dailyUsage.map((day, index) => (
-                    <div key={day.date} className="flex-1 flex flex-col items-center gap-2">
-                      <div 
-                        className="w-full bg-primary/20 rounded-t relative group cursor-pointer hover:bg-primary/30 transition-colors"
-                        style={{ height: `${(day.tokens / maxDailyTokens) * 100}%`, minHeight: '20px' }}
-                      >
-                        <div 
-                          className="absolute bottom-0 left-0 right-0 bg-primary rounded-t transition-all"
-                          style={{ height: `${(day.tokens / maxDailyTokens) * 100}%` }}
-                        />
-                        <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-popover border rounded px-2 py-1 text-xs opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                          {(day.tokens / 1000).toFixed(1)}K
-                        </div>
-                      </div>
-                      <span className="text-xs text-muted-foreground">{day.date}</span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Model Breakdown */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">模型使用分布</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {tokenUsage.modelBreakdown.map((model) => (
-                    <div key={model.model} className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span className="font-medium">{model.model}</span>
-                        <span className="text-muted-foreground">{(model.tokens / 1000).toFixed(1)}K ({model.percentage}%)</span>
-                      </div>
-                      <Progress value={model.percentage} className="h-2" />
-                    </div>
-                  ))}
-                </div>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[100px]">时间</TableHead>
+                      <TableHead>任务</TableHead>
+                      <TableHead>模型</TableHead>
+                      <TableHead className="text-right">输入</TableHead>
+                      <TableHead className="text-right">输出</TableHead>
+                      <TableHead className="text-right">合计</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {todayCallDetails.map((call) => (
+                      <TableRow key={call.id}>
+                        <TableCell className="font-mono text-xs text-muted-foreground">{call.time}</TableCell>
+                        <TableCell className="max-w-[200px] truncate" title={call.task}>{call.task}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="text-xs">
+                            {call.model}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right text-muted-foreground">{call.inputTokens.toLocaleString()}</TableCell>
+                        <TableCell className="text-right text-muted-foreground">{call.outputTokens.toLocaleString()}</TableCell>
+                        <TableCell className="text-right font-medium">{call.totalTokens.toLocaleString()}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </CardContent>
             </Card>
           </TabsContent>
