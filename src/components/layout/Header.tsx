@@ -35,6 +35,16 @@ export function Header({ title, description }: HeaderProps) {
             />
           </div>
 
+          {/* CLI Personal View Link */}
+          <a 
+            href="/my-cli" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="hidden md:block text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            CLI个人视图
+          </a>
+
           {/* Notifications */}
           <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground">
             <Bell className="w-4 h-4" />
