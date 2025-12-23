@@ -315,7 +315,6 @@ export default function MyCli() {
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-[100px]">时间</TableHead>
-                      <TableHead>任务</TableHead>
                       <TableHead>模型</TableHead>
                       <TableHead className="text-right">输入</TableHead>
                       <TableHead className="text-right">输出</TableHead>
@@ -326,7 +325,6 @@ export default function MyCli() {
                     {todayCallDetails.map((call) => (
                       <TableRow key={call.id}>
                         <TableCell className="font-mono text-xs text-muted-foreground">{call.time}</TableCell>
-                        <TableCell className="max-w-[200px] truncate" title={call.task}>{call.task}</TableCell>
                         <TableCell>
                           <Badge variant="outline" className="text-xs">
                             {call.model}
