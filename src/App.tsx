@@ -7,6 +7,7 @@ import Landing from "./pages/Landing";
 import Onboarding from "./pages/Onboarding";
 import Console from "./pages/Console";
 import MyCli from "./pages/MyCli";
+import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -22,6 +23,7 @@ const App = () => (
           <Route path="/onboarding" element={<Onboarding />} />
           <Route path="/console" element={<Console />} />
           <Route path="/my-cli" element={<MyCli />} />
+          <Route path="/admin" element={<Admin />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
