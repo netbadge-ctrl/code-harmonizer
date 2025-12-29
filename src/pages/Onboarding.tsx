@@ -15,8 +15,20 @@ import {
   Cloud,
   Server,
   Database,
-  HardDrive
+  HardDrive,
+  MapPin,
+  CreditCard,
+  Clock,
+  Globe
 } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -42,6 +54,8 @@ interface DiagnosticItem {
 }
 
 interface CloudConfig {
+  billingMethod: 'pay-as-you-go' | 'subscription';
+  region: string;
   slb: {
     enabled: boolean;
   };
@@ -64,6 +78,16 @@ interface CloudConfig {
   };
 }
 
+const regions = [
+  { id: 'cn-hangzhou', name: '华东1（杭州）', zone: '中国' },
+  { id: 'cn-shanghai', name: '华东2（上海）', zone: '中国' },
+  { id: 'cn-beijing', name: '华北2（北京）', zone: '中国' },
+  { id: 'cn-shenzhen', name: '华南1（深圳）', zone: '中国' },
+  { id: 'cn-hongkong', name: '中国（香港）', zone: '中国' },
+  { id: 'ap-southeast-1', name: '新加坡', zone: '亚太' },
+  { id: 'us-west-1', name: '美国（硅谷）', zone: '美洲' },
+];
+
 export function Onboarding() {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0);
@@ -81,6 +105,8 @@ export function Onboarding() {
 
   // Cloud services config
   const [cloudConfig, setCloudConfig] = useState<CloudConfig>({
+    billingMethod: 'pay-as-you-go',
+    region: 'cn-hangzhou',
     slb: { enabled: true },
     ecs: {
       enabled: true,
@@ -264,165 +290,266 @@ export function Onboarding() {
             {/* Step 1: Cloud Services */}
             {currentStep === 0 && (
               <div className="animate-fade-in">
-                {/* Title */}
-                <div className="flex items-center gap-3 mb-8">
-                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <Cloud className="w-5 h-5 text-primary" />
+                {/* Header */}
+                <div className="mb-8">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+                    <Cloud className="w-4 h-4" />
+                    <span>云服务配置</span>
                   </div>
-                  <div>
-                    <h1 className="text-xl font-semibold text-foreground">创建云服务</h1>
-                    <p className="text-sm text-muted-foreground">配置部署 KSGC 服务所需的云资源</p>
-                  </div>
+                  <h1 className="text-2xl font-bold text-foreground mb-1">创建云服务资源</h1>
+                  <p className="text-muted-foreground">配置部署 KSGC 服务所需的基础设施</p>
                 </div>
 
-                {/* SLB Config */}
-                <div className="mb-6 p-4 bg-card rounded-lg border border-border">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                      <Server className="w-5 h-5 text-blue-500" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-medium text-foreground">SLB 负载均衡</h3>
-                      <p className="text-xs text-muted-foreground">Server Load Balancer</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-green-600 font-medium">已配置</span>
-                      <CheckCircle2 className="w-4 h-4 text-green-600" />
-                    </div>
+                {/* Billing & Region Section */}
+                <div className="bg-card border border-border rounded-xl overflow-hidden mb-6">
+                  <div className="bg-muted/30 px-5 py-3 border-b border-border">
+                    <h2 className="font-semibold text-foreground flex items-center gap-2">
+                      <CreditCard className="w-4 h-4 text-primary" />
+                      基础配置
+                    </h2>
                   </div>
-                </div>
-
-                {/* ECS Config */}
-                <div className="mb-6 p-4 bg-card rounded-lg border border-border">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center">
-                      <HardDrive className="w-5 h-5 text-purple-500" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-medium text-foreground">云服务器 ECS</h3>
-                      <p className="text-xs text-muted-foreground">Elastic Compute Service</p>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div className="p-3 bg-muted/50 rounded-lg">
-                      <p className="text-muted-foreground text-xs mb-1">机型</p>
-                      <p className="font-medium text-foreground">{cloudConfig.ecs.machineType}</p>
-                    </div>
-                    <div className="p-3 bg-muted/50 rounded-lg">
-                      <p className="text-muted-foreground text-xs mb-1">规格</p>
-                      <p className="font-medium text-foreground">{cloudConfig.ecs.specs}</p>
-                    </div>
-                    <div className="p-3 bg-muted/50 rounded-lg">
-                      <p className="text-muted-foreground text-xs mb-1">数量</p>
-                      <p className="font-medium text-foreground">{cloudConfig.ecs.quantity} 台</p>
-                    </div>
-                    <div className="p-3 bg-muted/50 rounded-lg">
-                      <p className="text-muted-foreground text-xs mb-1">系统盘</p>
-                      <p className="font-medium text-foreground">{cloudConfig.ecs.systemDisk}</p>
-                    </div>
-                    <div className="p-3 bg-muted/50 rounded-lg col-span-2">
-                      <p className="text-muted-foreground text-xs mb-1">数据盘</p>
-                      <p className="font-medium text-foreground">{cloudConfig.ecs.dataDisk}</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* MySQL Config */}
-                <div className="mb-6 p-4 bg-card rounded-lg border border-border">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 rounded-lg bg-orange-500/10 flex items-center justify-center">
-                      <Database className="w-5 h-5 text-orange-500" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-medium text-foreground">MySQL 数据库</h3>
-                      <p className="text-xs text-muted-foreground">关系型数据库服务</p>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-3 gap-4 text-sm mb-4">
-                    <div className="p-3 bg-muted/50 rounded-lg">
-                      <p className="text-muted-foreground text-xs mb-1">存储类型</p>
-                      <p className="font-medium text-foreground">{cloudConfig.mysql.storageType}</p>
-                    </div>
-                    <div className="p-3 bg-muted/50 rounded-lg">
-                      <p className="text-muted-foreground text-xs mb-1">内存</p>
-                      <p className="font-medium text-foreground">{cloudConfig.mysql.memory}</p>
-                    </div>
-                    <div className="p-3 bg-muted/50 rounded-lg">
-                      <p className="text-muted-foreground text-xs mb-1">磁盘</p>
-                      <p className="font-medium text-foreground">{cloudConfig.mysql.disk}</p>
-                    </div>
-                  </div>
-
-                  {/* Admin Account Config */}
-                  <div className="border-t border-border pt-4 mt-4">
-                    <h4 className="text-sm font-medium text-foreground mb-3">管理员账户配置</h4>
+                  <div className="p-5 space-y-5">
+                    {/* Billing Method */}
                     <div className="space-y-3">
-                      <div className="space-y-2">
-                        <Label htmlFor="mysqlUser" className="text-sm">管理员用户名</Label>
-                        <Input
-                          id="mysqlUser"
-                          value={cloudConfig.mysql.adminUser}
-                          disabled
-                          className="bg-muted"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="mysqlPassword" className="text-sm">管理员密码</Label>
-                        <div className="relative">
-                          <Input
-                            id="mysqlPassword"
-                            type={showMysqlPassword ? 'text' : 'password'}
-                            placeholder="请输入密码（至少8位）"
-                            value={cloudConfig.mysql.adminPassword}
-                            onChange={(e) => setCloudConfig(prev => ({
-                              ...prev,
-                              mysql: { ...prev.mysql, adminPassword: e.target.value }
-                            }))}
-                            className="bg-background pr-10"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setShowMysqlPassword(!showMysqlPassword)}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                          >
-                            {showMysqlPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                          </button>
+                      <Label className="text-sm font-medium flex items-center gap-2">
+                        <Clock className="w-4 h-4 text-muted-foreground" />
+                        计费方式
+                      </Label>
+                      <RadioGroup
+                        value={cloudConfig.billingMethod}
+                        onValueChange={(value: 'pay-as-you-go' | 'subscription') => 
+                          setCloudConfig(prev => ({ ...prev, billingMethod: value }))
+                        }
+                        className="flex gap-4"
+                      >
+                        <div className={cn(
+                          "flex-1 relative flex items-start gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all",
+                          cloudConfig.billingMethod === 'pay-as-you-go' 
+                            ? "border-primary bg-primary/5" 
+                            : "border-border hover:border-muted-foreground/50"
+                        )}>
+                          <RadioGroupItem value="pay-as-you-go" id="pay-as-you-go" className="mt-0.5" />
+                          <div className="flex-1">
+                            <Label htmlFor="pay-as-you-go" className="font-medium cursor-pointer">
+                              按量付费
+                            </Label>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              按实际使用量计费，适合业务波动大的场景
+                            </p>
+                          </div>
                         </div>
-                        {cloudConfig.mysql.adminPassword && !passwordValid && (
-                          <p className="text-xs text-destructive">密码长度至少8位</p>
-                        )}
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="mysqlConfirmPassword" className="text-sm">确认密码</Label>
-                        <div className="relative">
-                          <Input
-                            id="mysqlConfirmPassword"
-                            type={showMysqlConfirmPassword ? 'text' : 'password'}
-                            placeholder="请再次输入密码"
-                            value={cloudConfig.mysql.confirmPassword}
-                            onChange={(e) => setCloudConfig(prev => ({
-                              ...prev,
-                              mysql: { ...prev.mysql, confirmPassword: e.target.value }
-                            }))}
-                            className="bg-background pr-10"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setShowMysqlConfirmPassword(!showMysqlConfirmPassword)}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                          >
-                            {showMysqlConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                          </button>
+                        <div className={cn(
+                          "flex-1 relative flex items-start gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all",
+                          cloudConfig.billingMethod === 'subscription' 
+                            ? "border-primary bg-primary/5" 
+                            : "border-border hover:border-muted-foreground/50"
+                        )}>
+                          <RadioGroupItem value="subscription" id="subscription" className="mt-0.5" />
+                          <div className="flex-1">
+                            <Label htmlFor="subscription" className="font-medium cursor-pointer">
+                              包年包月
+                            </Label>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              预付费模式，享受更优惠的价格
+                            </p>
+                          </div>
                         </div>
-                        {cloudConfig.mysql.confirmPassword && !passwordsMatch && (
-                          <p className="text-xs text-destructive">两次输入的密码不一致</p>
-                        )}
-                        {cloudConfig.mysql.confirmPassword && passwordsMatch && passwordValid && (
-                          <p className="text-xs text-green-600 flex items-center gap-1">
-                            <CheckCircle2 className="w-3 h-3" />
-                            密码设置正确
-                          </p>
-                        )}
+                      </RadioGroup>
+                    </div>
+
+                    {/* Region */}
+                    <div className="space-y-3">
+                      <Label className="text-sm font-medium flex items-center gap-2">
+                        <Globe className="w-4 h-4 text-muted-foreground" />
+                        地域
+                      </Label>
+                      <Select
+                        value={cloudConfig.region}
+                        onValueChange={(value) => setCloudConfig(prev => ({ ...prev, region: value }))}
+                      >
+                        <SelectTrigger className="w-full bg-background">
+                          <SelectValue placeholder="选择地域" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {regions.map((region) => (
+                            <SelectItem key={region.id} value={region.id}>
+                              <div className="flex items-center gap-2">
+                                <MapPin className="w-3 h-3 text-muted-foreground" />
+                                <span>{region.name}</span>
+                                <span className="text-xs text-muted-foreground">({region.zone})</span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground">
+                        选择距离您业务最近的地域可以降低网络延迟，提升访问速度
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Cloud Resources Section */}
+                <div className="bg-card border border-border rounded-xl overflow-hidden mb-6">
+                  <div className="bg-muted/30 px-5 py-3 border-b border-border">
+                    <h2 className="font-semibold text-foreground flex items-center gap-2">
+                      <Server className="w-4 h-4 text-primary" />
+                      云资源配置
+                    </h2>
+                  </div>
+                  <div className="divide-y divide-border">
+                    {/* SLB */}
+                    <div className="p-5">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                            <Server className="w-5 h-5 text-blue-500" />
+                          </div>
+                          <div>
+                            <h3 className="font-medium text-foreground">SLB 负载均衡</h3>
+                            <p className="text-xs text-muted-foreground">Server Load Balancer</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 px-3 py-1.5 bg-green-500/10 rounded-full">
+                          <CheckCircle2 className="w-4 h-4 text-green-600" />
+                          <span className="text-sm text-green-600 font-medium">已配置</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* ECS */}
+                    <div className="p-5">
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center">
+                          <HardDrive className="w-5 h-5 text-purple-500" />
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="font-medium text-foreground">云服务器 ECS</h3>
+                          <p className="text-xs text-muted-foreground">Elastic Compute Service</p>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
+                        <div className="p-3 bg-muted/50 rounded-lg">
+                          <p className="text-muted-foreground text-xs mb-1">机型</p>
+                          <p className="font-medium text-foreground">{cloudConfig.ecs.machineType}</p>
+                        </div>
+                        <div className="p-3 bg-muted/50 rounded-lg">
+                          <p className="text-muted-foreground text-xs mb-1">规格</p>
+                          <p className="font-medium text-foreground">{cloudConfig.ecs.specs}</p>
+                        </div>
+                        <div className="p-3 bg-muted/50 rounded-lg">
+                          <p className="text-muted-foreground text-xs mb-1">数量</p>
+                          <p className="font-medium text-foreground">{cloudConfig.ecs.quantity} 台</p>
+                        </div>
+                        <div className="p-3 bg-muted/50 rounded-lg">
+                          <p className="text-muted-foreground text-xs mb-1">系统盘</p>
+                          <p className="font-medium text-foreground">{cloudConfig.ecs.systemDisk}</p>
+                        </div>
+                        <div className="p-3 bg-muted/50 rounded-lg col-span-2 sm:col-span-2">
+                          <p className="text-muted-foreground text-xs mb-1">数据盘</p>
+                          <p className="font-medium text-foreground">{cloudConfig.ecs.dataDisk}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* MySQL */}
+                    <div className="p-5">
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="w-10 h-10 rounded-lg bg-orange-500/10 flex items-center justify-center">
+                          <Database className="w-5 h-5 text-orange-500" />
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="font-medium text-foreground">MySQL 数据库</h3>
+                          <p className="text-xs text-muted-foreground">关系型数据库服务</p>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-3 gap-3 text-sm mb-4">
+                        <div className="p-3 bg-muted/50 rounded-lg">
+                          <p className="text-muted-foreground text-xs mb-1">存储类型</p>
+                          <p className="font-medium text-foreground">{cloudConfig.mysql.storageType}</p>
+                        </div>
+                        <div className="p-3 bg-muted/50 rounded-lg">
+                          <p className="text-muted-foreground text-xs mb-1">内存</p>
+                          <p className="font-medium text-foreground">{cloudConfig.mysql.memory}</p>
+                        </div>
+                        <div className="p-3 bg-muted/50 rounded-lg">
+                          <p className="text-muted-foreground text-xs mb-1">磁盘</p>
+                          <p className="font-medium text-foreground">{cloudConfig.mysql.disk}</p>
+                        </div>
+                      </div>
+
+                      {/* Admin Account Config */}
+                      <div className="border-t border-border pt-4 mt-4">
+                        <h4 className="text-sm font-medium text-foreground mb-3">管理员账户配置</h4>
+                        <div className="space-y-3">
+                          <div className="space-y-2">
+                            <Label htmlFor="mysqlUser" className="text-sm">管理员用户名</Label>
+                            <Input
+                              id="mysqlUser"
+                              value={cloudConfig.mysql.adminUser}
+                              disabled
+                              className="bg-muted"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="mysqlPassword" className="text-sm">管理员密码</Label>
+                            <div className="relative">
+                              <Input
+                                id="mysqlPassword"
+                                type={showMysqlPassword ? 'text' : 'password'}
+                                placeholder="请输入密码（至少8位）"
+                                value={cloudConfig.mysql.adminPassword}
+                                onChange={(e) => setCloudConfig(prev => ({
+                                  ...prev,
+                                  mysql: { ...prev.mysql, adminPassword: e.target.value }
+                                }))}
+                                className="bg-background pr-10"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setShowMysqlPassword(!showMysqlPassword)}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                              >
+                                {showMysqlPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                              </button>
+                            </div>
+                            {cloudConfig.mysql.adminPassword && !passwordValid && (
+                              <p className="text-xs text-destructive">密码长度至少8位</p>
+                            )}
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="mysqlConfirmPassword" className="text-sm">确认密码</Label>
+                            <div className="relative">
+                              <Input
+                                id="mysqlConfirmPassword"
+                                type={showMysqlConfirmPassword ? 'text' : 'password'}
+                                placeholder="请再次输入密码"
+                                value={cloudConfig.mysql.confirmPassword}
+                                onChange={(e) => setCloudConfig(prev => ({
+                                  ...prev,
+                                  mysql: { ...prev.mysql, confirmPassword: e.target.value }
+                                }))}
+                                className="bg-background pr-10"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setShowMysqlConfirmPassword(!showMysqlConfirmPassword)}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                              >
+                                {showMysqlConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                              </button>
+                            </div>
+                            {cloudConfig.mysql.confirmPassword && !passwordsMatch && (
+                              <p className="text-xs text-destructive">两次输入的密码不一致</p>
+                            )}
+                            {cloudConfig.mysql.confirmPassword && passwordsMatch && passwordValid && (
+                              <p className="text-xs text-green-600 flex items-center gap-1">
+                                <CheckCircle2 className="w-3 h-3" />
+                                密码设置正确
+                              </p>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>
