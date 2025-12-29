@@ -11,7 +11,11 @@ import {
   Loader2,
   Shield,
   ExternalLink,
-  Building2
+  Building2,
+  Cloud,
+  Server,
+  Database,
+  HardDrive
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,14 +30,38 @@ interface Step {
 }
 
 const steps: Step[] = [
-  { id: 'integration', title: '企业集成配置', subtitle: '第 1 步' },
-  { id: 'confirm', title: '权益确认', subtitle: '第 2 步' },
+  { id: 'cloud', title: '创建云服务', subtitle: '第 1 步' },
+  { id: 'integration', title: '企业集成配置', subtitle: '第 2 步' },
+  { id: 'confirm', title: '权益确认', subtitle: '第 3 步' },
 ];
 
 interface DiagnosticItem {
   id: string;
   name: string;
   status: 'pending' | 'running' | 'success' | 'error';
+}
+
+interface CloudConfig {
+  slb: {
+    enabled: boolean;
+  };
+  ecs: {
+    enabled: boolean;
+    machineType: string;
+    specs: string;
+    quantity: number;
+    systemDisk: string;
+    dataDisk: string;
+  };
+  mysql: {
+    enabled: boolean;
+    storageType: string;
+    memory: string;
+    disk: string;
+    adminUser: string;
+    adminPassword: string;
+    confirmPassword: string;
+  };
 }
 
 export function Onboarding() {
@@ -50,6 +78,32 @@ export function Onboarding() {
   ]);
   const [isDiagnosing, setIsDiagnosing] = useState(false);
   const [diagnosisComplete, setDiagnosisComplete] = useState(false);
+
+  // Cloud services config
+  const [cloudConfig, setCloudConfig] = useState<CloudConfig>({
+    slb: { enabled: true },
+    ecs: {
+      enabled: true,
+      machineType: 'S6',
+      specs: '8C16G',
+      quantity: 3,
+      systemDisk: 'ESSD 50G',
+      dataDisk: '500G × 1',
+    },
+    mysql: {
+      enabled: true,
+      storageType: '本地盘',
+      memory: '1GB',
+      disk: '15GB',
+      adminUser: 'admin',
+      adminPassword: '',
+      confirmPassword: '',
+    },
+  });
+  const [showMysqlPassword, setShowMysqlPassword] = useState(false);
+  const [showMysqlConfirmPassword, setShowMysqlConfirmPassword] = useState(false);
+  const [isCreatingCloud, setIsCreatingCloud] = useState(false);
+  const [cloudCreated, setCloudCreated] = useState(false);
 
   const redirectUri = 'https://api.ksgc.io/auth/callback';
 
@@ -80,17 +134,42 @@ export function Onboarding() {
     setDiagnosisComplete(true);
   };
 
+  const createCloudServices = async () => {
+    setIsCreatingCloud(true);
+    // Simulate cloud service creation
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    setIsCreatingCloud(false);
+    setCloudCreated(true);
+    toast({ title: '云服务创建成功', description: '已完成 SLB、云服务器、MySQL 的部署配置' });
+  };
+
   const allChecksPassed = diagnostics.every(d => d.status === 'success');
+
+  const canProceedStep0 = () => {
+    const { mysql } = cloudConfig;
+    return (
+      mysql.adminPassword.length >= 8 &&
+      mysql.adminPassword === mysql.confirmPassword
+    );
+  };
 
   const canProceed = () => {
     if (currentStep === 0) {
+      return canProceedStep0() && cloudCreated;
+    }
+    if (currentStep === 1) {
       return identitySource && config.appId && config.appKey && diagnosisComplete && allChecksPassed;
     }
     return true;
   };
 
   const handleNext = () => {
-    if (currentStep === 0 && !diagnosisComplete) {
+    if (currentStep === 0 && !cloudCreated) {
+      createCloudServices();
+      return;
+    }
+
+    if (currentStep === 1 && !diagnosisComplete) {
       runDiagnostics();
       return;
     }
@@ -113,6 +192,9 @@ export function Onboarding() {
     if (index === currentStep) return 'current';
     return 'pending';
   };
+
+  const passwordsMatch = cloudConfig.mysql.adminPassword === cloudConfig.mysql.confirmPassword;
+  const passwordValid = cloudConfig.mysql.adminPassword.length >= 8;
 
   return (
     <div className="min-h-screen bg-slate-50 flex">
@@ -179,8 +261,190 @@ export function Onboarding() {
       <div className="flex-1 flex flex-col">
         <div className="flex-1 p-8 md:p-12 overflow-auto">
           <div className="max-w-2xl mx-auto">
-            {/* Step 1: Integration Config */}
+            {/* Step 1: Cloud Services */}
             {currentStep === 0 && (
+              <div className="animate-fade-in">
+                {/* Title */}
+                <div className="flex items-center gap-3 mb-8">
+                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <Cloud className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <h1 className="text-xl font-semibold text-foreground">创建云服务</h1>
+                    <p className="text-sm text-muted-foreground">配置部署 KSGC 服务所需的云资源</p>
+                  </div>
+                </div>
+
+                {/* SLB Config */}
+                <div className="mb-6 p-4 bg-card rounded-lg border border-border">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                      <Server className="w-5 h-5 text-blue-500" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-medium text-foreground">SLB 负载均衡</h3>
+                      <p className="text-xs text-muted-foreground">Server Load Balancer</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-green-600 font-medium">已配置</span>
+                      <CheckCircle2 className="w-4 h-4 text-green-600" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* ECS Config */}
+                <div className="mb-6 p-4 bg-card rounded-lg border border-border">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 rounded-lg bg-purple-500/10 flex items-center justify-center">
+                      <HardDrive className="w-5 h-5 text-purple-500" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-medium text-foreground">云服务器 ECS</h3>
+                      <p className="text-xs text-muted-foreground">Elastic Compute Service</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div className="p-3 bg-muted/50 rounded-lg">
+                      <p className="text-muted-foreground text-xs mb-1">机型</p>
+                      <p className="font-medium text-foreground">{cloudConfig.ecs.machineType}</p>
+                    </div>
+                    <div className="p-3 bg-muted/50 rounded-lg">
+                      <p className="text-muted-foreground text-xs mb-1">规格</p>
+                      <p className="font-medium text-foreground">{cloudConfig.ecs.specs}</p>
+                    </div>
+                    <div className="p-3 bg-muted/50 rounded-lg">
+                      <p className="text-muted-foreground text-xs mb-1">数量</p>
+                      <p className="font-medium text-foreground">{cloudConfig.ecs.quantity} 台</p>
+                    </div>
+                    <div className="p-3 bg-muted/50 rounded-lg">
+                      <p className="text-muted-foreground text-xs mb-1">系统盘</p>
+                      <p className="font-medium text-foreground">{cloudConfig.ecs.systemDisk}</p>
+                    </div>
+                    <div className="p-3 bg-muted/50 rounded-lg col-span-2">
+                      <p className="text-muted-foreground text-xs mb-1">数据盘</p>
+                      <p className="font-medium text-foreground">{cloudConfig.ecs.dataDisk}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* MySQL Config */}
+                <div className="mb-6 p-4 bg-card rounded-lg border border-border">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 rounded-lg bg-orange-500/10 flex items-center justify-center">
+                      <Database className="w-5 h-5 text-orange-500" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-medium text-foreground">MySQL 数据库</h3>
+                      <p className="text-xs text-muted-foreground">关系型数据库服务</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-4 text-sm mb-4">
+                    <div className="p-3 bg-muted/50 rounded-lg">
+                      <p className="text-muted-foreground text-xs mb-1">存储类型</p>
+                      <p className="font-medium text-foreground">{cloudConfig.mysql.storageType}</p>
+                    </div>
+                    <div className="p-3 bg-muted/50 rounded-lg">
+                      <p className="text-muted-foreground text-xs mb-1">内存</p>
+                      <p className="font-medium text-foreground">{cloudConfig.mysql.memory}</p>
+                    </div>
+                    <div className="p-3 bg-muted/50 rounded-lg">
+                      <p className="text-muted-foreground text-xs mb-1">磁盘</p>
+                      <p className="font-medium text-foreground">{cloudConfig.mysql.disk}</p>
+                    </div>
+                  </div>
+
+                  {/* Admin Account Config */}
+                  <div className="border-t border-border pt-4 mt-4">
+                    <h4 className="text-sm font-medium text-foreground mb-3">管理员账户配置</h4>
+                    <div className="space-y-3">
+                      <div className="space-y-2">
+                        <Label htmlFor="mysqlUser" className="text-sm">管理员用户名</Label>
+                        <Input
+                          id="mysqlUser"
+                          value={cloudConfig.mysql.adminUser}
+                          disabled
+                          className="bg-muted"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="mysqlPassword" className="text-sm">管理员密码</Label>
+                        <div className="relative">
+                          <Input
+                            id="mysqlPassword"
+                            type={showMysqlPassword ? 'text' : 'password'}
+                            placeholder="请输入密码（至少8位）"
+                            value={cloudConfig.mysql.adminPassword}
+                            onChange={(e) => setCloudConfig(prev => ({
+                              ...prev,
+                              mysql: { ...prev.mysql, adminPassword: e.target.value }
+                            }))}
+                            className="bg-background pr-10"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowMysqlPassword(!showMysqlPassword)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                          >
+                            {showMysqlPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </button>
+                        </div>
+                        {cloudConfig.mysql.adminPassword && !passwordValid && (
+                          <p className="text-xs text-destructive">密码长度至少8位</p>
+                        )}
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="mysqlConfirmPassword" className="text-sm">确认密码</Label>
+                        <div className="relative">
+                          <Input
+                            id="mysqlConfirmPassword"
+                            type={showMysqlConfirmPassword ? 'text' : 'password'}
+                            placeholder="请再次输入密码"
+                            value={cloudConfig.mysql.confirmPassword}
+                            onChange={(e) => setCloudConfig(prev => ({
+                              ...prev,
+                              mysql: { ...prev.mysql, confirmPassword: e.target.value }
+                            }))}
+                            className="bg-background pr-10"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowMysqlConfirmPassword(!showMysqlConfirmPassword)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                          >
+                            {showMysqlConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </button>
+                        </div>
+                        {cloudConfig.mysql.confirmPassword && !passwordsMatch && (
+                          <p className="text-xs text-destructive">两次输入的密码不一致</p>
+                        )}
+                        {cloudConfig.mysql.confirmPassword && passwordsMatch && passwordValid && (
+                          <p className="text-xs text-green-600 flex items-center gap-1">
+                            <CheckCircle2 className="w-3 h-3" />
+                            密码设置正确
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Cloud Creation Status */}
+                {cloudCreated && (
+                  <div className="p-4 rounded-lg bg-green-50 border border-green-200">
+                    <div className="flex items-center gap-2 text-green-700">
+                      <CheckCircle2 className="w-5 h-5" />
+                      <span className="font-medium">云服务创建成功</span>
+                    </div>
+                    <p className="text-sm text-green-600 mt-1">
+                      SLB、云服务器、MySQL 已完成配置，可以进入下一步
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Step 2: Integration Config */}
+            {currentStep === 1 && (
               <div className="animate-fade-in">
                 {/* Title */}
                 <div className="flex items-center gap-3 mb-8">
@@ -345,8 +609,8 @@ export function Onboarding() {
               </div>
             )}
 
-            {/* Step 2: Confirm */}
-            {currentStep === 1 && (
+            {/* Step 3: Confirm */}
+            {currentStep === 2 && (
               <div className="animate-fade-in text-center py-8">
                 {/* Success Icon */}
                 <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6">
@@ -393,10 +657,35 @@ export function Onboarding() {
                 }
               }}
             >
-              {currentStep === 0 ? '返回' : '取消'}
+              {currentStep === 0 ? '返回' : '上一步'}
             </Button>
             
             {currentStep === 0 && (
+              <Button 
+                onClick={handleNext}
+                disabled={!canProceedStep0() || isCreatingCloud}
+                className="gap-2 bg-green-600 hover:bg-green-700"
+              >
+                {isCreatingCloud ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    创建中...
+                  </>
+                ) : cloudCreated ? (
+                  <>
+                    进入下一步
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                ) : (
+                  <>
+                    创建云服务
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
+              </Button>
+            )}
+
+            {currentStep === 1 && (
               <Button 
                 onClick={handleNext}
                 disabled={!identitySource || !config.appId || !config.appKey || isDiagnosing}
@@ -421,7 +710,7 @@ export function Onboarding() {
               </Button>
             )}
 
-            {currentStep === 1 && (
+            {currentStep === 2 && (
               <Button 
                 onClick={handleComplete}
                 className="gap-2 bg-green-600 hover:bg-green-700"
