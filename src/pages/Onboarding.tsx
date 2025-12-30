@@ -21,13 +21,6 @@ import {
   Clock,
   Globe
 } from 'lucide-react';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -42,10 +35,40 @@ interface Step {
 }
 
 const steps: Step[] = [
-  { id: 'cloud', title: '创建云服务', subtitle: '第 1 步' },
-  { id: 'integration', title: '企业集成配置', subtitle: '第 2 步' },
-  { id: 'confirm', title: '权益确认', subtitle: '第 3 步' },
+  { id: 'cloud-integration', title: '创建云服务与集成配置', subtitle: '第 1 步' },
+  { id: 'confirm', title: '权益确认', subtitle: '第 2 步' },
 ];
+
+const regionTabs = [
+  { id: 'domestic', label: '国内' },
+  { id: 'asia-pacific', label: '亚太' },
+  { id: 'europe', label: '欧洲' },
+];
+
+const regionsByTab: Record<string, { id: string; name: string }[]> = {
+  domestic: [
+    { id: 'cn-beijing', name: '华北1（北京）' },
+    { id: 'cn-shanghai', name: '华东1（上海）' },
+    { id: 'cn-guangzhou', name: '华南1（广州）' },
+    { id: 'cn-xibei', name: '西北1区（庆阳）' },
+    { id: 'cn-huadong-finance', name: '华东金融1（北京）' },
+    { id: 'cn-huadong-finance-sh', name: '华东金融1（上海）' },
+    { id: 'cn-taipei', name: '台北' },
+    { id: 'cn-ningbo', name: '华东2（宁波）' },
+    { id: 'cn-xibei3', name: '西北3区（宁夏）' },
+    { id: 'cn-xibei4', name: '西北4（海东）' },
+  ],
+  'asia-pacific': [
+    { id: 'ap-singapore', name: '新加坡' },
+    { id: 'ap-hongkong', name: '中国香港' },
+    { id: 'ap-tokyo', name: '日本（东京）' },
+    { id: 'ap-seoul', name: '韩国（首尔）' },
+  ],
+  europe: [
+    { id: 'eu-frankfurt', name: '德国（法兰克福）' },
+    { id: 'eu-london', name: '英国（伦敦）' },
+  ],
+};
 
 interface DiagnosticItem {
   id: string;
@@ -78,15 +101,7 @@ interface CloudConfig {
   };
 }
 
-const regions = [
-  { id: 'cn-hangzhou', name: '华东1（杭州）', zone: '中国' },
-  { id: 'cn-shanghai', name: '华东2（上海）', zone: '中国' },
-  { id: 'cn-beijing', name: '华北2（北京）', zone: '中国' },
-  { id: 'cn-shenzhen', name: '华南1（深圳）', zone: '中国' },
-  { id: 'cn-hongkong', name: '中国（香港）', zone: '中国' },
-  { id: 'ap-southeast-1', name: '新加坡', zone: '亚太' },
-  { id: 'us-west-1', name: '美国（硅谷）', zone: '美洲' },
-];
+// Region tab state will be managed in component
 
 export function Onboarding() {
   const navigate = useNavigate();
@@ -106,15 +121,15 @@ export function Onboarding() {
   // Cloud services config
   const [cloudConfig, setCloudConfig] = useState<CloudConfig>({
     billingMethod: 'pay-as-you-go',
-    region: 'cn-hangzhou',
+    region: 'cn-beijing',
     slb: { enabled: true },
     ecs: {
       enabled: true,
-      machineType: 'S6',
-      specs: '8C16G',
+      machineType: '标准型S6.8B',
+      specs: '8核16GB',
       quantity: 3,
-      systemDisk: 'ESSD 50G',
-      dataDisk: '500G × 1',
+      systemDisk: '云硬盘3.0 50G',
+      dataDisk: '云硬盘3.0 500G',
     },
     mysql: {
       enabled: true,
@@ -126,6 +141,7 @@ export function Onboarding() {
       confirmPassword: '',
     },
   });
+  const [regionTab, setRegionTab] = useState('domestic');
   const [showMysqlPassword, setShowMysqlPassword] = useState(false);
   const [showMysqlConfirmPassword, setShowMysqlConfirmPassword] = useState(false);
   const [isCreatingCloud, setIsCreatingCloud] = useState(false);
@@ -181,10 +197,7 @@ export function Onboarding() {
 
   const canProceed = () => {
     if (currentStep === 0) {
-      return canProceedStep0() && cloudCreated;
-    }
-    if (currentStep === 1) {
-      return identitySource && config.appId && config.appKey && diagnosisComplete && allChecksPassed;
+      return canProceedStep0() && cloudCreated && identitySource && config.appId && config.appKey && diagnosisComplete && allChecksPassed;
     }
     return true;
   };
@@ -195,7 +208,7 @@ export function Onboarding() {
       return;
     }
 
-    if (currentStep === 1 && !diagnosisComplete) {
+    if (currentStep === 0 && cloudCreated && !diagnosisComplete && identitySource && config.appId && config.appKey) {
       runDiagnostics();
       return;
     }
@@ -363,27 +376,42 @@ export function Onboarding() {
                         <Globe className="w-4 h-4 text-muted-foreground" />
                         地域
                       </Label>
-                      <Select
-                        value={cloudConfig.region}
-                        onValueChange={(value) => setCloudConfig(prev => ({ ...prev, region: value }))}
-                      >
-                        <SelectTrigger className="w-full bg-background">
-                          <SelectValue placeholder="选择地域" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {regions.map((region) => (
-                            <SelectItem key={region.id} value={region.id}>
-                              <div className="flex items-center gap-2">
-                                <MapPin className="w-3 h-3 text-muted-foreground" />
-                                <span>{region.name}</span>
-                                <span className="text-xs text-muted-foreground">({region.zone})</span>
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <p className="text-xs text-muted-foreground">
-                        选择距离您业务最近的地域可以降低网络延迟，提升访问速度
+                      {/* Region Tabs */}
+                      <div className="flex gap-4 border-b border-border">
+                        {regionTabs.map((tab) => (
+                          <button
+                            key={tab.id}
+                            onClick={() => setRegionTab(tab.id)}
+                            className={cn(
+                              "pb-2 px-1 text-sm font-medium border-b-2 transition-colors",
+                              regionTab === tab.id
+                                ? "border-primary text-primary"
+                                : "border-transparent text-muted-foreground hover:text-foreground"
+                            )}
+                          >
+                            {tab.label}
+                          </button>
+                        ))}
+                      </div>
+                      {/* Region Buttons */}
+                      <div className="flex flex-wrap gap-2">
+                        {regionsByTab[regionTab]?.map((region) => (
+                          <button
+                            key={region.id}
+                            onClick={() => setCloudConfig(prev => ({ ...prev, region: region.id }))}
+                            className={cn(
+                              "px-4 py-2 text-sm rounded border transition-all",
+                              cloudConfig.region === region.id
+                                ? "bg-primary text-primary-foreground border-primary"
+                                : "bg-background text-foreground border-border hover:border-primary/50"
+                            )}
+                          >
+                            {region.name}
+                          </button>
+                        ))}
+                      </div>
+                      <p className="text-xs text-orange-600">
+                        创建成功后<span className="text-destructive font-medium">不支持更改地域</span>，不同地域之间内网不互通。建议选择靠近业务的地域，增加访问速度
                       </p>
                     </div>
                   </div>
@@ -557,187 +585,190 @@ export function Onboarding() {
 
                 {/* Cloud Creation Status */}
                 {cloudCreated && (
-                  <div className="p-4 rounded-lg bg-green-50 border border-green-200">
+                  <div className="p-4 rounded-lg bg-green-50 border border-green-200 mb-6">
                     <div className="flex items-center gap-2 text-green-700">
                       <CheckCircle2 className="w-5 h-5" />
                       <span className="font-medium">云服务创建成功</span>
                     </div>
                     <p className="text-sm text-green-600 mt-1">
-                      SLB、云服务器、MySQL 已完成配置，可以进入下一步
+                      SLB、云服务器、MySQL 已完成配置
                     </p>
                   </div>
                 )}
+
+                {/* Integration Config Section - shown after cloud created */}
+                {cloudCreated && (
+                  <>
+                    {/* Integration Title */}
+                    <div className="bg-card border border-border rounded-xl overflow-hidden mb-6">
+                      <div className="bg-muted/30 px-5 py-3 border-b border-border">
+                        <h2 className="font-semibold text-foreground flex items-center gap-2">
+                          <Building2 className="w-4 h-4 text-primary" />
+                          企业集成配置
+                        </h2>
+                      </div>
+                      <div className="p-5 space-y-6">
+                        {/* Verified Company */}
+                        <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center">
+                              <Building2 className="w-5 h-5 text-slate-600" />
+                            </div>
+                            <div>
+                              <p className="text-xs text-muted-foreground">已验证企业</p>
+                              <p className="font-medium text-foreground">北京智码云科技有限公司</p>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Identity Source Selection */}
+                        <div>
+                          <Label className="text-sm text-foreground mb-3 block">选择连接身份源</Label>
+                          <div className="grid grid-cols-2 gap-4">
+                            <button
+                              onClick={() => setIdentitySource('wps365')}
+                              className={cn(
+                                "p-4 rounded-lg border-2 text-left transition-all",
+                                identitySource === 'wps365'
+                                  ? "border-primary bg-primary/5"
+                                  : "border-border hover:border-primary/30"
+                              )}
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-lg bg-blue-600 flex items-center justify-center">
+                                  <span className="text-white font-bold">W</span>
+                                </div>
+                                <div>
+                                  <p className="font-medium text-foreground">WPS 365</p>
+                                  <p className="text-xs text-muted-foreground">金山办公集成</p>
+                                </div>
+                              </div>
+                            </button>
+                            <button
+                              onClick={() => setIdentitySource('wecom')}
+                              className={cn(
+                                "p-4 rounded-lg border-2 text-left transition-all",
+                                identitySource === 'wecom'
+                                  ? "border-primary bg-primary/5"
+                                  : "border-border hover:border-primary/30"
+                              )}
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-lg bg-slate-200 flex items-center justify-center">
+                                  <span className="text-slate-600 font-bold text-sm">We</span>
+                                </div>
+                                <div>
+                                  <p className="font-medium text-foreground">企业微信</p>
+                                  <p className="text-xs text-muted-foreground">通讯录集成</p>
+                                </div>
+                              </div>
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Notice */}
+                        <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
+                          <p className="text-sm text-primary">
+                            配置后，系统将以此进行成员信息认证和企业架构同步。请确保在开放平台已授予相应权限。
+                            <a href="#" className="inline-flex items-center gap-1 ml-2 font-medium hover:underline">
+                              查看操作文档 <ExternalLink className="w-3 h-3" />
+                            </a>
+                          </p>
+                        </div>
+
+                        {/* Config Inputs */}
+                        {identitySource && (
+                          <div className="space-y-4">
+                            <div className="space-y-2">
+                              <Label htmlFor="appId">App ID</Label>
+                              <Input
+                                id="appId"
+                                placeholder="请输入应用 ID"
+                                value={config.appId}
+                                onChange={(e) => setConfig(prev => ({ ...prev, appId: e.target.value }))}
+                                className="bg-background"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="appKey">App Key</Label>
+                              <div className="relative">
+                                <Input
+                                  id="appKey"
+                                  type={showAppKey ? 'text' : 'password'}
+                                  placeholder="请输入应用密钥"
+                                  value={config.appKey}
+                                  onChange={(e) => setConfig(prev => ({ ...prev, appKey: e.target.value }))}
+                                  className="bg-background pr-10"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => setShowAppKey(!showAppKey)}
+                                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                                >
+                                  {showAppKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                </button>
+                              </div>
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="redirectUri">Redirect URI (回调地址)</Label>
+                              <Input
+                                id="redirectUri"
+                                placeholder="请输入回调地址"
+                                value={config.redirectUri || ''}
+                                onChange={(e) => setConfig(prev => ({ ...prev, redirectUri: e.target.value }))}
+                                className="bg-background"
+                              />
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Diagnostics */}
+                        {identitySource && config.appId && config.appKey && (
+                          <div className="border border-border rounded-lg p-4">
+                            <div className="flex items-center justify-between mb-4">
+                              <span className="text-sm text-muted-foreground">集成连接诊断</span>
+                              {diagnosisComplete && allChecksPassed && (
+                                <span className="flex items-center gap-1.5 text-sm text-green-600">
+                                  <CheckCircle2 className="w-4 h-4" />
+                                  测试全部通过
+                                </span>
+                              )}
+                            </div>
+                            <div className="space-y-3">
+                              {diagnostics.map((item) => (
+                                <div key={item.id} className="flex items-center gap-3">
+                                  {item.status === 'pending' && (
+                                    <div className="w-5 h-5 rounded-full border-2 border-slate-300" />
+                                  )}
+                                  {item.status === 'running' && (
+                                    <Loader2 className="w-5 h-5 text-primary animate-spin" />
+                                  )}
+                                  {item.status === 'success' && (
+                                    <CheckCircle2 className="w-5 h-5 text-green-600" />
+                                  )}
+                                  {item.status === 'error' && (
+                                    <div className="w-5 h-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center text-xs">!</div>
+                                  )}
+                                  <span className={cn(
+                                    "text-sm",
+                                    item.status === 'success' ? "text-foreground" : "text-muted-foreground"
+                                  )}>
+                                    {item.name}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             )}
 
-            {/* Step 2: Integration Config */}
+            {/* Step 2: Confirm */}
             {currentStep === 1 && (
-              <div className="animate-fade-in">
-                {/* Title */}
-                <div className="flex items-center gap-3 mb-8">
-                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <Building2 className="w-5 h-5 text-primary" />
-                  </div>
-                  <h1 className="text-xl font-semibold text-foreground">配置集成信息</h1>
-                </div>
-
-                {/* Verified Company */}
-                <div className="flex items-center justify-between p-4 bg-card rounded-lg border border-border mb-8">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-lg bg-slate-100 flex items-center justify-center">
-                      <Building2 className="w-6 h-6 text-slate-600" />
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">已验证企业</p>
-                      <p className="font-medium text-foreground">北京智码云科技有限公司</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Identity Source Selection */}
-                <div className="mb-6">
-                  <Label className="text-sm text-foreground mb-3 block">选择连接身份源</Label>
-                  <div className="grid grid-cols-2 gap-4">
-                    <button
-                      onClick={() => setIdentitySource('wps365')}
-                      className={cn(
-                        "p-4 rounded-lg border-2 text-left transition-all",
-                        identitySource === 'wps365'
-                          ? "border-primary bg-primary/5"
-                          : "border-border hover:border-primary/30"
-                      )}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-lg bg-blue-600 flex items-center justify-center">
-                          <span className="text-white font-bold text-lg">W</span>
-                        </div>
-                        <div>
-                          <p className="font-medium text-foreground">WPS 365</p>
-                          <p className="text-xs text-muted-foreground">金山办公集成</p>
-                        </div>
-                      </div>
-                    </button>
-                    <button
-                      onClick={() => setIdentitySource('wecom')}
-                      className={cn(
-                        "p-4 rounded-lg border-2 text-left transition-all",
-                        identitySource === 'wecom'
-                          ? "border-primary bg-primary/5"
-                          : "border-border hover:border-primary/30"
-                      )}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-lg bg-slate-200 flex items-center justify-center">
-                          <span className="text-slate-600 font-bold text-sm">We</span>
-                        </div>
-                        <div>
-                          <p className="font-medium text-foreground">企业微信</p>
-                          <p className="text-xs text-muted-foreground">通讯录集成</p>
-                        </div>
-                      </div>
-                    </button>
-                  </div>
-                </div>
-
-                {/* Notice */}
-                <div className="p-4 rounded-lg bg-primary/5 border border-primary/20 mb-6">
-                  <p className="text-sm text-primary">
-                    配置后，系统将以此进行成员信息认证和企业架构同步。请确保在开放平台已授予相应权限。
-                    <a href="#" className="inline-flex items-center gap-1 ml-2 font-medium hover:underline">
-                      查看操作文档 <ExternalLink className="w-3 h-3" />
-                    </a>
-                  </p>
-                </div>
-
-                {/* Config Inputs */}
-                {identitySource && (
-                  <div className="space-y-4 mb-8">
-                    <div className="space-y-2">
-                      <Label htmlFor="appId">App ID</Label>
-                      <Input
-                        id="appId"
-                        placeholder="请输入应用 ID"
-                        value={config.appId}
-                        onChange={(e) => setConfig(prev => ({ ...prev, appId: e.target.value }))}
-                        className="bg-background"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="appKey">App Key</Label>
-                      <div className="relative">
-                        <Input
-                          id="appKey"
-                          type={showAppKey ? 'text' : 'password'}
-                          placeholder="请输入应用密钥"
-                          value={config.appKey}
-                          onChange={(e) => setConfig(prev => ({ ...prev, appKey: e.target.value }))}
-                          className="bg-background pr-10"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowAppKey(!showAppKey)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-300"
-                        >
-                          {showAppKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                        </button>
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="redirectUri">Redirect URI (回调地址)</Label>
-                      <Input
-                        id="redirectUri"
-                        placeholder="请输入回调地址"
-                        value={config.redirectUri || ''}
-                        onChange={(e) => setConfig(prev => ({ ...prev, redirectUri: e.target.value }))}
-                        className="bg-background"
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {/* Diagnostics */}
-                {identitySource && config.appId && config.appKey && (
-                  <div className="border border-border rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-4">
-                      <span className="text-sm text-muted-foreground">集成连接诊断</span>
-                      {diagnosisComplete && allChecksPassed && (
-                        <span className="flex items-center gap-1.5 text-sm text-green-600">
-                          <CheckCircle2 className="w-4 h-4" />
-                          测试全部通过
-                        </span>
-                      )}
-                    </div>
-                    <div className="space-y-3">
-                      {diagnostics.map((item) => (
-                        <div key={item.id} className="flex items-center gap-3">
-                          {item.status === 'pending' && (
-                            <div className="w-5 h-5 rounded-full border-2 border-slate-300" />
-                          )}
-                          {item.status === 'running' && (
-                            <Loader2 className="w-5 h-5 text-primary animate-spin" />
-                          )}
-                          {item.status === 'success' && (
-                            <CheckCircle2 className="w-5 h-5 text-green-600" />
-                          )}
-                          {item.status === 'error' && (
-                            <div className="w-5 h-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center text-xs">!</div>
-                          )}
-                          <span className={cn(
-                            "text-sm",
-                            item.status === 'success' ? "text-foreground" : "text-muted-foreground"
-                          )}>
-                            {item.name}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Step 3: Confirm */}
-            {currentStep === 2 && (
               <div className="animate-fade-in text-center py-8">
                 {/* Success Icon */}
                 <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6">
@@ -790,7 +821,7 @@ export function Onboarding() {
             {currentStep === 0 && (
               <Button 
                 onClick={handleNext}
-                disabled={!canProceedStep0() || isCreatingCloud}
+                disabled={(!canProceedStep0() && !cloudCreated) || isCreatingCloud || isDiagnosing}
                 className="gap-2 bg-green-600 hover:bg-green-700"
               >
                 {isCreatingCloud ? (
@@ -798,14 +829,24 @@ export function Onboarding() {
                     <Loader2 className="w-4 h-4 animate-spin" />
                     创建中...
                   </>
-                ) : cloudCreated ? (
+                ) : isDiagnosing ? (
                   <>
-                    进入下一步
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    诊断中...
+                  </>
+                ) : !cloudCreated ? (
+                  <>
+                    创建云服务
+                    <ArrowRight className="w-4 h-4" />
+                  </>
+                ) : !diagnosisComplete || !allChecksPassed ? (
+                  <>
+                    开始诊断
                     <ArrowRight className="w-4 h-4" />
                   </>
                 ) : (
                   <>
-                    创建云服务
+                    进入下一步
                     <ArrowRight className="w-4 h-4" />
                   </>
                 )}
@@ -813,31 +854,6 @@ export function Onboarding() {
             )}
 
             {currentStep === 1 && (
-              <Button 
-                onClick={handleNext}
-                disabled={!identitySource || !config.appId || !config.appKey || isDiagnosing}
-                className="gap-2 bg-green-600 hover:bg-green-700"
-              >
-                {isDiagnosing ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    诊断中...
-                  </>
-                ) : diagnosisComplete && allChecksPassed ? (
-                  <>
-                    进入下一步
-                    <ArrowRight className="w-4 h-4" />
-                  </>
-                ) : (
-                  <>
-                    进入下一步
-                    <ArrowRight className="w-4 h-4" />
-                  </>
-                )}
-              </Button>
-            )}
-
-            {currentStep === 2 && (
               <Button 
                 onClick={handleComplete}
                 className="gap-2 bg-green-600 hover:bg-green-700"
