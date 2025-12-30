@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Building2, Users, Zap, Shield, Clock, Activity, Settings, Globe, Eye } from 'lucide-react';
+import { format } from 'date-fns';
+import { ArrowLeft, Building2, Users, Zap, Shield, Clock, Activity, Settings, Globe, Eye, CalendarIcon } from 'lucide-react';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -42,12 +45,10 @@ const statusLabels: Record<string, string> = {
 };
 
 const authMethodLabels: Record<string, string> = {
-  wps365: 'WPS 365',
+  wps365: '金山协作',
   wecom: '企业微信',
-  azure: 'Azure AD',
-  okta: 'Okta',
-  feishu: '飞书',
   dingtalk: '钉钉',
+  feishu: '飞书',
   none: '未配置',
 };
 
@@ -85,6 +86,10 @@ function formatDateTime(dateString: string): string {
 
 export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
   const customer = getCustomerDetail(customerId);
+  const [usageDateRange, setUsageDateRange] = useState<{ from: Date | undefined; to: Date | undefined }>({
+    from: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+    to: new Date(),
+  });
 
   if (!customer) {
     return (
@@ -96,6 +101,30 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
       </div>
     );
   }
+
+  // 处理模型时延折线图数据
+  const latencyChartData = customer.modelLatencyTrend ? (() => {
+    const dateMap = new Map<string, Record<string, number>>();
+    customer.modelLatencyTrend.forEach(item => {
+      if (!dateMap.has(item.date)) {
+        dateMap.set(item.date, {});
+      }
+      const entry = dateMap.get(item.date)!;
+      entry[`${item.model}_input`] = item.avgInputLatency;
+      entry[`${item.model}_output`] = item.avgOutputLatency;
+    });
+    return Array.from(dateMap.entries()).map(([date, data]) => ({
+      date,
+      ...data,
+    }));
+  })() : [];
+
+  const modelColors: Record<string, string> = {
+    'GPT-4 Turbo': 'hsl(213, 94%, 50%)',
+    'Claude 3.5 Sonnet': 'hsl(142, 76%, 36%)',
+    'GPT-4o': 'hsl(38, 92%, 50%)',
+    'GPT-4o Mini': 'hsl(0, 84%, 60%)',
+  };
 
   return (
     <div className="space-y-6">
@@ -195,30 +224,6 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
 
         <TabsContent value="overview" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* 企业信息 */}
-            <Card className="enterprise-card">
-              <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Building2 className="w-4 h-4" />
-                  企业信息
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">企业名称</span>
-                  <span className="text-sm font-medium">{customer.companyName}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">企业域名</span>
-                  <span className="text-sm">{customer.domain}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">创建时间</span>
-                  <span className="text-sm">{formatDate(customer.createdAt)}</span>
-                </div>
-              </CardContent>
-            </Card>
-
             {/* 订阅信息 */}
             <Card className="enterprise-card">
               <CardHeader>
@@ -350,24 +355,34 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                     </Dialog>
                   </div>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">主要使用模型</span>
-                  <span className="text-sm">{customer.models.primaryModel}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">累计 Token</span>
-                  <span className="text-sm">{formatTokens(customer.usage.totalTokens)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">累计请求</span>
-                  <span className="text-sm">{customer.usage.totalRequests.toLocaleString()}</span>
-                </div>
               </CardContent>
             </Card>
           </div>
         </TabsContent>
 
         <TabsContent value="usage" className="space-y-4">
+          {/* 日期选择器 */}
+          <div className="flex items-center gap-4">
+            <span className="text-sm text-muted-foreground">时间范围：</span>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-2">
+                  <CalendarIcon className="w-4 h-4" />
+                  {usageDateRange.from ? format(usageDateRange.from, 'yyyy-MM-dd') : '开始日期'} - {usageDateRange.to ? format(usageDateRange.to, 'yyyy-MM-dd') : '结束日期'}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="range"
+                  selected={usageDateRange}
+                  onSelect={(range) => setUsageDateRange({ from: range?.from, to: range?.to })}
+                  numberOfMonths={2}
+                  className="pointer-events-auto"
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* 每日使用趋势 */}
             <Card className="enterprise-card">
@@ -451,6 +466,8 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                     <th>Token 消耗</th>
                     <th>请求数</th>
                     <th>占比</th>
+                    <th>千Token输入平均时长</th>
+                    <th>千Token输出平均时长</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -468,10 +485,76 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                       <td>{formatTokens(usage.tokens)}</td>
                       <td>{usage.requests.toLocaleString()}</td>
                       <td>{usage.percentage}%</td>
+                      <td>{usage.avgInputLatencyPer1KToken} ms</td>
+                      <td>{usage.avgOutputLatencyPer1KToken} ms</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
+            </CardContent>
+          </Card>
+
+          {/* 模型时延趋势图 */}
+          <Card className="enterprise-card">
+            <CardHeader>
+              <CardTitle className="text-base">模型千Token时延趋势</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-80">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={latencyChartData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis 
+                      dataKey="date" 
+                      tick={{ fontSize: 12 }}
+                      tickFormatter={(value) => value.slice(5)}
+                    />
+                    <YAxis 
+                      tick={{ fontSize: 12 }}
+                      label={{ value: 'ms', angle: -90, position: 'insideLeft', fontSize: 12 }}
+                    />
+                    <Tooltip 
+                      formatter={(value: number, name: string) => {
+                        const parts = name.split('_');
+                        const model = parts.slice(0, -1).join('_');
+                        const type = parts[parts.length - 1] === 'input' ? '输入' : '输出';
+                        return [`${value} ms`, `${model} (${type})`];
+                      }}
+                      labelFormatter={(label) => `日期: ${label}`}
+                    />
+                    {Object.keys(modelColors).map((model) => (
+                      <React.Fragment key={model}>
+                        <Line 
+                          type="monotone" 
+                          dataKey={`${model}_output`}
+                          stroke={modelColors[model]}
+                          strokeWidth={2}
+                          name={`${model}_output`}
+                          dot={{ r: 3 }}
+                        />
+                        <Line 
+                          type="monotone" 
+                          dataKey={`${model}_input`}
+                          stroke={modelColors[model]}
+                          strokeWidth={2}
+                          strokeDasharray="5 5"
+                          name={`${model}_input`}
+                          dot={{ r: 3 }}
+                        />
+                      </React.Fragment>
+                    ))}
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="flex flex-wrap gap-4 mt-4 justify-center">
+                {Object.entries(modelColors).map(([model, color]) => (
+                  <div key={model} className="flex items-center gap-2 text-sm">
+                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: color }} />
+                    <span>{model}</span>
+                    <span className="text-muted-foreground">(实线:输出, 虚线:输入)</span>
+                  </div>
+                ))}
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
