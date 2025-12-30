@@ -232,7 +232,7 @@ export function Onboarding() {
   return (
     <div className="min-h-screen bg-slate-50 flex">
       {/* Left Sidebar */}
-      <div className="w-64 bg-slate-800 p-5 hidden md:flex flex-col">
+      <div className="w-56 bg-slate-800 p-5 hidden md:flex flex-col shrink-0">
         {/* Logo */}
         <div className="flex items-center gap-3 mb-12">
           <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
@@ -475,7 +475,7 @@ export function Onboarding() {
                 </div>
 
                 {/* Section 2: Cloud Resources */}
-                <div className="bg-card border-2 border-border rounded-xl overflow-hidden mb-6 shadow-sm">
+                <div ref={cloudRef} className="bg-card border-2 border-border rounded-xl overflow-hidden mb-6 shadow-sm">
                   <div className="bg-muted/30 px-5 py-4 border-b border-border">
                     <h2 className="font-semibold text-foreground flex items-center gap-2 text-lg">
                       <Server className="w-5 h-5 text-primary" />
@@ -541,8 +541,9 @@ export function Onboarding() {
                             <h3 className="font-medium text-foreground">SLB 负载均衡</h3>
                             <p className="text-xs text-muted-foreground">Server Load Balancer</p>
                           </div>
-                          <div className="text-sm text-muted-foreground">
-                            × 1
+                          <div className="text-right">
+                            <div className="text-sm text-muted-foreground">× 1</div>
+                            <div className="text-xs text-orange-500">参考价格: ¥{cloudConfig.slb.pricePerDay}/天</div>
                           </div>
                         </div>
                       </div>
@@ -557,8 +558,9 @@ export function Onboarding() {
                             <h3 className="font-medium text-foreground">云服务器 ECS</h3>
                             <p className="text-xs text-muted-foreground">Elastic Compute Service</p>
                           </div>
-                          <div className="text-sm font-medium text-foreground">
-                            × {cloudConfig.ecs.quantity} 台
+                          <div className="text-right">
+                            <div className="text-sm font-medium text-foreground">× {cloudConfig.ecs.quantity} 台</div>
+                            <div className="text-xs text-orange-500">参考价格: ¥{cloudConfig.ecs.pricePerDayPerUnit}/天/台</div>
                           </div>
                         </div>
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
@@ -591,8 +593,9 @@ export function Onboarding() {
                             <h3 className="font-medium text-foreground">MySQL 数据库</h3>
                             <p className="text-xs text-muted-foreground">关系型数据库服务</p>
                           </div>
-                          <div className="text-sm font-medium text-foreground">
-                            × {cloudConfig.mysql.quantity} 个
+                          <div className="text-right">
+                            <div className="text-sm font-medium text-foreground">× {cloudConfig.mysql.quantity} 个</div>
+                            <div className="text-xs text-orange-500">参考价格: ¥{cloudConfig.mysql.pricePerDay}/天</div>
                           </div>
                         </div>
                         <div className="grid grid-cols-3 gap-3 text-sm mb-4">
@@ -694,13 +697,48 @@ export function Onboarding() {
                     </div>
                   </div>
                 </div>
+              </div>
+            )}
+            </div>
 
+            {/* Right: Scroll Navigation - Only show on step 0 */}
+            {currentStep === 0 && (
+              <div className="hidden lg:block w-48 shrink-0">
+                <div className="sticky top-6">
+                  <div className="bg-card border border-border rounded-lg p-4">
+                    <h3 className="text-sm font-medium text-foreground mb-3">服务开通导航</h3>
+                    <div className="space-y-1">
+                      {configSections.map((section, index) => (
+                        <button
+                          key={section.id}
+                          onClick={() => scrollToSection(section.id)}
+                          className={cn(
+                            "w-full flex items-center gap-2 px-3 py-2 rounded text-sm text-left transition-colors",
+                            activeSection === section.id
+                              ? "bg-primary/10 text-primary font-medium"
+                              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                          )}
+                        >
+                          <div className={cn(
+                            "w-5 h-5 rounded-full flex items-center justify-center text-xs font-medium shrink-0",
+                            activeSection === section.id
+                              ? "bg-primary text-primary-foreground"
+                              : "bg-muted text-muted-foreground"
+                          )}>
+                            {index + 1}
+                          </div>
+                          <span>{section.title}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
 
             {/* Step 2: Confirm */}
             {currentStep === 1 && (
-              <div className="animate-fade-in text-center py-8">
+              <div className="animate-fade-in text-center py-8 flex-1">
                 {/* Success Icon */}
                 <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6">
                   <Shield className="w-10 h-10 text-primary" />
