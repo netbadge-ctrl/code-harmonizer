@@ -95,6 +95,58 @@ export interface CustomerDetail extends Customer {
     timestamp: string;
     details: string;
   }[];
+  
+  // 云服务监控数据
+  cloudServices: {
+    slb: {
+      ip: string;
+      activeConnections: number;
+      maxConnections: number;
+      healthyBackendCount: number;
+      totalBackendCount: number;
+      packetLossRate: number;
+      errorCount: number;
+      inboundBandwidth: number; // Mbps
+      outboundBandwidth: number; // Mbps
+      maxBandwidth: number; // Mbps
+    };
+    servers: {
+      id: number;
+      ip: string;
+      status: 'healthy' | 'unhealthy' | 'warning';
+      cpuUser: number; // 百分比
+      cpuSystem: number; // 百分比
+      memoryAvailable: number; // GB
+      memoryTotal: number; // GB
+      loadAverage: [number, number, number]; // 1min, 5min, 15min
+      diskReadSpeed: number; // MB/s
+      diskWriteSpeed: number; // MB/s
+      diskIoWait: number; // 百分比
+      diskUsageRoot: number; // 百分比
+      diskUsageLogs: number; // 百分比
+      networkInbound: number; // Mbps
+      networkOutbound: number; // Mbps
+    }[];
+    database: {
+      ip: string;
+      currentConnections: number;
+      maxConnections: number;
+      qps: number;
+      tps: number;
+      slowQueriesPerMinute: number;
+      replicationLag: number; // 秒
+      iopsRead: number;
+      iopsWrite: number;
+    };
+    elasticsearch: {
+      ip: string;
+      queryLatency: number; // ms
+      writeLatency: number; // ms
+      diskUsage: number; // 百分比
+      diskTotal: number; // GB
+      diskUsed: number; // GB
+    };
+  };
 }
 
 export type AdminView = 'customers' | 'customerDetail' | 'analytics' | 'settings';
