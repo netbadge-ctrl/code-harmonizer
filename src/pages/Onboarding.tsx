@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Check, 
@@ -7,7 +7,6 @@ import {
   Eye,
   EyeOff,
   CheckCircle2,
-  Loader2,
   Shield,
   ExternalLink,
   Building2,
@@ -18,7 +17,9 @@ import {
   CreditCard,
   Clock,
   Globe,
-  Copy
+  Copy,
+  ShoppingCart,
+  Loader2
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -80,6 +81,7 @@ interface CloudConfig {
   region: string;
   slb: {
     enabled: boolean;
+    pricePerDay: number;
   };
   ecs: {
     enabled: boolean;
@@ -88,6 +90,7 @@ interface CloudConfig {
     quantity: number;
     systemDisk: string;
     dataDisk: string;
+    pricePerDayPerUnit: number;
   };
   mysql: {
     enabled: boolean;
@@ -98,16 +101,15 @@ interface CloudConfig {
     adminUser: string;
     adminPassword: string;
     confirmPassword: string;
+    pricePerDay: number;
   };
 }
 
-type ProvisioningPhase = 'idle' | 'cloud' | 'integration' | 'complete';
-
-interface CloudProvisioningItem {
-  id: string;
-  name: string;
-  status: 'pending' | 'running' | 'success' | 'error';
-}
+// Navigation sections for scroll tracking
+const configSections = [
+  { id: 'integration', title: '企业集成配置' },
+  { id: 'cloud', title: '云服务资源开通' },
+];
 
 export function Onboarding() {
   const navigate = useNavigate();
@@ -115,17 +117,18 @@ export function Onboarding() {
   const [identitySource, setIdentitySource] = useState<'wps365' | 'wecom' | null>(null);
   const [config, setConfig] = useState({ appId: '', appKey: '', redirectUri: '' });
   const [showAppKey, setShowAppKey] = useState(false);
-  const [diagnostics, setDiagnostics] = useState<DiagnosticItem[]>([
-    { id: 'gateway', name: '身份源网关连通性', status: 'pending' },
-    { id: 'credentials', name: 'App ID & Key凭证有效性', status: 'pending' },
-    { id: 'redirect', name: 'Redirect URI 回调校验', status: 'pending' },
-  ]);
+  const [activeSection, setActiveSection] = useState('integration');
 
-  // Cloud services config
+  // Refs for scroll tracking
+  const integrationRef = useRef<HTMLDivElement>(null);
+  const cloudRef = useRef<HTMLDivElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  // Cloud services config with prices
   const [cloudConfig, setCloudConfig] = useState<CloudConfig>({
     billingMethod: 'trial',
     region: 'cn-beijing',
-    slb: { enabled: true },
+    slb: { enabled: true, pricePerDay: 2.5 },
     ecs: {
       enabled: true,
       machineType: '标准型S6.8B',
@@ -133,6 +136,7 @@ export function Onboarding() {
       quantity: 3,
       systemDisk: '云硬盘3.0 50G',
       dataDisk: '云硬盘3.0 500G',
+      pricePerDayPerUnit: 8.96,
     },
     mysql: {
       enabled: true,
@@ -143,64 +147,42 @@ export function Onboarding() {
       adminUser: 'admin',
       adminPassword: '',
       confirmPassword: '',
+      pricePerDay: 3.2,
     },
   });
   const [regionTab, setRegionTab] = useState('domestic');
   const [showMysqlPassword, setShowMysqlPassword] = useState(false);
   const [showMysqlConfirmPassword, setShowMysqlConfirmPassword] = useState(false);
 
-  // Provisioning state
-  const [provisioningPhase, setProvisioningPhase] = useState<ProvisioningPhase>('idle');
-  const [cloudProvisioning, setCloudProvisioning] = useState<CloudProvisioningItem[]>([
-    { id: 'slb', name: 'SLB 负载均衡', status: 'pending' },
-    { id: 'ecs', name: '云服务器 ECS', status: 'pending' },
-    { id: 'mysql', name: 'MySQL 数据库', status: 'pending' },
-  ]);
+  // Scroll tracking effect
+  useEffect(() => {
+    const handleScroll = () => {
+      if (!contentRef.current) return;
+      
+      const scrollTop = contentRef.current.scrollTop;
+      const integrationTop = integrationRef.current?.offsetTop || 0;
+      const cloudTop = cloudRef.current?.offsetTop || 0;
+      
+      // Determine which section is in view (with offset for better UX)
+      const offset = 150;
+      if (scrollTop + offset >= cloudTop) {
+        setActiveSection('cloud');
+      } else {
+        setActiveSection('integration');
+      }
+    };
 
-  const runProvisioning = async () => {
-    // Phase 1: Cloud Services
-    setProvisioningPhase('cloud');
-    
-    for (let i = 0; i < cloudProvisioning.length; i++) {
-      setCloudProvisioning(prev => prev.map((item, idx) => 
-        idx === i ? { ...item, status: 'running' } : item
-      ));
-      
-      await new Promise(resolve => setTimeout(resolve, 800 + Math.random() * 600));
-      
-      setCloudProvisioning(prev => prev.map((item, idx) => 
-        idx === i ? { ...item, status: 'success' } : item
-      ));
+    const contentElement = contentRef.current;
+    if (contentElement) {
+      contentElement.addEventListener('scroll', handleScroll);
+      return () => contentElement.removeEventListener('scroll', handleScroll);
     }
-
-    toast({ title: '云服务创建成功', description: '已完成 SLB、云服务器、MySQL 的部署配置' });
-
-    // Phase 2: Integration Validation
-    setProvisioningPhase('integration');
-    
-    for (let i = 0; i < diagnostics.length; i++) {
-      setDiagnostics(prev => prev.map((d, idx) => 
-        idx === i ? { ...d, status: 'running' } : d
-      ));
-      
-      await new Promise(resolve => setTimeout(resolve, 600 + Math.random() * 400));
-      
-      setDiagnostics(prev => prev.map((d, idx) => 
-        idx === i ? { ...d, status: 'success' } : d
-      ));
-    }
-
-    toast({ title: '企业集成验证通过', description: '身份源配置已验证成功' });
-    setProvisioningPhase('complete');
-  };
-
-  const allCloudSuccess = cloudProvisioning.every(item => item.status === 'success');
-  const allDiagnosticsSuccess = diagnostics.every(d => d.status === 'success');
+  }, []);
 
   const restrictedUsernames = ['root', 'rdsrepladmin', 'rdsadmin', 'dtsroot'];
   const isUsernameRestricted = restrictedUsernames.includes(cloudConfig.mysql.adminUser.toLowerCase());
 
-  const canStartProvisioning = () => {
+  const canPurchase = () => {
     const { mysql } = cloudConfig;
     const passwordValid = mysql.adminPassword.length >= 8 && mysql.adminPassword === mysql.confirmPassword;
     const usernameValid = mysql.adminUser && !restrictedUsernames.includes(mysql.adminUser.toLowerCase());
@@ -208,15 +190,21 @@ export function Onboarding() {
     return passwordValid && usernameValid && integrationValid;
   };
 
-  const handleNext = () => {
-    if (currentStep === 0 && provisioningPhase === 'idle') {
-      runProvisioning();
-      return;
-    }
-    
-    if (currentStep < steps.length - 1) {
-      setCurrentStep(prev => prev + 1);
-    }
+  const handlePurchase = () => {
+    // Navigate to order confirmation page with order data
+    const regionName = regionsByTab[regionTab]?.find(r => r.id === cloudConfig.region)?.name || cloudConfig.region;
+    navigate('/order-confirm', {
+      state: {
+        orderData: {
+          region: regionName,
+          ecs: cloudConfig.ecs,
+          mysql: cloudConfig.mysql,
+          slb: cloudConfig.slb,
+          identitySource,
+          config,
+        }
+      }
+    });
   };
 
   const handleComplete = () => {
@@ -236,7 +224,10 @@ export function Onboarding() {
   const passwordsMatch = cloudConfig.mysql.adminPassword === cloudConfig.mysql.confirmPassword;
   const passwordValid = cloudConfig.mysql.adminPassword.length >= 8;
 
-  const isProvisioning = provisioningPhase === 'cloud' || provisioningPhase === 'integration';
+  const scrollToSection = (sectionId: string) => {
+    const ref = sectionId === 'integration' ? integrationRef : cloudRef;
+    ref.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 flex">
@@ -301,8 +292,10 @@ export function Onboarding() {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
-        <div className="flex-1 p-6 md:p-10 overflow-auto">
-          <div className="max-w-3xl mx-auto">
+        <div ref={contentRef} className="flex-1 p-6 md:p-10 overflow-auto">
+          <div className="max-w-4xl mx-auto flex gap-6">
+            {/* Left: Main Form */}
+            <div className="flex-1">
             {/* Step 1: Cloud Services & Integration */}
             {currentStep === 0 && (
               <div className="animate-fade-in">
@@ -329,16 +322,19 @@ export function Onboarding() {
                       <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
                         <Clock className="w-5 h-5 text-primary" />
                       </div>
-                      <div>
+                      <div className="flex-1">
                         <p className="font-medium text-foreground">试用</p>
                         <p className="text-xs text-muted-foreground">免费试用期间体验全部功能</p>
                       </div>
                     </div>
+                    <p className="text-xs text-muted-foreground mt-3 leading-relaxed">
+                      将为您开通7天包含基础云资源和1亿Token有限模型的KSGC试用服务。试用到期或试用Token耗尽，可通过开通正式服务继续使用。
+                    </p>
                   </div>
                 </div>
 
                 {/* Section 1: Enterprise Integration Config */}
-                <div className="bg-card border-2 border-border rounded-xl overflow-hidden mb-8 shadow-sm">
+                <div ref={integrationRef} className="bg-card border-2 border-border rounded-xl overflow-hidden mb-8 shadow-sm">
                   <div className="bg-muted/30 px-5 py-4 border-b border-border">
                     <h2 className="font-semibold text-foreground flex items-center gap-2 text-lg">
                       <Building2 className="w-5 h-5 text-primary" />
@@ -365,14 +361,12 @@ export function Onboarding() {
                       <Label className="text-sm text-foreground mb-3 block">选择连接身份源</Label>
                       <div className="grid grid-cols-2 gap-4">
                         <button
-                          onClick={() => !isProvisioning && setIdentitySource('wps365')}
-                          disabled={isProvisioning}
+                          onClick={() => setIdentitySource('wps365')}
                           className={cn(
                             "p-4 rounded-lg border-2 text-left transition-all",
                             identitySource === 'wps365'
                               ? "border-primary bg-primary/5"
-                              : "border-border hover:border-primary/30",
-                            isProvisioning && "opacity-60 cursor-not-allowed"
+                              : "border-border hover:border-primary/30"
                           )}
                         >
                           <div className="flex items-center gap-3">
@@ -386,14 +380,12 @@ export function Onboarding() {
                           </div>
                         </button>
                         <button
-                          onClick={() => !isProvisioning && setIdentitySource('wecom')}
-                          disabled={isProvisioning}
+                          onClick={() => setIdentitySource('wecom')}
                           className={cn(
                             "p-4 rounded-lg border-2 text-left transition-all",
                             identitySource === 'wecom'
                               ? "border-primary bg-primary/5"
-                              : "border-border hover:border-primary/30",
-                            isProvisioning && "opacity-60 cursor-not-allowed"
+                              : "border-border hover:border-primary/30"
                           )}
                         >
                           <div className="flex items-center gap-3">
@@ -429,7 +421,6 @@ export function Onboarding() {
                             placeholder="请输入应用 ID"
                             value={config.appId}
                             onChange={(e) => setConfig(prev => ({ ...prev, appId: e.target.value }))}
-                            disabled={isProvisioning}
                             className="bg-background"
                           />
                         </div>
@@ -442,7 +433,6 @@ export function Onboarding() {
                               placeholder="请输入应用密钥"
                               value={config.appKey}
                               onChange={(e) => setConfig(prev => ({ ...prev, appKey: e.target.value }))}
-                              disabled={isProvisioning}
                               className="bg-background pr-10"
                             />
                             <button
@@ -462,7 +452,6 @@ export function Onboarding() {
                               placeholder="请输入回调地址"
                               value={config.redirectUri || ''}
                               onChange={(e) => setConfig(prev => ({ ...prev, redirectUri: e.target.value }))}
-                              disabled={isProvisioning}
                               className="bg-background pr-10"
                             />
                             <button
@@ -506,14 +495,12 @@ export function Onboarding() {
                         {regionTabs.map((tab) => (
                           <button
                             key={tab.id}
-                            onClick={() => !isProvisioning && setRegionTab(tab.id)}
-                            disabled={isProvisioning}
+                            onClick={() => setRegionTab(tab.id)}
                             className={cn(
                               "pb-2 px-1 text-sm font-medium border-b-2 transition-colors",
                               regionTab === tab.id
                                 ? "border-primary text-primary"
-                                : "border-transparent text-muted-foreground hover:text-foreground",
-                              isProvisioning && "opacity-60 cursor-not-allowed"
+                                : "border-transparent text-muted-foreground hover:text-foreground"
                             )}
                           >
                             {tab.label}
@@ -525,14 +512,12 @@ export function Onboarding() {
                         {regionsByTab[regionTab]?.map((region) => (
                           <button
                             key={region.id}
-                            onClick={() => !isProvisioning && setCloudConfig(prev => ({ ...prev, region: region.id }))}
-                            disabled={isProvisioning}
+                            onClick={() => setCloudConfig(prev => ({ ...prev, region: region.id }))}
                             className={cn(
                               "px-4 py-2 text-sm rounded border transition-all",
                               cloudConfig.region === region.id
                                 ? "bg-primary text-primary-foreground border-primary"
-                                : "bg-background text-foreground border-border hover:border-primary/50",
-                              isProvisioning && "opacity-60 cursor-not-allowed"
+                                : "bg-background text-foreground border-border hover:border-primary/50"
                             )}
                           >
                             {region.name}
@@ -639,7 +624,6 @@ export function Onboarding() {
                                   ...prev,
                                   mysql: { ...prev.mysql, adminUser: e.target.value }
                                 }))}
-                                disabled={isProvisioning}
                                 className="bg-background"
                               />
                               {cloudConfig.mysql.adminUser && ['root', 'rdsrepladmin', 'rdsadmin', 'dtsroot'].includes(cloudConfig.mysql.adminUser.toLowerCase()) && (
@@ -658,7 +642,6 @@ export function Onboarding() {
                                     ...prev,
                                     mysql: { ...prev.mysql, adminPassword: e.target.value }
                                   }))}
-                                  disabled={isProvisioning}
                                   className="bg-background pr-10"
                                 />
                                 <button
@@ -685,7 +668,6 @@ export function Onboarding() {
                                     ...prev,
                                     mysql: { ...prev.mysql, confirmPassword: e.target.value }
                                   }))}
-                                  disabled={isProvisioning}
                                   className="bg-background pr-10"
                                 />
                                 <button
@@ -713,103 +695,6 @@ export function Onboarding() {
                   </div>
                 </div>
 
-                {/* Provisioning Progress */}
-                {provisioningPhase !== 'idle' && (
-                  <div className="bg-card border border-border rounded-xl overflow-hidden mb-6">
-                    <div className="bg-muted/30 px-5 py-3 border-b border-border">
-                      <h2 className="font-semibold text-foreground">部署进度</h2>
-                    </div>
-                    <div className="p-5 space-y-6">
-                      {/* Cloud Services Progress */}
-                      <div>
-                        <div className="flex items-center gap-2 mb-3">
-                          <Cloud className="w-4 h-4 text-primary" />
-                          <span className="text-sm font-medium text-foreground">云服务开通</span>
-                          {allCloudSuccess && (
-                            <span className="ml-auto flex items-center gap-1 text-xs text-green-600">
-                              <CheckCircle2 className="w-3 h-3" />
-                              已完成
-                            </span>
-                          )}
-                          {provisioningPhase === 'cloud' && !allCloudSuccess && (
-                            <span className="ml-auto flex items-center gap-1 text-xs text-primary">
-                              <Loader2 className="w-3 h-3 animate-spin" />
-                              进行中
-                            </span>
-                          )}
-                        </div>
-                        <div className="space-y-2 pl-6">
-                          {cloudProvisioning.map((item) => (
-                            <div key={item.id} className="flex items-center gap-3">
-                              {item.status === 'pending' && (
-                                <div className="w-4 h-4 rounded-full border-2 border-slate-300" />
-                              )}
-                              {item.status === 'running' && (
-                                <Loader2 className="w-4 h-4 text-primary animate-spin" />
-                              )}
-                              {item.status === 'success' && (
-                                <CheckCircle2 className="w-4 h-4 text-green-600" />
-                              )}
-                              <span className={cn(
-                                "text-sm",
-                                item.status === 'success' ? "text-foreground" : "text-muted-foreground"
-                              )}>
-                                {item.name}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Integration Validation Progress */}
-                      <div>
-                        <div className="flex items-center gap-2 mb-3">
-                          <Building2 className="w-4 h-4 text-primary" />
-                          <span className="text-sm font-medium text-foreground">企业集成验证</span>
-                          {allDiagnosticsSuccess && (
-                            <span className="ml-auto flex items-center gap-1 text-xs text-green-600">
-                              <CheckCircle2 className="w-3 h-3" />
-                              已完成
-                            </span>
-                          )}
-                          {provisioningPhase === 'integration' && !allDiagnosticsSuccess && (
-                            <span className="ml-auto flex items-center gap-1 text-xs text-primary">
-                              <Loader2 className="w-3 h-3 animate-spin" />
-                              进行中
-                            </span>
-                          )}
-                          {provisioningPhase === 'cloud' && (
-                            <span className="ml-auto text-xs text-muted-foreground">等待中</span>
-                          )}
-                        </div>
-                        <div className="space-y-2 pl-6">
-                          {diagnostics.map((item) => (
-                            <div key={item.id} className="flex items-center gap-3">
-                              {item.status === 'pending' && (
-                                <div className="w-4 h-4 rounded-full border-2 border-slate-300" />
-                              )}
-                              {item.status === 'running' && (
-                                <Loader2 className="w-4 h-4 text-primary animate-spin" />
-                              )}
-                              {item.status === 'success' && (
-                                <CheckCircle2 className="w-4 h-4 text-green-600" />
-                              )}
-                              {item.status === 'error' && (
-                                <div className="w-4 h-4 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center text-xs">!</div>
-                              )}
-                              <span className={cn(
-                                "text-sm",
-                                item.status === 'success' ? "text-foreground" : "text-muted-foreground"
-                              )}>
-                                {item.name}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
               </div>
             )}
 
@@ -850,7 +735,7 @@ export function Onboarding() {
 
         {/* Footer Actions */}
         <div className="border-t border-border p-6 bg-card">
-          <div className="max-w-2xl mx-auto flex items-center justify-between">
+          <div className="max-w-3xl mx-auto flex items-center justify-between">
             <Button
               variant="ghost"
               onClick={() => {
@@ -860,38 +745,18 @@ export function Onboarding() {
                   setCurrentStep(prev => prev - 1);
                 }
               }}
-              disabled={isProvisioning}
             >
               {currentStep === 0 ? '返回' : '上一步'}
             </Button>
             
             {currentStep === 0 && (
               <Button 
-                onClick={handleNext}
-                disabled={!canStartProvisioning() || isProvisioning}
-                className="gap-2 bg-green-600 hover:bg-green-700"
+                onClick={handlePurchase}
+                disabled={!canPurchase()}
+                className="gap-2 bg-orange-500 hover:bg-orange-600"
               >
-                {provisioningPhase === 'cloud' ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    创建云服务中...
-                  </>
-                ) : provisioningPhase === 'integration' ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    验证集成中...
-                  </>
-                ) : provisioningPhase === 'complete' ? (
-                  <>
-                    进入下一步
-                    <ArrowRight className="w-4 h-4" />
-                  </>
-                ) : (
-                  <>
-                    开始部署
-                    <ArrowRight className="w-4 h-4" />
-                  </>
-                )}
+                <ShoppingCart className="w-4 h-4" />
+                立即购买
               </Button>
             )}
 
