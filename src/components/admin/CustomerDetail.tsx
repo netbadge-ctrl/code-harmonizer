@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { format } from 'date-fns';
-import { ArrowLeft, Building2, Users, Zap, Shield, Clock, Activity, Settings, Globe, Eye, CalendarIcon, Cloud, Server, Database, Network, HardDrive, Cpu, MemoryStick, AlertTriangle, CheckCircle2, XCircle } from 'lucide-react';
+import { ArrowLeft, Building2, Users, Zap, Shield, Clock, Activity, Settings, Globe, Eye, CalendarIcon, Cloud, Server, Database, Network, HardDrive, Cpu, MemoryStick, AlertTriangle, CheckCircle2, XCircle, Filter } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { CustomerDetail as CustomerDetailType } from '@/types/admin';
 import { getCustomerDetail } from '@/data/adminMockData';
 import { cn } from '@/lib/utils';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   BarChart,
   Bar,
@@ -90,6 +91,13 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
     from: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
     to: new Date(),
   });
+  const [selectedModel, setSelectedModel] = useState<string>('all');
+
+  // 获取可选模型列表
+  const availableModels = useMemo(() => {
+    if (!customer) return [];
+    return customer.modelUsage.map(m => m.model);
+  }, [customer]);
 
   if (!customer) {
     return (
@@ -102,22 +110,33 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
     );
   }
 
-  // 处理模型时延折线图数据
+  // 处理模型时延折线图数据（支持模型筛选）
   const latencyChartData = customer.modelLatencyTrend ? (() => {
-    const dateMap = new Map<string, Record<string, number>>();
-    customer.modelLatencyTrend.forEach(item => {
-      if (!dateMap.has(item.date)) {
-        dateMap.set(item.date, {});
+    const filteredData = selectedModel === 'all' 
+      ? customer.modelLatencyTrend 
+      : customer.modelLatencyTrend.filter(item => item.model === selectedModel);
+    
+    const timeMap = new Map<string, Record<string, number>>();
+    filteredData.forEach(item => {
+      if (!timeMap.has(item.timestamp)) {
+        timeMap.set(item.timestamp, {});
       }
-      const entry = dateMap.get(item.date)!;
+      const entry = timeMap.get(item.timestamp)!;
       entry[`${item.model}_input`] = item.avgInputLatency;
       entry[`${item.model}_output`] = item.avgOutputLatency;
     });
-    return Array.from(dateMap.entries()).map(([date, data]) => ({
-      date,
+    return Array.from(timeMap.entries()).map(([timestamp, data]) => ({
+      timestamp,
       ...data,
     }));
   })() : [];
+
+  // 筛选后的模型使用数据
+  const filteredModelUsage = selectedModel === 'all' 
+    ? customer.modelUsage 
+    : customer.modelUsage.filter(m => m.model === selectedModel);
+
+  // 筛选后的模型颜色
 
   const modelColors: Record<string, string> = {
     'GPT-4 Turbo': 'hsl(213, 94%, 50%)',
@@ -362,26 +381,43 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
         </TabsContent>
 
         <TabsContent value="usage" className="space-y-4">
-          {/* 日期选择器 */}
-          <div className="flex items-center gap-4">
-            <span className="text-sm text-muted-foreground">时间范围：</span>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-2">
-                  <CalendarIcon className="w-4 h-4" />
-                  {usageDateRange.from ? format(usageDateRange.from, 'yyyy-MM-dd') : '开始日期'} - {usageDateRange.to ? format(usageDateRange.to, 'yyyy-MM-dd') : '结束日期'}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="range"
-                  selected={usageDateRange}
-                  onSelect={(range) => setUsageDateRange({ from: range?.from, to: range?.to })}
-                  numberOfMonths={2}
-                  className="pointer-events-auto"
-                />
-              </PopoverContent>
-            </Popover>
+          {/* 筛选器 */}
+          <div className="flex items-center gap-4 flex-wrap">
+            <div className="flex items-center gap-2">
+              <Filter className="w-4 h-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">模型筛选：</span>
+              <Select value={selectedModel} onValueChange={setSelectedModel}>
+                <SelectTrigger className="w-[180px] h-8">
+                  <SelectValue placeholder="选择模型" />
+                </SelectTrigger>
+                <SelectContent className="bg-background border">
+                  <SelectItem value="all">全部模型</SelectItem>
+                  {availableModels.map(model => (
+                    <SelectItem key={model} value={model}>{model}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">时间范围：</span>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-2">
+                    <CalendarIcon className="w-4 h-4" />
+                    {usageDateRange.from ? format(usageDateRange.from, 'yyyy-MM-dd') : '开始日期'} - {usageDateRange.to ? format(usageDateRange.to, 'yyyy-MM-dd') : '结束日期'}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="range"
+                    selected={usageDateRange}
+                    onSelect={(range) => setUsageDateRange({ from: range?.from, to: range?.to })}
+                    numberOfMonths={2}
+                    className="pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -472,7 +508,7 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                   </tr>
                 </thead>
                 <tbody>
-                  {customer.modelUsage.map((usage, index) => (
+                  {filteredModelUsage.map((usage, index) => (
                     <tr key={usage.model}>
                       <td>
                         <div className="flex items-center gap-2">
@@ -495,10 +531,10 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
             </CardContent>
           </Card>
 
-          {/* 模型时延趋势图 */}
+          {/* 模型时延趋势图（分钟粒度） */}
           <Card className="enterprise-card">
             <CardHeader>
-              <CardTitle className="text-base">模型千Token时延趋势</CardTitle>
+              <CardTitle className="text-base">模型千Token时延趋势（分钟粒度）</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="h-80">
@@ -506,9 +542,12 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                   <LineChart data={latencyChartData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis 
-                      dataKey="date" 
-                      tick={{ fontSize: 12 }}
-                      tickFormatter={(value) => value.slice(5)}
+                      dataKey="timestamp" 
+                      tick={{ fontSize: 10 }}
+                      interval="preserveStartEnd"
+                      angle={-45}
+                      textAnchor="end"
+                      height={60}
                     />
                     <YAxis 
                       tick={{ fontSize: 12 }}
@@ -521,9 +560,9 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                         const type = parts[parts.length - 1] === 'input' ? '输入' : '输出';
                         return [`${value} ms`, `${model} (${type})`];
                       }}
-                      labelFormatter={(label) => `日期: ${label}`}
+                      labelFormatter={(label) => `时间: ${label}`}
                     />
-                    {Object.keys(modelColors).map((model) => (
+                    {(selectedModel === 'all' ? Object.keys(modelColors) : [selectedModel]).filter(m => modelColors[m]).map((model) => (
                       <React.Fragment key={model}>
                         <Line 
                           type="monotone" 
@@ -531,7 +570,8 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                           stroke={modelColors[model]}
                           strokeWidth={2}
                           name={`${model}_output`}
-                          dot={{ r: 3 }}
+                          dot={{ r: 2 }}
+                          connectNulls
                         />
                         <Line 
                           type="monotone" 
@@ -540,7 +580,8 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                           strokeWidth={2}
                           strokeDasharray="5 5"
                           name={`${model}_input`}
-                          dot={{ r: 3 }}
+                          dot={{ r: 2 }}
+                          connectNulls
                         />
                       </React.Fragment>
                     ))}
@@ -548,7 +589,7 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                 </ResponsiveContainer>
               </div>
               <div className="flex flex-wrap gap-4 mt-4 justify-center">
-                {Object.entries(modelColors).map(([model, color]) => (
+                {(selectedModel === 'all' ? Object.entries(modelColors) : [[selectedModel, modelColors[selectedModel]]]).filter(([_, color]) => color).map(([model, color]) => (
                   <div key={model} className="flex items-center gap-2 text-sm">
                     <div className="w-3 h-3 rounded-full" style={{ backgroundColor: color }} />
                     <span>{model}</span>

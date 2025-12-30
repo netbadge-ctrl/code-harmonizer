@@ -244,14 +244,16 @@ export const getCustomerDetail = (customerId: string): CustomerDetail | null => 
     ],
     modelLatencyTrend: (() => {
       const models = ['GPT-4 Turbo', 'Claude 3.5 Sonnet', 'GPT-4o', 'GPT-4o Mini'];
-      const trend: { date: string; model: string; avgInputLatency: number; avgOutputLatency: number }[] = [];
-      for (let i = 6; i >= 0; i--) {
+      const trend: { timestamp: string; model: string; avgInputLatency: number; avgOutputLatency: number }[] = [];
+      // 生成最近2小时的分钟级数据（每5分钟一个点）
+      for (let i = 23; i >= 0; i--) {
         const date = new Date();
-        date.setDate(date.getDate() - i);
-        const dateStr = date.toISOString().split('T')[0];
+        date.setMinutes(Math.floor(date.getMinutes() / 5) * 5 - i * 5);
+        date.setSeconds(0);
+        const timestamp = `${date.getMonth() + 1}/${date.getDate()} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
         models.forEach(model => {
           trend.push({
-            date: dateStr,
+            timestamp,
             model,
             avgInputLatency: Math.floor(Math.random() * 30) + 20,
             avgOutputLatency: Math.floor(Math.random() * 80) + 60,

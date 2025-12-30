@@ -61,9 +61,9 @@ export interface CustomerDetail extends Customer {
     avgOutputLatencyPer1KToken: number; // 千token输出平均时长(ms)
   }[];
   
-  // 模型时延趋势数据
+  // 模型时延趋势数据（分钟粒度）
   modelLatencyTrend: {
-    date: string;
+    timestamp: string; // 分钟级时间戳，如 "2024-12-28 10:05"
     model: string;
     avgInputLatency: number;
     avgOutputLatency: number;
