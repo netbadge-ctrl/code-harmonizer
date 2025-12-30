@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { format } from 'date-fns';
-import { ArrowLeft, Building2, Users, Zap, Shield, Clock, Activity, Settings, Globe, Eye, CalendarIcon, Cloud, Server, Database, Network } from 'lucide-react';
+import { ArrowLeft, Building2, Users, Zap, Shield, Clock, Activity, Settings, Globe, Eye, CalendarIcon, Cloud, Server, Database, Network, HardDrive, Cpu, MemoryStick, AlertTriangle, CheckCircle2, XCircle } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -627,6 +627,7 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
 
         {/* 云服务信息 */}
         <TabsContent value="cloud" className="space-y-4">
+          {/* 架构概览 */}
           <Card className="enterprise-card">
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2">
@@ -635,62 +636,311 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex flex-col items-center py-8 space-y-4">
+              <div className="flex flex-col items-center py-4 space-y-3">
                 {/* 统一网关 */}
-                <div className="flex flex-col items-center">
-                  <div className="flex items-center gap-3 px-8 py-4 bg-primary/10 border border-primary/20 rounded-lg">
-                    <Network className="w-6 h-6 text-primary" />
-                    <span className="font-medium text-foreground">统一网关</span>
-                  </div>
-                  <div className="w-0.5 h-8 bg-border" />
+                <div className="flex items-center gap-3 px-6 py-3 bg-primary/10 border border-primary/20 rounded-lg">
+                  <Network className="w-5 h-5 text-primary" />
+                  <span className="font-medium text-foreground text-sm">统一网关</span>
                 </div>
-
+                <div className="w-0.5 h-4 bg-border" />
+                
                 {/* SLB */}
-                <div className="flex flex-col items-center">
-                  <div className="flex items-center gap-3 px-8 py-4 bg-info/10 border border-info/20 rounded-lg">
-                    <Globe className="w-6 h-6 text-info" />
-                    <span className="font-medium text-foreground">SLB 负载均衡</span>
-                  </div>
-                  <div className="w-0.5 h-8 bg-border" />
+                <div className="flex items-center gap-3 px-6 py-3 bg-info/10 border border-info/20 rounded-lg">
+                  <Globe className="w-5 h-5 text-info" />
+                  <span className="font-medium text-foreground text-sm">SLB 负载均衡</span>
                 </div>
-
-                {/* 连接线分叉 */}
-                <div className="flex items-center justify-center w-full max-w-md">
-                  <div className="flex-1 h-0.5 bg-border" />
-                  <div className="w-2 h-2 rounded-full bg-border" />
-                  <div className="flex-1 h-0.5 bg-border" />
-                </div>
-
-                {/* 云服务器 3台 */}
-                <div className="flex items-start gap-6">
-                  {[1, 2, 3].map((index) => (
-                    <div key={index} className="flex flex-col items-center">
-                      <div className="w-0.5 h-4 bg-border" />
-                      <div className="flex flex-col items-center gap-2 px-6 py-4 bg-success/10 border border-success/20 rounded-lg">
-                        <Server className="w-6 h-6 text-success" />
-                        <span className="text-sm font-medium text-foreground">云服务器 {index}</span>
-                      </div>
+                <div className="w-0.5 h-4 bg-border" />
+                
+                {/* 云服务器 */}
+                <div className="flex items-center gap-4">
+                  {customer.cloudServices.servers.map((server) => (
+                    <div key={server.id} className={`flex items-center gap-2 px-4 py-2 rounded-lg border ${
+                      server.status === 'healthy' ? 'bg-success/10 border-success/20' :
+                      server.status === 'warning' ? 'bg-warning/10 border-warning/20' :
+                      'bg-destructive/10 border-destructive/20'
+                    }`}>
+                      <Server className={`w-4 h-4 ${
+                        server.status === 'healthy' ? 'text-success' :
+                        server.status === 'warning' ? 'text-warning' :
+                        'text-destructive'
+                      }`} />
+                      <span className="text-xs font-medium">服务器 {server.id}</span>
                     </div>
                   ))}
                 </div>
-
-                {/* 连接线汇合 */}
-                <div className="flex items-center justify-center w-full max-w-md">
-                  <div className="flex-1 h-0.5 bg-border" />
-                  <div className="w-2 h-2 rounded-full bg-border" />
-                  <div className="flex-1 h-0.5 bg-border" />
-                </div>
                 <div className="w-0.5 h-4 bg-border" />
-
+                
                 {/* 数据库和ES */}
-                <div className="flex items-center gap-6">
-                  <div className="flex items-center gap-3 px-6 py-4 bg-warning/10 border border-warning/20 rounded-lg">
-                    <Database className="w-6 h-6 text-warning" />
-                    <span className="font-medium text-foreground">数据库</span>
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2 px-4 py-2 bg-warning/10 border border-warning/20 rounded-lg">
+                    <Database className="w-4 h-4 text-warning" />
+                    <span className="text-xs font-medium">数据库</span>
                   </div>
-                  <div className="flex items-center gap-3 px-6 py-4 bg-destructive/10 border border-destructive/20 rounded-lg">
-                    <Database className="w-6 h-6 text-destructive" />
-                    <span className="font-medium text-foreground">Elasticsearch</span>
+                  <div className="flex items-center gap-2 px-4 py-2 bg-destructive/10 border border-destructive/20 rounded-lg">
+                    <HardDrive className="w-4 h-4 text-destructive" />
+                    <span className="text-xs font-medium">Elasticsearch</span>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* SLB 监控 */}
+          <Card className="enterprise-card">
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Globe className="w-4 h-4 text-info" />
+                SLB 负载均衡监控
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                <div className="p-3 bg-muted/30 rounded-lg">
+                  <div className="text-xs text-muted-foreground mb-1">IP 地址</div>
+                  <div className="font-mono text-sm font-medium">{customer.cloudServices.slb.ip}</div>
+                </div>
+                <div className="p-3 bg-muted/30 rounded-lg">
+                  <div className="text-xs text-muted-foreground mb-1">活跃连接数</div>
+                  <div className="font-medium text-lg">{customer.cloudServices.slb.activeConnections.toLocaleString()}</div>
+                  <div className="text-xs text-muted-foreground">/ {customer.cloudServices.slb.maxConnections.toLocaleString()}</div>
+                </div>
+                <div className="p-3 bg-muted/30 rounded-lg">
+                  <div className="text-xs text-muted-foreground mb-1">健康后端节点</div>
+                  <div className={`font-medium text-lg flex items-center gap-1 ${
+                    customer.cloudServices.slb.healthyBackendCount < customer.cloudServices.slb.totalBackendCount ? 'text-destructive' : 'text-success'
+                  }`}>
+                    {customer.cloudServices.slb.healthyBackendCount < customer.cloudServices.slb.totalBackendCount ? (
+                      <AlertTriangle className="w-4 h-4" />
+                    ) : (
+                      <CheckCircle2 className="w-4 h-4" />
+                    )}
+                    {customer.cloudServices.slb.healthyBackendCount} / {customer.cloudServices.slb.totalBackendCount}
+                  </div>
+                </div>
+                <div className="p-3 bg-muted/30 rounded-lg">
+                  <div className="text-xs text-muted-foreground mb-1">丢包率 / 错误数</div>
+                  <div className="font-medium">
+                    <span className={customer.cloudServices.slb.packetLossRate > 1 ? 'text-destructive' : ''}>{customer.cloudServices.slb.packetLossRate}%</span>
+                    <span className="text-muted-foreground mx-1">/</span>
+                    <span className={customer.cloudServices.slb.errorCount > 50 ? 'text-destructive' : ''}>{customer.cloudServices.slb.errorCount}</span>
+                  </div>
+                </div>
+                <div className="p-3 bg-muted/30 rounded-lg">
+                  <div className="text-xs text-muted-foreground mb-1">流入带宽</div>
+                  <div className="font-medium">{customer.cloudServices.slb.inboundBandwidth} Mbps</div>
+                  <div className="text-xs text-muted-foreground">/ {customer.cloudServices.slb.maxBandwidth} Mbps</div>
+                </div>
+                <div className="p-3 bg-muted/30 rounded-lg">
+                  <div className="text-xs text-muted-foreground mb-1">流出带宽</div>
+                  <div className="font-medium">{customer.cloudServices.slb.outboundBandwidth} Mbps</div>
+                  <div className="text-xs text-muted-foreground">/ {customer.cloudServices.slb.maxBandwidth} Mbps</div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* 云服务器监控 */}
+          <Card className="enterprise-card">
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Server className="w-4 h-4 text-success" />
+                云服务器监控
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {customer.cloudServices.servers.map((server) => (
+                  <div key={server.id} className={`p-4 rounded-lg border ${
+                    server.status === 'healthy' ? 'bg-success/5 border-success/20' :
+                    server.status === 'warning' ? 'bg-warning/5 border-warning/20' :
+                    'bg-destructive/5 border-destructive/20'
+                  }`}>
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className={`p-2 rounded-full ${
+                        server.status === 'healthy' ? 'bg-success/20' :
+                        server.status === 'warning' ? 'bg-warning/20' :
+                        'bg-destructive/20'
+                      }`}>
+                        {server.status === 'healthy' ? <CheckCircle2 className="w-4 h-4 text-success" /> :
+                         server.status === 'warning' ? <AlertTriangle className="w-4 h-4 text-warning" /> :
+                         <XCircle className="w-4 h-4 text-destructive" />}
+                      </div>
+                      <div>
+                        <div className="font-medium">云服务器 {server.id}</div>
+                        <div className="text-xs text-muted-foreground font-mono">{server.ip}</div>
+                      </div>
+                      <Badge variant={server.status === 'healthy' ? 'default' : server.status === 'warning' ? 'secondary' : 'destructive'} className="ml-auto">
+                        {server.status === 'healthy' ? '健康' : server.status === 'warning' ? '警告' : '异常'}
+                      </Badge>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
+                      {/* CPU */}
+                      <div className="p-2 bg-background/50 rounded">
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
+                          <Cpu className="w-3 h-3" />
+                          CPU 使用率
+                        </div>
+                        <div className={`text-sm font-medium ${(server.cpuUser + server.cpuSystem) > 80 ? 'text-destructive' : (server.cpuUser + server.cpuSystem) > 70 ? 'text-warning' : ''}`}>
+                          {(server.cpuUser + server.cpuSystem).toFixed(1)}%
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          User: {server.cpuUser}% | Sys: {server.cpuSystem}%
+                        </div>
+                      </div>
+                      
+                      {/* 内存 */}
+                      <div className="p-2 bg-background/50 rounded">
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
+                          <MemoryStick className="w-3 h-3" />
+                          内存可用
+                        </div>
+                        <div className={`text-sm font-medium ${(server.memoryAvailable / server.memoryTotal) < 0.2 ? 'text-destructive' : ''}`}>
+                          {server.memoryAvailable} GB
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          / {server.memoryTotal} GB
+                        </div>
+                      </div>
+                      
+                      {/* Load Average */}
+                      <div className="p-2 bg-background/50 rounded">
+                        <div className="text-xs text-muted-foreground mb-1">Load Average</div>
+                        <div className={`text-sm font-medium ${server.loadAverage[0] > 4 ? 'text-destructive' : server.loadAverage[0] > 2 ? 'text-warning' : ''}`}>
+                          {server.loadAverage[0].toFixed(2)}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {server.loadAverage[1].toFixed(2)} / {server.loadAverage[2].toFixed(2)}
+                        </div>
+                      </div>
+                      
+                      {/* 磁盘 I/O */}
+                      <div className="p-2 bg-background/50 rounded">
+                        <div className="text-xs text-muted-foreground mb-1">磁盘 I/O</div>
+                        <div className="text-sm font-medium">
+                          R: {server.diskReadSpeed} MB/s
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          W: {server.diskWriteSpeed} MB/s | Wait: {server.diskIoWait}%
+                        </div>
+                      </div>
+                      
+                      {/* 磁盘空间 */}
+                      <div className="p-2 bg-background/50 rounded">
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground mb-1">
+                          <HardDrive className="w-3 h-3" />
+                          磁盘空间
+                        </div>
+                        <div className={`text-sm font-medium ${server.diskUsageRoot > 90 ? 'text-destructive' : server.diskUsageRoot > 80 ? 'text-warning' : ''}`}>
+                          / : {server.diskUsageRoot}%
+                        </div>
+                        <div className={`text-xs ${server.diskUsageLogs > 90 ? 'text-destructive' : server.diskUsageLogs > 80 ? 'text-warning' : 'text-muted-foreground'}`}>
+                          日志: {server.diskUsageLogs}%
+                        </div>
+                      </div>
+                      
+                      {/* 网络流量 */}
+                      <div className="p-2 bg-background/50 rounded col-span-2">
+                        <div className="text-xs text-muted-foreground mb-1">网络流量</div>
+                        <div className="flex items-center gap-4 text-sm font-medium">
+                          <span>↓ {server.networkInbound} Mbps</span>
+                          <span>↑ {server.networkOutbound} Mbps</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* 数据库监控 */}
+          <Card className="enterprise-card">
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Database className="w-4 h-4 text-warning" />
+                数据库监控
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                <div className="p-3 bg-muted/30 rounded-lg">
+                  <div className="text-xs text-muted-foreground mb-1">IP 地址</div>
+                  <div className="font-mono text-sm font-medium">{customer.cloudServices.database.ip}</div>
+                </div>
+                <div className="p-3 bg-muted/30 rounded-lg">
+                  <div className="text-xs text-muted-foreground mb-1">连接数</div>
+                  <div className={`font-medium text-lg ${(customer.cloudServices.database.currentConnections / customer.cloudServices.database.maxConnections) > 0.8 ? 'text-destructive' : ''}`}>
+                    {customer.cloudServices.database.currentConnections}
+                  </div>
+                  <div className="text-xs text-muted-foreground">/ {customer.cloudServices.database.maxConnections}</div>
+                </div>
+                <div className="p-3 bg-muted/30 rounded-lg">
+                  <div className="text-xs text-muted-foreground mb-1">QPS / TPS</div>
+                  <div className="font-medium">
+                    <span className="text-lg">{customer.cloudServices.database.qps.toLocaleString()}</span>
+                    <span className="text-muted-foreground mx-1">/</span>
+                    <span>{customer.cloudServices.database.tps}</span>
+                  </div>
+                </div>
+                <div className="p-3 bg-muted/30 rounded-lg">
+                  <div className="text-xs text-muted-foreground mb-1">慢查询 /分钟</div>
+                  <div className={`font-medium text-lg ${customer.cloudServices.database.slowQueriesPerMinute > 5 ? 'text-destructive' : customer.cloudServices.database.slowQueriesPerMinute > 2 ? 'text-warning' : ''}`}>
+                    {customer.cloudServices.database.slowQueriesPerMinute}
+                  </div>
+                </div>
+                <div className="p-3 bg-muted/30 rounded-lg">
+                  <div className="text-xs text-muted-foreground mb-1">主从延迟</div>
+                  <div className={`font-medium text-lg ${customer.cloudServices.database.replicationLag > 5 ? 'text-destructive' : customer.cloudServices.database.replicationLag > 2 ? 'text-warning' : ''}`}>
+                    {customer.cloudServices.database.replicationLag}s
+                  </div>
+                </div>
+                <div className="p-3 bg-muted/30 rounded-lg">
+                  <div className="text-xs text-muted-foreground mb-1">IOPS</div>
+                  <div className="font-medium">
+                    R: {customer.cloudServices.database.iopsRead.toLocaleString()}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    W: {customer.cloudServices.database.iopsWrite.toLocaleString()}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Elasticsearch 监控 */}
+          <Card className="enterprise-card">
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <HardDrive className="w-4 h-4 text-destructive" />
+                Elasticsearch 监控
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="p-3 bg-muted/30 rounded-lg">
+                  <div className="text-xs text-muted-foreground mb-1">IP 地址</div>
+                  <div className="font-mono text-sm font-medium">{customer.cloudServices.elasticsearch.ip}</div>
+                </div>
+                <div className="p-3 bg-muted/30 rounded-lg">
+                  <div className="text-xs text-muted-foreground mb-1">查询延迟</div>
+                  <div className={`font-medium text-lg ${customer.cloudServices.elasticsearch.queryLatency > 100 ? 'text-destructive' : customer.cloudServices.elasticsearch.queryLatency > 50 ? 'text-warning' : ''}`}>
+                    {customer.cloudServices.elasticsearch.queryLatency} ms
+                  </div>
+                </div>
+                <div className="p-3 bg-muted/30 rounded-lg">
+                  <div className="text-xs text-muted-foreground mb-1">写入延迟</div>
+                  <div className={`font-medium text-lg ${customer.cloudServices.elasticsearch.writeLatency > 100 ? 'text-destructive' : customer.cloudServices.elasticsearch.writeLatency > 50 ? 'text-warning' : ''}`}>
+                    {customer.cloudServices.elasticsearch.writeLatency} ms
+                  </div>
+                </div>
+                <div className="p-3 bg-muted/30 rounded-lg">
+                  <div className="text-xs text-muted-foreground mb-1">磁盘使用率</div>
+                  <div className={`font-medium text-lg ${customer.cloudServices.elasticsearch.diskUsage > 85 ? 'text-destructive' : customer.cloudServices.elasticsearch.diskUsage > 70 ? 'text-warning' : ''}`}>
+                    {customer.cloudServices.elasticsearch.diskUsage}%
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {customer.cloudServices.elasticsearch.diskUsed} / {customer.cloudServices.elasticsearch.diskTotal} GB
                   </div>
                 </div>
               </div>
