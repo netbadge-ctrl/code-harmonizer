@@ -18,12 +18,11 @@ export const mockCustomers: Customer[] = [
       usedSeats: 87,
     },
     authConfig: {
-      ssoEnabled: true,
-      ssoProvider: 'azure',
-      mfaEnabled: true,
+      enterpriseAuthMethod: 'azure',
       ipWhitelistEnabled: true,
-      ipWhitelistCount: 5,
+      ipWhitelist: ['10.0.0.0/24', '192.168.1.0/24', '172.16.0.0/16', '10.10.10.1', '203.0.113.0/24'],
     },
+    enabledModels: ['GPT-4 Turbo', 'GPT-4o', 'GPT-4o Mini', 'Claude 3.5 Sonnet', 'Claude 3 Opus', 'Gemini Pro', 'ERNIE-4.0', 'Qwen-Max'],
     usage: {
       totalTokens: 125000000,
       monthlyTokens: 15200000,
@@ -57,12 +56,11 @@ export const mockCustomers: Customer[] = [
       usedSeats: 43,
     },
     authConfig: {
-      ssoEnabled: true,
-      ssoProvider: 'wps365',
-      mfaEnabled: true,
+      enterpriseAuthMethod: 'wps365',
       ipWhitelistEnabled: true,
-      ipWhitelistCount: 3,
+      ipWhitelist: ['10.1.0.0/24', '192.168.2.0/24', '10.2.2.1'],
     },
+    enabledModels: ['Claude 3.5 Sonnet', 'GPT-4o', 'GPT-4o Mini', 'ERNIE-4.0', 'Qwen-Max'],
     usage: {
       totalTokens: 68000000,
       monthlyTokens: 8500000,
@@ -95,11 +93,11 @@ export const mockCustomers: Customer[] = [
       usedSeats: 18,
     },
     authConfig: {
-      ssoEnabled: false,
-      mfaEnabled: false,
+      enterpriseAuthMethod: 'none',
       ipWhitelistEnabled: false,
-      ipWhitelistCount: 0,
+      ipWhitelist: [],
     },
+    enabledModels: ['GPT-4o Mini', 'ERNIE-4.0', 'Qwen-Turbo'],
     usage: {
       totalTokens: 12000000,
       monthlyTokens: 2100000,
@@ -133,11 +131,11 @@ export const mockCustomers: Customer[] = [
       usedSeats: 5,
     },
     authConfig: {
-      ssoEnabled: false,
-      mfaEnabled: false,
+      enterpriseAuthMethod: 'none',
       ipWhitelistEnabled: false,
-      ipWhitelistCount: 0,
+      ipWhitelist: [],
     },
+    enabledModels: ['GPT-4o', 'GPT-4o Mini'],
     usage: {
       totalTokens: 500000,
       monthlyTokens: 500000,
@@ -171,12 +169,11 @@ export const mockCustomers: Customer[] = [
       usedSeats: 156,
     },
     authConfig: {
-      ssoEnabled: true,
-      ssoProvider: 'okta',
-      mfaEnabled: true,
+      enterpriseAuthMethod: 'okta',
       ipWhitelistEnabled: true,
-      ipWhitelistCount: 8,
+      ipWhitelist: ['10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16', '203.0.113.1', '203.0.113.2', '198.51.100.0/24', '198.51.101.0/24', '100.64.0.0/10'],
     },
+    enabledModels: ['GPT-4 Turbo', 'GPT-4o', 'GPT-4o Mini', 'Claude 3.5 Sonnet', 'Claude 3 Opus', 'Claude 3 Haiku', 'Gemini Pro', 'ERNIE-4.0', 'Qwen-Max', 'Qwen-Turbo'],
     usage: {
       totalTokens: 280000000,
       monthlyTokens: 32000000,
@@ -209,12 +206,11 @@ export const mockCustomers: Customer[] = [
       usedSeats: 0,
     },
     authConfig: {
-      ssoEnabled: true,
-      ssoProvider: 'wecom',
-      mfaEnabled: false,
+      enterpriseAuthMethod: 'wecom',
       ipWhitelistEnabled: false,
-      ipWhitelistCount: 0,
+      ipWhitelist: [],
     },
+    enabledModels: ['Claude 3.5 Sonnet', 'GPT-4o', 'ERNIE-4.0', 'Qwen-Max'],
     usage: {
       totalTokens: 45000000,
       monthlyTokens: 0,

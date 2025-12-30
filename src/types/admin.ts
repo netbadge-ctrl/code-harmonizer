@@ -21,12 +21,13 @@ export interface Customer {
   
   // 认证配置
   authConfig: {
-    ssoEnabled: boolean;
-    ssoProvider?: 'wps365' | 'wecom' | 'azure' | 'okta';
-    mfaEnabled: boolean;
+    enterpriseAuthMethod: 'wps365' | 'wecom' | 'azure' | 'okta' | 'feishu' | 'dingtalk' | 'none';
     ipWhitelistEnabled: boolean;
-    ipWhitelistCount: number;
+    ipWhitelist: string[];
   };
+  
+  // 开通的模型列表
+  enabledModels: string[];
   
   // 使用统计
   usage: {
