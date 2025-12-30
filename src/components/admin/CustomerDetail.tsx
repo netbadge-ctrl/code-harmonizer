@@ -1,9 +1,10 @@
-import React from 'react';
-import { ArrowLeft, Building2, Users, Zap, Shield, Clock, Activity, Settings, Mail, Phone, Globe } from 'lucide-react';
+import React, { useState } from 'react';
+import { ArrowLeft, Building2, Users, Zap, Shield, Clock, Activity, Settings, Globe, Eye } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { CustomerDetail as CustomerDetailType } from '@/types/admin';
 import { getCustomerDetail } from '@/data/adminMockData';
 import { cn } from '@/lib/utils';
@@ -38,6 +39,16 @@ const statusLabels: Record<string, string> = {
   active: '正常',
   expired: '已过期',
   suspended: '已暂停',
+};
+
+const authMethodLabels: Record<string, string> = {
+  wps365: 'WPS 365',
+  wecom: '企业微信',
+  azure: 'Azure AD',
+  okta: 'Okta',
+  feishu: '飞书',
+  dingtalk: '钉钉',
+  none: '未配置',
 };
 
 const COLORS = ['hsl(213, 94%, 50%)', 'hsl(142, 76%, 36%)', 'hsl(38, 92%, 50%)', 'hsl(0, 84%, 60%)', 'hsl(220, 9%, 46%)'];
@@ -184,32 +195,26 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
 
         <TabsContent value="overview" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* 联系信息 */}
+            {/* 企业信息 */}
             <Card className="enterprise-card">
               <CardHeader>
                 <CardTitle className="text-base flex items-center gap-2">
                   <Building2 className="w-4 h-4" />
-                  联系信息
+                  企业信息
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <Users className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-sm">{customer.contactName}</span>
+                <div className="flex justify-between">
+                  <span className="text-sm text-muted-foreground">企业名称</span>
+                  <span className="text-sm font-medium">{customer.companyName}</span>
                 </div>
-                <div className="flex items-center gap-3">
-                  <Mail className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-sm">{customer.contactEmail}</span>
-                </div>
-                {customer.contactPhone && (
-                  <div className="flex items-center gap-3">
-                    <Phone className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-sm">{customer.contactPhone}</span>
-                  </div>
-                )}
-                <div className="flex items-center gap-3">
-                  <Globe className="w-4 h-4 text-muted-foreground" />
+                <div className="flex justify-between">
+                  <span className="text-sm text-muted-foreground">企业域名</span>
                   <span className="text-sm">{customer.domain}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-muted-foreground">创建时间</span>
+                  <span className="text-sm">{formatDate(customer.createdAt)}</span>
                 </div>
               </CardContent>
             </Card>
@@ -263,33 +268,46 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">SSO 单点登录</span>
-                  {customer.authConfig.ssoEnabled ? (
-                    <span className="status-badge status-badge-success">
-                      {customer.authConfig.ssoProvider?.toUpperCase()}
-                    </span>
-                  ) : (
-                    <span className="status-badge status-badge-neutral">未启用</span>
-                  )}
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">多因素认证 (MFA)</span>
+                  <span className="text-sm text-muted-foreground">企业认证方式</span>
                   <span className={cn(
                     "status-badge",
-                    customer.authConfig.mfaEnabled ? 'status-badge-success' : 'status-badge-neutral'
+                    customer.authConfig.enterpriseAuthMethod !== 'none' ? 'status-badge-success' : 'status-badge-neutral'
                   )}>
-                    {customer.authConfig.mfaEnabled ? '已启用' : '未启用'}
+                    {authMethodLabels[customer.authConfig.enterpriseAuthMethod]}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-muted-foreground">IP 白名单</span>
-                  {customer.authConfig.ipWhitelistEnabled ? (
-                    <span className="status-badge status-badge-success">
-                      {customer.authConfig.ipWhitelistCount} 条规则
-                    </span>
-                  ) : (
-                    <span className="status-badge status-badge-neutral">未启用</span>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {customer.authConfig.ipWhitelistEnabled ? (
+                      <>
+                        <span className="status-badge status-badge-success">
+                          {customer.authConfig.ipWhitelist.length} 条规则
+                        </span>
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-6 px-2">
+                              <Eye className="w-3 h-3" />
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>IP 白名单</DialogTitle>
+                            </DialogHeader>
+                            <div className="space-y-2 max-h-64 overflow-y-auto">
+                              {customer.authConfig.ipWhitelist.map((ip, index) => (
+                                <div key={index} className="flex items-center gap-2 p-2 bg-muted rounded-md">
+                                  <span className="text-sm font-mono">{ip}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </DialogContent>
+                        </Dialog>
+                      </>
+                    ) : (
+                      <span className="status-badge status-badge-neutral">未启用</span>
+                    )}
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -303,9 +321,34 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">已启用模型</span>
-                  <span className="text-sm">{customer.models.enabledCount} / {customer.models.totalCount}</span>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">已开通模型</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm">{customer.enabledModels.length} 个</span>
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button variant="ghost" size="sm" className="h-6 px-2">
+                          <Eye className="w-3 h-3" />
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>已开通模型列表</DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-2 max-h-64 overflow-y-auto">
+                          {customer.enabledModels.map((model, index) => (
+                            <div key={index} className="flex items-center gap-2 p-2 bg-muted rounded-md">
+                              <div 
+                                className="w-3 h-3 rounded-full" 
+                                style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                              />
+                              <span className="text-sm">{model}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-sm text-muted-foreground">主要使用模型</span>

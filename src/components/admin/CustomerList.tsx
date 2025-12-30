@@ -223,7 +223,6 @@ export function CustomerList({ onSelectCustomer }: CustomerListProps) {
                       <div className="flex flex-col">
                         <span className="font-medium text-foreground">{customer.companyName}</span>
                         <span className="text-xs text-muted-foreground">{customer.domain}</span>
-                        <span className="text-xs text-muted-foreground">{customer.contactEmail}</span>
                       </div>
                     </td>
                     <td>
@@ -258,18 +257,17 @@ export function CustomerList({ onSelectCustomer }: CustomerListProps) {
                     <td>
                       <div className="flex flex-col gap-1">
                         <div className="flex items-center gap-1">
-                          {customer.authConfig.ssoEnabled ? (
+                          {customer.authConfig.enterpriseAuthMethod !== 'none' ? (
                             <span className="status-badge status-badge-success">
-                              SSO: {customer.authConfig.ssoProvider?.toUpperCase()}
+                              {customer.authConfig.enterpriseAuthMethod.toUpperCase()}
                             </span>
                           ) : (
-                            <span className="status-badge status-badge-neutral">无SSO</span>
+                            <span className="status-badge status-badge-neutral">未配置</span>
                           )}
                         </div>
                         <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                          {customer.authConfig.mfaEnabled && <span>MFA</span>}
                           {customer.authConfig.ipWhitelistEnabled && (
-                            <span>· IP白名单({customer.authConfig.ipWhitelistCount})</span>
+                            <span>IP白名单({customer.authConfig.ipWhitelist.length})</span>
                           )}
                         </div>
                       </div>
