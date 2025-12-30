@@ -16,7 +16,7 @@ const viewConfig: Record<AdminView, { title: string; description: string }> = {
   settings: { title: '系统设置', description: '管理后台系统配置' },
 };
 
-export function Admin() {
+export function USS() {
   const [currentView, setCurrentView] = useState<AdminView>('customers');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
@@ -97,4 +97,4 @@ export function Admin() {
   );
 }
 
-export default Admin;
+export default USS;

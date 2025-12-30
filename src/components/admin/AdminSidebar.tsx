@@ -44,7 +44,7 @@ export function AdminSidebar({ currentView, onViewChange, collapsed, onToggleCol
         {!collapsed && (
           <div className="animate-fade-in flex items-center gap-1">
             <span className="text-sm font-semibold text-sidebar-foreground">智码云</span>
-            <span className="text-xs text-destructive font-medium">管理后台</span>
+            <span className="text-xs text-destructive font-medium">USS</span>
           </div>
         )}
       </div>
