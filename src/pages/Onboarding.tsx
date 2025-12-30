@@ -6,7 +6,6 @@ import {
   Terminal,
   Eye,
   EyeOff,
-  Copy,
   CheckCircle2,
   Loader2,
   Shield,
@@ -16,7 +15,6 @@ import {
   Server,
   Database,
   HardDrive,
-  MapPin,
   CreditCard,
   Clock,
   Globe
@@ -95,13 +93,20 @@ interface CloudConfig {
     storageType: string;
     memory: string;
     disk: string;
+    quantity: number;
     adminUser: string;
     adminPassword: string;
     confirmPassword: string;
   };
 }
 
-// Region tab state will be managed in component
+type ProvisioningPhase = 'idle' | 'cloud' | 'integration' | 'complete';
+
+interface CloudProvisioningItem {
+  id: string;
+  name: string;
+  status: 'pending' | 'running' | 'success' | 'error';
+}
 
 export function Onboarding() {
   const navigate = useNavigate();
@@ -109,14 +114,11 @@ export function Onboarding() {
   const [identitySource, setIdentitySource] = useState<'wps365' | 'wecom' | null>(null);
   const [config, setConfig] = useState({ appId: '', appKey: '', redirectUri: '' });
   const [showAppKey, setShowAppKey] = useState(false);
-  const [copied, setCopied] = useState(false);
   const [diagnostics, setDiagnostics] = useState<DiagnosticItem[]>([
     { id: 'gateway', name: '身份源网关连通性', status: 'pending' },
     { id: 'credentials', name: 'App ID & Key凭证有效性', status: 'pending' },
     { id: 'redirect', name: 'Redirect URI 回调校验', status: 'pending' },
   ]);
-  const [isDiagnosing, setIsDiagnosing] = useState(false);
-  const [diagnosisComplete, setDiagnosisComplete] = useState(false);
 
   // Cloud services config
   const [cloudConfig, setCloudConfig] = useState<CloudConfig>({
@@ -136,6 +138,7 @@ export function Onboarding() {
       storageType: '本地盘',
       memory: '1GB',
       disk: '15GB',
+      quantity: 1,
       adminUser: 'admin',
       adminPassword: '',
       confirmPassword: '',
@@ -144,72 +147,65 @@ export function Onboarding() {
   const [regionTab, setRegionTab] = useState('domestic');
   const [showMysqlPassword, setShowMysqlPassword] = useState(false);
   const [showMysqlConfirmPassword, setShowMysqlConfirmPassword] = useState(false);
-  const [isCreatingCloud, setIsCreatingCloud] = useState(false);
-  const [cloudCreated, setCloudCreated] = useState(false);
 
-  const redirectUri = 'https://api.ksgc.io/auth/callback';
+  // Provisioning state
+  const [provisioningPhase, setProvisioningPhase] = useState<ProvisioningPhase>('idle');
+  const [cloudProvisioning, setCloudProvisioning] = useState<CloudProvisioningItem[]>([
+    { id: 'slb', name: 'SLB 负载均衡', status: 'pending' },
+    { id: 'ecs', name: '云服务器 ECS', status: 'pending' },
+    { id: 'mysql', name: 'MySQL 数据库', status: 'pending' },
+  ]);
 
-  const handleCopyUri = async () => {
-    await navigator.clipboard.writeText(redirectUri);
-    setCopied(true);
-    toast({ title: '已复制回调地址' });
-    setTimeout(() => setCopied(false), 2000);
-  };
+  const runProvisioning = async () => {
+    // Phase 1: Cloud Services
+    setProvisioningPhase('cloud');
+    
+    for (let i = 0; i < cloudProvisioning.length; i++) {
+      setCloudProvisioning(prev => prev.map((item, idx) => 
+        idx === i ? { ...item, status: 'running' } : item
+      ));
+      
+      await new Promise(resolve => setTimeout(resolve, 800 + Math.random() * 600));
+      
+      setCloudProvisioning(prev => prev.map((item, idx) => 
+        idx === i ? { ...item, status: 'success' } : item
+      ));
+    }
 
-  const runDiagnostics = async () => {
-    setIsDiagnosing(true);
-    setDiagnosisComplete(false);
+    toast({ title: '云服务创建成功', description: '已完成 SLB、云服务器、MySQL 的部署配置' });
+
+    // Phase 2: Integration Validation
+    setProvisioningPhase('integration');
     
     for (let i = 0; i < diagnostics.length; i++) {
       setDiagnostics(prev => prev.map((d, idx) => 
         idx === i ? { ...d, status: 'running' } : d
       ));
       
-      await new Promise(resolve => setTimeout(resolve, 800 + Math.random() * 400));
+      await new Promise(resolve => setTimeout(resolve, 600 + Math.random() * 400));
       
       setDiagnostics(prev => prev.map((d, idx) => 
         idx === i ? { ...d, status: 'success' } : d
       ));
     }
-    
-    setIsDiagnosing(false);
-    setDiagnosisComplete(true);
+
+    toast({ title: '企业集成验证通过', description: '身份源配置已验证成功' });
+    setProvisioningPhase('complete');
   };
 
-  const createCloudServices = async () => {
-    setIsCreatingCloud(true);
-    // Simulate cloud service creation
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    setIsCreatingCloud(false);
-    setCloudCreated(true);
-    toast({ title: '云服务创建成功', description: '已完成 SLB、云服务器、MySQL 的部署配置' });
-  };
+  const allCloudSuccess = cloudProvisioning.every(item => item.status === 'success');
+  const allDiagnosticsSuccess = diagnostics.every(d => d.status === 'success');
 
-  const allChecksPassed = diagnostics.every(d => d.status === 'success');
-
-  const canProceedStep0 = () => {
+  const canStartProvisioning = () => {
     const { mysql } = cloudConfig;
-    return (
-      mysql.adminPassword.length >= 8 &&
-      mysql.adminPassword === mysql.confirmPassword
-    );
-  };
-
-  const canProceed = () => {
-    if (currentStep === 0) {
-      return canProceedStep0() && cloudCreated && identitySource && config.appId && config.appKey && diagnosisComplete && allChecksPassed;
-    }
-    return true;
+    const passwordValid = mysql.adminPassword.length >= 8 && mysql.adminPassword === mysql.confirmPassword;
+    const integrationValid = identitySource && config.appId && config.appKey;
+    return passwordValid && integrationValid;
   };
 
   const handleNext = () => {
-    if (currentStep === 0 && !cloudCreated) {
-      createCloudServices();
-      return;
-    }
-
-    if (currentStep === 0 && cloudCreated && !diagnosisComplete && identitySource && config.appId && config.appKey) {
-      runDiagnostics();
+    if (currentStep === 0 && provisioningPhase === 'idle') {
+      runProvisioning();
       return;
     }
     
@@ -234,6 +230,8 @@ export function Onboarding() {
 
   const passwordsMatch = cloudConfig.mysql.adminPassword === cloudConfig.mysql.confirmPassword;
   const passwordValid = cloudConfig.mysql.adminPassword.length >= 8;
+
+  const isProvisioning = provisioningPhase === 'cloud' || provisioningPhase === 'integration';
 
   return (
     <div className="min-h-screen bg-slate-50 flex">
@@ -300,17 +298,17 @@ export function Onboarding() {
       <div className="flex-1 flex flex-col">
         <div className="flex-1 p-8 md:p-12 overflow-auto">
           <div className="max-w-2xl mx-auto">
-            {/* Step 1: Cloud Services */}
+            {/* Step 1: Cloud Services & Integration */}
             {currentStep === 0 && (
               <div className="animate-fade-in">
                 {/* Header */}
                 <div className="mb-8">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
                     <Cloud className="w-4 h-4" />
-                    <span>云服务配置</span>
+                    <span>服务配置</span>
                   </div>
-                  <h1 className="text-2xl font-bold text-foreground mb-1">创建云服务资源</h1>
-                  <p className="text-muted-foreground">配置部署 KSGC 服务所需的基础设施</p>
+                  <h1 className="text-2xl font-bold text-foreground mb-1">创建云服务与集成配置</h1>
+                  <p className="text-muted-foreground">配置云资源和企业身份源，完成后系统将自动完成部署和验证</p>
                 </div>
 
                 {/* Billing & Region Section */}
@@ -334,12 +332,14 @@ export function Onboarding() {
                           setCloudConfig(prev => ({ ...prev, billingMethod: value }))
                         }
                         className="flex gap-4"
+                        disabled={isProvisioning}
                       >
                         <div className={cn(
                           "flex-1 relative flex items-start gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all",
                           cloudConfig.billingMethod === 'pay-as-you-go' 
                             ? "border-primary bg-primary/5" 
-                            : "border-border hover:border-muted-foreground/50"
+                            : "border-border hover:border-muted-foreground/50",
+                          isProvisioning && "opacity-60 cursor-not-allowed"
                         )}>
                           <RadioGroupItem value="pay-as-you-go" id="pay-as-you-go" className="mt-0.5" />
                           <div className="flex-1">
@@ -355,7 +355,8 @@ export function Onboarding() {
                           "flex-1 relative flex items-start gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all",
                           cloudConfig.billingMethod === 'subscription' 
                             ? "border-primary bg-primary/5" 
-                            : "border-border hover:border-muted-foreground/50"
+                            : "border-border hover:border-muted-foreground/50",
+                          isProvisioning && "opacity-60 cursor-not-allowed"
                         )}>
                           <RadioGroupItem value="subscription" id="subscription" className="mt-0.5" />
                           <div className="flex-1">
@@ -381,12 +382,14 @@ export function Onboarding() {
                         {regionTabs.map((tab) => (
                           <button
                             key={tab.id}
-                            onClick={() => setRegionTab(tab.id)}
+                            onClick={() => !isProvisioning && setRegionTab(tab.id)}
+                            disabled={isProvisioning}
                             className={cn(
                               "pb-2 px-1 text-sm font-medium border-b-2 transition-colors",
                               regionTab === tab.id
                                 ? "border-primary text-primary"
-                                : "border-transparent text-muted-foreground hover:text-foreground"
+                                : "border-transparent text-muted-foreground hover:text-foreground",
+                              isProvisioning && "opacity-60 cursor-not-allowed"
                             )}
                           >
                             {tab.label}
@@ -398,12 +401,14 @@ export function Onboarding() {
                         {regionsByTab[regionTab]?.map((region) => (
                           <button
                             key={region.id}
-                            onClick={() => setCloudConfig(prev => ({ ...prev, region: region.id }))}
+                            onClick={() => !isProvisioning && setCloudConfig(prev => ({ ...prev, region: region.id }))}
+                            disabled={isProvisioning}
                             className={cn(
                               "px-4 py-2 text-sm rounded border transition-all",
                               cloudConfig.region === region.id
                                 ? "bg-primary text-primary-foreground border-primary"
-                                : "bg-background text-foreground border-border hover:border-primary/50"
+                                : "bg-background text-foreground border-border hover:border-primary/50",
+                              isProvisioning && "opacity-60 cursor-not-allowed"
                             )}
                           >
                             {region.name}
@@ -428,19 +433,16 @@ export function Onboarding() {
                   <div className="divide-y divide-border">
                     {/* SLB */}
                     <div className="p-5">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                            <Server className="w-5 h-5 text-blue-500" />
-                          </div>
-                          <div>
-                            <h3 className="font-medium text-foreground">SLB 负载均衡</h3>
-                            <p className="text-xs text-muted-foreground">Server Load Balancer</p>
-                          </div>
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                          <Server className="w-5 h-5 text-blue-500" />
                         </div>
-                        <div className="flex items-center gap-2 px-3 py-1.5 bg-green-500/10 rounded-full">
-                          <CheckCircle2 className="w-4 h-4 text-green-600" />
-                          <span className="text-sm text-green-600 font-medium">已配置</span>
+                        <div className="flex-1">
+                          <h3 className="font-medium text-foreground">SLB 负载均衡</h3>
+                          <p className="text-xs text-muted-foreground">Server Load Balancer</p>
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          × 1
                         </div>
                       </div>
                     </div>
@@ -455,8 +457,11 @@ export function Onboarding() {
                           <h3 className="font-medium text-foreground">云服务器 ECS</h3>
                           <p className="text-xs text-muted-foreground">Elastic Compute Service</p>
                         </div>
+                        <div className="text-sm font-medium text-foreground">
+                          × {cloudConfig.ecs.quantity} 台
+                        </div>
                       </div>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
                         <div className="p-3 bg-muted/50 rounded-lg">
                           <p className="text-muted-foreground text-xs mb-1">机型</p>
                           <p className="font-medium text-foreground">{cloudConfig.ecs.machineType}</p>
@@ -466,14 +471,10 @@ export function Onboarding() {
                           <p className="font-medium text-foreground">{cloudConfig.ecs.specs}</p>
                         </div>
                         <div className="p-3 bg-muted/50 rounded-lg">
-                          <p className="text-muted-foreground text-xs mb-1">数量</p>
-                          <p className="font-medium text-foreground">{cloudConfig.ecs.quantity} 台</p>
-                        </div>
-                        <div className="p-3 bg-muted/50 rounded-lg">
                           <p className="text-muted-foreground text-xs mb-1">系统盘</p>
                           <p className="font-medium text-foreground">{cloudConfig.ecs.systemDisk}</p>
                         </div>
-                        <div className="p-3 bg-muted/50 rounded-lg col-span-2 sm:col-span-2">
+                        <div className="p-3 bg-muted/50 rounded-lg">
                           <p className="text-muted-foreground text-xs mb-1">数据盘</p>
                           <p className="font-medium text-foreground">{cloudConfig.ecs.dataDisk}</p>
                         </div>
@@ -489,6 +490,9 @@ export function Onboarding() {
                         <div className="flex-1">
                           <h3 className="font-medium text-foreground">MySQL 数据库</h3>
                           <p className="text-xs text-muted-foreground">关系型数据库服务</p>
+                        </div>
+                        <div className="text-sm font-medium text-foreground">
+                          × {cloudConfig.mysql.quantity} 个
                         </div>
                       </div>
                       <div className="grid grid-cols-3 gap-3 text-sm mb-4">
@@ -531,6 +535,7 @@ export function Onboarding() {
                                   ...prev,
                                   mysql: { ...prev.mysql, adminPassword: e.target.value }
                                 }))}
+                                disabled={isProvisioning}
                                 className="bg-background pr-10"
                               />
                               <button
@@ -557,6 +562,7 @@ export function Onboarding() {
                                   ...prev,
                                   mysql: { ...prev.mysql, confirmPassword: e.target.value }
                                 }))}
+                                disabled={isProvisioning}
                                 className="bg-background pr-10"
                               />
                               <button
@@ -583,186 +589,234 @@ export function Onboarding() {
                   </div>
                 </div>
 
-                {/* Cloud Creation Status */}
-                {cloudCreated && (
-                  <div className="p-4 rounded-lg bg-green-50 border border-green-200 mb-6">
-                    <div className="flex items-center gap-2 text-green-700">
-                      <CheckCircle2 className="w-5 h-5" />
-                      <span className="font-medium">云服务创建成功</span>
-                    </div>
-                    <p className="text-sm text-green-600 mt-1">
-                      SLB、云服务器、MySQL 已完成配置
-                    </p>
+                {/* Integration Config Section */}
+                <div className="bg-card border border-border rounded-xl overflow-hidden mb-6">
+                  <div className="bg-muted/30 px-5 py-3 border-b border-border">
+                    <h2 className="font-semibold text-foreground flex items-center gap-2">
+                      <Building2 className="w-4 h-4 text-primary" />
+                      企业集成配置
+                    </h2>
                   </div>
-                )}
-
-                {/* Integration Config Section - shown after cloud created */}
-                {cloudCreated && (
-                  <>
-                    {/* Integration Title */}
-                    <div className="bg-card border border-border rounded-xl overflow-hidden mb-6">
-                      <div className="bg-muted/30 px-5 py-3 border-b border-border">
-                        <h2 className="font-semibold text-foreground flex items-center gap-2">
-                          <Building2 className="w-4 h-4 text-primary" />
-                          企业集成配置
-                        </h2>
+                  <div className="p-5 space-y-6">
+                    {/* Verified Company */}
+                    <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center">
+                          <Building2 className="w-5 h-5 text-slate-600" />
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">已验证企业</p>
+                          <p className="font-medium text-foreground">北京智码云科技有限公司</p>
+                        </div>
                       </div>
-                      <div className="p-5 space-y-6">
-                        {/* Verified Company */}
-                        <div className="flex items-center justify-between p-4 bg-muted/30 rounded-lg">
+                    </div>
+
+                    {/* Identity Source Selection */}
+                    <div>
+                      <Label className="text-sm text-foreground mb-3 block">选择连接身份源</Label>
+                      <div className="grid grid-cols-2 gap-4">
+                        <button
+                          onClick={() => !isProvisioning && setIdentitySource('wps365')}
+                          disabled={isProvisioning}
+                          className={cn(
+                            "p-4 rounded-lg border-2 text-left transition-all",
+                            identitySource === 'wps365'
+                              ? "border-primary bg-primary/5"
+                              : "border-border hover:border-primary/30",
+                            isProvisioning && "opacity-60 cursor-not-allowed"
+                          )}
+                        >
                           <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center">
-                              <Building2 className="w-5 h-5 text-slate-600" />
+                            <div className="w-10 h-10 rounded-lg bg-blue-600 flex items-center justify-center">
+                              <span className="text-white font-bold">W</span>
                             </div>
                             <div>
-                              <p className="text-xs text-muted-foreground">已验证企业</p>
-                              <p className="font-medium text-foreground">北京智码云科技有限公司</p>
+                              <p className="font-medium text-foreground">WPS 365</p>
+                              <p className="text-xs text-muted-foreground">金山办公集成</p>
                             </div>
                           </div>
-                        </div>
-
-                        {/* Identity Source Selection */}
-                        <div>
-                          <Label className="text-sm text-foreground mb-3 block">选择连接身份源</Label>
-                          <div className="grid grid-cols-2 gap-4">
-                            <button
-                              onClick={() => setIdentitySource('wps365')}
-                              className={cn(
-                                "p-4 rounded-lg border-2 text-left transition-all",
-                                identitySource === 'wps365'
-                                  ? "border-primary bg-primary/5"
-                                  : "border-border hover:border-primary/30"
-                              )}
-                            >
-                              <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-lg bg-blue-600 flex items-center justify-center">
-                                  <span className="text-white font-bold">W</span>
-                                </div>
-                                <div>
-                                  <p className="font-medium text-foreground">WPS 365</p>
-                                  <p className="text-xs text-muted-foreground">金山办公集成</p>
-                                </div>
-                              </div>
-                            </button>
-                            <button
-                              onClick={() => setIdentitySource('wecom')}
-                              className={cn(
-                                "p-4 rounded-lg border-2 text-left transition-all",
-                                identitySource === 'wecom'
-                                  ? "border-primary bg-primary/5"
-                                  : "border-border hover:border-primary/30"
-                              )}
-                            >
-                              <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-lg bg-slate-200 flex items-center justify-center">
-                                  <span className="text-slate-600 font-bold text-sm">We</span>
-                                </div>
-                                <div>
-                                  <p className="font-medium text-foreground">企业微信</p>
-                                  <p className="text-xs text-muted-foreground">通讯录集成</p>
-                                </div>
-                              </div>
-                            </button>
-                          </div>
-                        </div>
-
-                        {/* Notice */}
-                        <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
-                          <p className="text-sm text-primary">
-                            配置后，系统将以此进行成员信息认证和企业架构同步。请确保在开放平台已授予相应权限。
-                            <a href="#" className="inline-flex items-center gap-1 ml-2 font-medium hover:underline">
-                              查看操作文档 <ExternalLink className="w-3 h-3" />
-                            </a>
-                          </p>
-                        </div>
-
-                        {/* Config Inputs */}
-                        {identitySource && (
-                          <div className="space-y-4">
-                            <div className="space-y-2">
-                              <Label htmlFor="appId">App ID</Label>
-                              <Input
-                                id="appId"
-                                placeholder="请输入应用 ID"
-                                value={config.appId}
-                                onChange={(e) => setConfig(prev => ({ ...prev, appId: e.target.value }))}
-                                className="bg-background"
-                              />
+                        </button>
+                        <button
+                          onClick={() => !isProvisioning && setIdentitySource('wecom')}
+                          disabled={isProvisioning}
+                          className={cn(
+                            "p-4 rounded-lg border-2 text-left transition-all",
+                            identitySource === 'wecom'
+                              ? "border-primary bg-primary/5"
+                              : "border-border hover:border-primary/30",
+                            isProvisioning && "opacity-60 cursor-not-allowed"
+                          )}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-lg bg-slate-200 flex items-center justify-center">
+                              <span className="text-slate-600 font-bold text-sm">We</span>
                             </div>
-                            <div className="space-y-2">
-                              <Label htmlFor="appKey">App Key</Label>
-                              <div className="relative">
-                                <Input
-                                  id="appKey"
-                                  type={showAppKey ? 'text' : 'password'}
-                                  placeholder="请输入应用密钥"
-                                  value={config.appKey}
-                                  onChange={(e) => setConfig(prev => ({ ...prev, appKey: e.target.value }))}
-                                  className="bg-background pr-10"
-                                />
-                                <button
-                                  type="button"
-                                  onClick={() => setShowAppKey(!showAppKey)}
-                                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                                >
-                                  {showAppKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                                </button>
-                              </div>
-                            </div>
-                            <div className="space-y-2">
-                              <Label htmlFor="redirectUri">Redirect URI (回调地址)</Label>
-                              <Input
-                                id="redirectUri"
-                                placeholder="请输入回调地址"
-                                value={config.redirectUri || ''}
-                                onChange={(e) => setConfig(prev => ({ ...prev, redirectUri: e.target.value }))}
-                                className="bg-background"
-                              />
+                            <div>
+                              <p className="font-medium text-foreground">企业微信</p>
+                              <p className="text-xs text-muted-foreground">通讯录集成</p>
                             </div>
                           </div>
-                        )}
-
-                        {/* Diagnostics */}
-                        {identitySource && config.appId && config.appKey && (
-                          <div className="border border-border rounded-lg p-4">
-                            <div className="flex items-center justify-between mb-4">
-                              <span className="text-sm text-muted-foreground">集成连接诊断</span>
-                              {diagnosisComplete && allChecksPassed && (
-                                <span className="flex items-center gap-1.5 text-sm text-green-600">
-                                  <CheckCircle2 className="w-4 h-4" />
-                                  测试全部通过
-                                </span>
-                              )}
-                            </div>
-                            <div className="space-y-3">
-                              {diagnostics.map((item) => (
-                                <div key={item.id} className="flex items-center gap-3">
-                                  {item.status === 'pending' && (
-                                    <div className="w-5 h-5 rounded-full border-2 border-slate-300" />
-                                  )}
-                                  {item.status === 'running' && (
-                                    <Loader2 className="w-5 h-5 text-primary animate-spin" />
-                                  )}
-                                  {item.status === 'success' && (
-                                    <CheckCircle2 className="w-5 h-5 text-green-600" />
-                                  )}
-                                  {item.status === 'error' && (
-                                    <div className="w-5 h-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center text-xs">!</div>
-                                  )}
-                                  <span className={cn(
-                                    "text-sm",
-                                    item.status === 'success' ? "text-foreground" : "text-muted-foreground"
-                                  )}>
-                                    {item.name}
-                                  </span>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
+                        </button>
                       </div>
                     </div>
-                  </>
+
+                    {/* Notice */}
+                    <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
+                      <p className="text-sm text-primary">
+                        配置后，系统将以此进行成员信息认证和企业架构同步。请确保在开放平台已授予相应权限。
+                        <a href="#" className="inline-flex items-center gap-1 ml-2 font-medium hover:underline">
+                          查看操作文档 <ExternalLink className="w-3 h-3" />
+                        </a>
+                      </p>
+                    </div>
+
+                    {/* Config Inputs */}
+                    {identitySource && (
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="appId">App ID</Label>
+                          <Input
+                            id="appId"
+                            placeholder="请输入应用 ID"
+                            value={config.appId}
+                            onChange={(e) => setConfig(prev => ({ ...prev, appId: e.target.value }))}
+                            disabled={isProvisioning}
+                            className="bg-background"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="appKey">App Key</Label>
+                          <div className="relative">
+                            <Input
+                              id="appKey"
+                              type={showAppKey ? 'text' : 'password'}
+                              placeholder="请输入应用密钥"
+                              value={config.appKey}
+                              onChange={(e) => setConfig(prev => ({ ...prev, appKey: e.target.value }))}
+                              disabled={isProvisioning}
+                              className="bg-background pr-10"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowAppKey(!showAppKey)}
+                              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                            >
+                              {showAppKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                            </button>
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="redirectUri">Redirect URI (回调地址)</Label>
+                          <Input
+                            id="redirectUri"
+                            placeholder="请输入回调地址"
+                            value={config.redirectUri || ''}
+                            onChange={(e) => setConfig(prev => ({ ...prev, redirectUri: e.target.value }))}
+                            disabled={isProvisioning}
+                            className="bg-background"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Provisioning Progress */}
+                {provisioningPhase !== 'idle' && (
+                  <div className="bg-card border border-border rounded-xl overflow-hidden mb-6">
+                    <div className="bg-muted/30 px-5 py-3 border-b border-border">
+                      <h2 className="font-semibold text-foreground">部署进度</h2>
+                    </div>
+                    <div className="p-5 space-y-6">
+                      {/* Cloud Services Progress */}
+                      <div>
+                        <div className="flex items-center gap-2 mb-3">
+                          <Cloud className="w-4 h-4 text-primary" />
+                          <span className="text-sm font-medium text-foreground">云服务开通</span>
+                          {allCloudSuccess && (
+                            <span className="ml-auto flex items-center gap-1 text-xs text-green-600">
+                              <CheckCircle2 className="w-3 h-3" />
+                              已完成
+                            </span>
+                          )}
+                          {provisioningPhase === 'cloud' && !allCloudSuccess && (
+                            <span className="ml-auto flex items-center gap-1 text-xs text-primary">
+                              <Loader2 className="w-3 h-3 animate-spin" />
+                              进行中
+                            </span>
+                          )}
+                        </div>
+                        <div className="space-y-2 pl-6">
+                          {cloudProvisioning.map((item) => (
+                            <div key={item.id} className="flex items-center gap-3">
+                              {item.status === 'pending' && (
+                                <div className="w-4 h-4 rounded-full border-2 border-slate-300" />
+                              )}
+                              {item.status === 'running' && (
+                                <Loader2 className="w-4 h-4 text-primary animate-spin" />
+                              )}
+                              {item.status === 'success' && (
+                                <CheckCircle2 className="w-4 h-4 text-green-600" />
+                              )}
+                              <span className={cn(
+                                "text-sm",
+                                item.status === 'success' ? "text-foreground" : "text-muted-foreground"
+                              )}>
+                                {item.name}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Integration Validation Progress */}
+                      <div>
+                        <div className="flex items-center gap-2 mb-3">
+                          <Building2 className="w-4 h-4 text-primary" />
+                          <span className="text-sm font-medium text-foreground">企业集成验证</span>
+                          {allDiagnosticsSuccess && (
+                            <span className="ml-auto flex items-center gap-1 text-xs text-green-600">
+                              <CheckCircle2 className="w-3 h-3" />
+                              已完成
+                            </span>
+                          )}
+                          {provisioningPhase === 'integration' && !allDiagnosticsSuccess && (
+                            <span className="ml-auto flex items-center gap-1 text-xs text-primary">
+                              <Loader2 className="w-3 h-3 animate-spin" />
+                              进行中
+                            </span>
+                          )}
+                          {provisioningPhase === 'cloud' && (
+                            <span className="ml-auto text-xs text-muted-foreground">等待中</span>
+                          )}
+                        </div>
+                        <div className="space-y-2 pl-6">
+                          {diagnostics.map((item) => (
+                            <div key={item.id} className="flex items-center gap-3">
+                              {item.status === 'pending' && (
+                                <div className="w-4 h-4 rounded-full border-2 border-slate-300" />
+                              )}
+                              {item.status === 'running' && (
+                                <Loader2 className="w-4 h-4 text-primary animate-spin" />
+                              )}
+                              {item.status === 'success' && (
+                                <CheckCircle2 className="w-4 h-4 text-green-600" />
+                              )}
+                              {item.status === 'error' && (
+                                <div className="w-4 h-4 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center text-xs">!</div>
+                              )}
+                              <span className={cn(
+                                "text-sm",
+                                item.status === 'success' ? "text-foreground" : "text-muted-foreground"
+                              )}>
+                                {item.name}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 )}
               </div>
             )}
@@ -814,6 +868,7 @@ export function Onboarding() {
                   setCurrentStep(prev => prev - 1);
                 }
               }}
+              disabled={isProvisioning}
             >
               {currentStep === 0 ? '返回' : '上一步'}
             </Button>
@@ -821,32 +876,27 @@ export function Onboarding() {
             {currentStep === 0 && (
               <Button 
                 onClick={handleNext}
-                disabled={(!canProceedStep0() && !cloudCreated) || isCreatingCloud || isDiagnosing}
+                disabled={!canStartProvisioning() || isProvisioning}
                 className="gap-2 bg-green-600 hover:bg-green-700"
               >
-                {isCreatingCloud ? (
+                {provisioningPhase === 'cloud' ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    创建中...
+                    创建云服务中...
                   </>
-                ) : isDiagnosing ? (
+                ) : provisioningPhase === 'integration' ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    诊断中...
+                    验证集成中...
                   </>
-                ) : !cloudCreated ? (
+                ) : provisioningPhase === 'complete' ? (
                   <>
-                    创建云服务
-                    <ArrowRight className="w-4 h-4" />
-                  </>
-                ) : !diagnosisComplete || !allChecksPassed ? (
-                  <>
-                    开始诊断
+                    进入下一步
                     <ArrowRight className="w-4 h-4" />
                   </>
                 ) : (
                   <>
-                    进入下一步
+                    开始部署
                     <ArrowRight className="w-4 h-4" />
                   </>
                 )}
