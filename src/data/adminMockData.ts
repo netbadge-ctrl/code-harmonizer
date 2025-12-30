@@ -18,7 +18,7 @@ export const mockCustomers: Customer[] = [
       usedSeats: 87,
     },
     authConfig: {
-      enterpriseAuthMethod: 'azure',
+      enterpriseAuthMethod: 'wps365',
       ipWhitelistEnabled: true,
       ipWhitelist: ['10.0.0.0/24', '192.168.1.0/24', '172.16.0.0/16', '10.10.10.1', '203.0.113.0/24'],
     },
@@ -169,7 +169,7 @@ export const mockCustomers: Customer[] = [
       usedSeats: 156,
     },
     authConfig: {
-      enterpriseAuthMethod: 'okta',
+      enterpriseAuthMethod: 'dingtalk',
       ipWhitelistEnabled: true,
       ipWhitelist: ['10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16', '203.0.113.1', '203.0.113.2', '198.51.100.0/24', '198.51.101.0/24', '100.64.0.0/10'],
     },
@@ -236,12 +236,30 @@ export const getCustomerDetail = (customerId: string): CustomerDetail | null => 
   return {
     ...customer,
     modelUsage: [
-      { model: 'GPT-4 Turbo', tokens: 45000000, requests: 15200, percentage: 36 },
-      { model: 'Claude 3.5 Sonnet', tokens: 35000000, requests: 12800, percentage: 28 },
-      { model: 'GPT-4o', tokens: 25000000, requests: 9500, percentage: 20 },
-      { model: 'GPT-4o Mini', tokens: 15000000, requests: 5800, percentage: 12 },
-      { model: '其他', tokens: 5000000, requests: 1930, percentage: 4 },
+      { model: 'GPT-4 Turbo', tokens: 45000000, requests: 15200, percentage: 36, avgInputLatencyPer1KToken: 45, avgOutputLatencyPer1KToken: 128 },
+      { model: 'Claude 3.5 Sonnet', tokens: 35000000, requests: 12800, percentage: 28, avgInputLatencyPer1KToken: 38, avgOutputLatencyPer1KToken: 115 },
+      { model: 'GPT-4o', tokens: 25000000, requests: 9500, percentage: 20, avgInputLatencyPer1KToken: 32, avgOutputLatencyPer1KToken: 95 },
+      { model: 'GPT-4o Mini', tokens: 15000000, requests: 5800, percentage: 12, avgInputLatencyPer1KToken: 18, avgOutputLatencyPer1KToken: 52 },
+      { model: '其他', tokens: 5000000, requests: 1930, percentage: 4, avgInputLatencyPer1KToken: 25, avgOutputLatencyPer1KToken: 78 },
     ],
+    modelLatencyTrend: (() => {
+      const models = ['GPT-4 Turbo', 'Claude 3.5 Sonnet', 'GPT-4o', 'GPT-4o Mini'];
+      const trend: { date: string; model: string; avgInputLatency: number; avgOutputLatency: number }[] = [];
+      for (let i = 6; i >= 0; i--) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        const dateStr = date.toISOString().split('T')[0];
+        models.forEach(model => {
+          trend.push({
+            date: dateStr,
+            model,
+            avgInputLatency: Math.floor(Math.random() * 30) + 20,
+            avgOutputLatency: Math.floor(Math.random() * 80) + 60,
+          });
+        });
+      }
+      return trend;
+    })(),
     dailyUsage: Array.from({ length: 7 }, (_, i) => {
       const date = new Date();
       date.setDate(date.getDate() - (6 - i));

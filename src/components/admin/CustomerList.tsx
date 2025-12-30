@@ -259,7 +259,10 @@ export function CustomerList({ onSelectCustomer }: CustomerListProps) {
                         <div className="flex items-center gap-1">
                           {customer.authConfig.enterpriseAuthMethod !== 'none' ? (
                             <span className="status-badge status-badge-success">
-                              {customer.authConfig.enterpriseAuthMethod.toUpperCase()}
+                              {customer.authConfig.enterpriseAuthMethod === 'wps365' ? '金山协作' :
+                               customer.authConfig.enterpriseAuthMethod === 'wecom' ? '企业微信' :
+                               customer.authConfig.enterpriseAuthMethod === 'dingtalk' ? '钉钉' :
+                               customer.authConfig.enterpriseAuthMethod === 'feishu' ? '飞书' : '未知'}
                             </span>
                           ) : (
                             <span className="status-badge status-badge-neutral">未配置</span>

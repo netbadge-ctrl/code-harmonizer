@@ -21,7 +21,7 @@ export interface Customer {
   
   // 认证配置
   authConfig: {
-    enterpriseAuthMethod: 'wps365' | 'wecom' | 'azure' | 'okta' | 'feishu' | 'dingtalk' | 'none';
+    enterpriseAuthMethod: 'wps365' | 'wecom' | 'dingtalk' | 'feishu' | 'none';
     ipWhitelistEnabled: boolean;
     ipWhitelist: string[];
   };
@@ -57,6 +57,16 @@ export interface CustomerDetail extends Customer {
     tokens: number;
     requests: number;
     percentage: number;
+    avgInputLatencyPer1KToken: number;  // 千token输入平均时长(ms)
+    avgOutputLatencyPer1KToken: number; // 千token输出平均时长(ms)
+  }[];
+  
+  // 模型时延趋势数据
+  modelLatencyTrend: {
+    date: string;
+    model: string;
+    avgInputLatency: number;
+    avgOutputLatency: number;
   }[];
   
   // 每日使用趋势
