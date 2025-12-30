@@ -8,7 +8,7 @@ import Onboarding from "./pages/Onboarding";
 import OrderConfirm from "./pages/OrderConfirm";
 import Console from "./pages/Console";
 import MyCli from "./pages/MyCli";
-import Admin from "./pages/Admin";
+import USS from "./pages/USS";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -25,7 +25,7 @@ const App = () => (
           <Route path="/order-confirm" element={<OrderConfirm />} />
           <Route path="/console" element={<Console />} />
           <Route path="/my-cli" element={<MyCli />} />
-          <Route path="/admin" element={<Admin />} />
+          <Route path="/uss" element={<USS />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
