@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { format } from 'date-fns';
-import { ArrowLeft, Building2, Users, Zap, Shield, Clock, Activity, Settings, Globe, Eye, CalendarIcon } from 'lucide-react';
+import { ArrowLeft, Building2, Users, Zap, Shield, Clock, Activity, Settings, Globe, Eye, CalendarIcon, Cloud, Server, Database, Network } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -220,6 +220,7 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
           <TabsTrigger value="usage">使用统计</TabsTrigger>
           <TabsTrigger value="users">活跃用户</TabsTrigger>
           <TabsTrigger value="logs">操作日志</TabsTrigger>
+          <TabsTrigger value="cloud">云服务信息</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
@@ -620,6 +621,79 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                   ))}
                 </tbody>
               </table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* 云服务信息 */}
+        <TabsContent value="cloud" className="space-y-4">
+          <Card className="enterprise-card">
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Cloud className="w-4 h-4" />
+                云服务架构
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col items-center py-8 space-y-4">
+                {/* 统一网关 */}
+                <div className="flex flex-col items-center">
+                  <div className="flex items-center gap-3 px-8 py-4 bg-primary/10 border border-primary/20 rounded-lg">
+                    <Network className="w-6 h-6 text-primary" />
+                    <span className="font-medium text-foreground">统一网关</span>
+                  </div>
+                  <div className="w-0.5 h-8 bg-border" />
+                </div>
+
+                {/* SLB */}
+                <div className="flex flex-col items-center">
+                  <div className="flex items-center gap-3 px-8 py-4 bg-info/10 border border-info/20 rounded-lg">
+                    <Globe className="w-6 h-6 text-info" />
+                    <span className="font-medium text-foreground">SLB 负载均衡</span>
+                  </div>
+                  <div className="w-0.5 h-8 bg-border" />
+                </div>
+
+                {/* 连接线分叉 */}
+                <div className="flex items-center justify-center w-full max-w-md">
+                  <div className="flex-1 h-0.5 bg-border" />
+                  <div className="w-2 h-2 rounded-full bg-border" />
+                  <div className="flex-1 h-0.5 bg-border" />
+                </div>
+
+                {/* 云服务器 3台 */}
+                <div className="flex items-start gap-6">
+                  {[1, 2, 3].map((index) => (
+                    <div key={index} className="flex flex-col items-center">
+                      <div className="w-0.5 h-4 bg-border" />
+                      <div className="flex flex-col items-center gap-2 px-6 py-4 bg-success/10 border border-success/20 rounded-lg">
+                        <Server className="w-6 h-6 text-success" />
+                        <span className="text-sm font-medium text-foreground">云服务器 {index}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* 连接线汇合 */}
+                <div className="flex items-center justify-center w-full max-w-md">
+                  <div className="flex-1 h-0.5 bg-border" />
+                  <div className="w-2 h-2 rounded-full bg-border" />
+                  <div className="flex-1 h-0.5 bg-border" />
+                </div>
+                <div className="w-0.5 h-4 bg-border" />
+
+                {/* 数据库和ES */}
+                <div className="flex items-center gap-6">
+                  <div className="flex items-center gap-3 px-6 py-4 bg-warning/10 border border-warning/20 rounded-lg">
+                    <Database className="w-6 h-6 text-warning" />
+                    <span className="font-medium text-foreground">数据库</span>
+                  </div>
+                  <div className="flex items-center gap-3 px-6 py-4 bg-destructive/10 border border-destructive/20 rounded-lg">
+                    <Database className="w-6 h-6 text-destructive" />
+                    <span className="font-medium text-foreground">Elasticsearch</span>
+                  </div>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
