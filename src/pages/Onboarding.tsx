@@ -17,7 +17,8 @@ import {
   HardDrive,
   CreditCard,
   Clock,
-  Globe
+  Globe,
+  Copy
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -196,11 +197,15 @@ export function Onboarding() {
   const allCloudSuccess = cloudProvisioning.every(item => item.status === 'success');
   const allDiagnosticsSuccess = diagnostics.every(d => d.status === 'success');
 
+  const restrictedUsernames = ['root', 'rdsrepladmin', 'rdsadmin', 'dtsroot'];
+  const isUsernameRestricted = restrictedUsernames.includes(cloudConfig.mysql.adminUser.toLowerCase());
+
   const canStartProvisioning = () => {
     const { mysql } = cloudConfig;
     const passwordValid = mysql.adminPassword.length >= 8 && mysql.adminPassword === mysql.confirmPassword;
+    const usernameValid = mysql.adminUser && !restrictedUsernames.includes(mysql.adminUser.toLowerCase());
     const integrationValid = identitySource && config.appId && config.appKey;
-    return passwordValid && integrationValid;
+    return passwordValid && usernameValid && integrationValid;
   };
 
   const handleNext = () => {
@@ -451,14 +456,29 @@ export function Onboarding() {
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="redirectUri">Redirect URI (回调地址)</Label>
-                          <Input
-                            id="redirectUri"
-                            placeholder="请输入回调地址"
-                            value={config.redirectUri || ''}
-                            onChange={(e) => setConfig(prev => ({ ...prev, redirectUri: e.target.value }))}
-                            disabled={isProvisioning}
-                            className="bg-background"
-                          />
+                          <div className="relative">
+                            <Input
+                              id="redirectUri"
+                              placeholder="请输入回调地址"
+                              value={config.redirectUri || ''}
+                              onChange={(e) => setConfig(prev => ({ ...prev, redirectUri: e.target.value }))}
+                              disabled={isProvisioning}
+                              className="bg-background pr-10"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (config.redirectUri) {
+                                  navigator.clipboard.writeText(config.redirectUri);
+                                  toast({ title: '已复制', description: '回调地址已复制到剪贴板' });
+                                }
+                              }}
+                              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                              title="复制"
+                            >
+                              <Copy className="w-4 h-4" />
+                            </button>
+                          </div>
                         </div>
                       </div>
                     )}
@@ -605,18 +625,26 @@ export function Onboarding() {
                           </div>
                         </div>
 
-                        {/* Admin Account Config */}
-                        <div className="border-t border-border pt-4 mt-4">
-                          <h4 className="text-sm font-medium text-foreground mb-3">管理员账户配置</h4>
+                        {/* Database & Security Config */}
+                        <div className="pt-4 mt-4">
+                          <h4 className="text-sm font-medium text-foreground mb-3">数据库和安全配置</h4>
                           <div className="space-y-3">
                             <div className="space-y-2">
-                              <Label htmlFor="mysqlUser" className="text-sm">管理员用户名</Label>
+                              <Label htmlFor="mysqlUser" className="text-sm">管理员账户</Label>
                               <Input
                                 id="mysqlUser"
+                                placeholder="请输入管理员账户名"
                                 value={cloudConfig.mysql.adminUser}
-                                disabled
-                                className="bg-muted"
+                                onChange={(e) => setCloudConfig(prev => ({
+                                  ...prev,
+                                  mysql: { ...prev.mysql, adminUser: e.target.value }
+                                }))}
+                                disabled={isProvisioning}
+                                className="bg-background"
                               />
+                              {cloudConfig.mysql.adminUser && ['root', 'rdsrepladmin', 'rdsadmin', 'dtsroot'].includes(cloudConfig.mysql.adminUser.toLowerCase()) && (
+                                <p className="text-xs text-destructive">不可使用 root、rdsrepladmin、rdsadmin、dtsroot 作为管理员账户</p>
+                              )}
                             </div>
                             <div className="space-y-2">
                               <Label htmlFor="mysqlPassword" className="text-sm">管理员密码</Label>
