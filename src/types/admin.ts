@@ -3,7 +3,9 @@
 export interface Customer {
   id: string;
   companyName: string;
-  domain: string;
+  customerCode: string; // 客户识别码
+  clientVersion: string; // 客户端版本
+  serverVersion: string; // 服务端版本
   contactName: string;
   contactEmail: string;
   contactPhone?: string;

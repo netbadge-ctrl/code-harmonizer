@@ -191,7 +191,7 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
           </div>
           <div>
             <h1 className="text-xl font-semibold text-foreground">{customer.companyName}</h1>
-            <p className="text-sm text-muted-foreground">{customer.domain}</p>
+            <p className="text-sm text-muted-foreground">{customer.customerCode}</p>
           </div>
           <span className={cn(
             "status-badge ml-2",
@@ -204,65 +204,6 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
         </div>
       </div>
 
-      {/* 概览卡片 */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="enterprise-card">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10">
-                <Activity className="w-5 h-5 text-primary" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-foreground">{planLabels[customer.subscription.plan]}</p>
-                <p className="text-xs text-muted-foreground">
-                  {customer.subscription.billingType === 'prepaid' ? '预付费' : '后付费'}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="enterprise-card">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-success/10">
-                <Users className="w-5 h-5 text-success" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-foreground">{customer.usage.activeUsers}</p>
-                <p className="text-xs text-muted-foreground">
-                  活跃用户 / {customer.subscription.usedSeats} 已分配
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="enterprise-card">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-warning/10">
-                <Zap className="w-5 h-5 text-warning" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-foreground">{formatTokens(customer.usage.monthlyTokens)}</p>
-                <p className="text-xs text-muted-foreground">本月 Token 消耗</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="enterprise-card">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-info/10">
-                <Clock className="w-5 h-5 text-info" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-foreground">{customer.usage.monthlyRequests}</p>
-                <p className="text-xs text-muted-foreground">本月请求数</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
 
       {/* 详细信息 Tabs */}
       <Tabs defaultValue="overview" className="space-y-4">
@@ -572,6 +513,30 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                     </tr>
                   ))}
                 </tbody>
+                <tfoot>
+                  <tr className="border-t-2 border-border font-medium bg-muted/50">
+                    <td>
+                      <span className="font-semibold">总计</span>
+                    </td>
+                    <td>{formatTokens(filteredModelUsage.reduce((sum, u) => sum + u.tokens, 0))}</td>
+                    <td>{filteredModelUsage.reduce((sum, u) => sum + u.percentage, 0)}%</td>
+                    <td>
+                      <span>{filteredModelUsage.reduce((sum, u) => sum + u.requests, 0).toLocaleString()}</span>
+                      <span className="text-muted-foreground"> / </span>
+                      <span className="text-success">{filteredModelUsage.reduce((sum, u) => sum + u.successfulRequests, 0).toLocaleString()}</span>
+                    </td>
+                    <td>
+                      {filteredModelUsage.length > 0 
+                        ? Math.round(filteredModelUsage.reduce((sum, u) => sum + u.avgInputLatencyPer1KToken, 0) / filteredModelUsage.length) 
+                        : 0} ms
+                    </td>
+                    <td>
+                      {filteredModelUsage.length > 0 
+                        ? Math.round(filteredModelUsage.reduce((sum, u) => sum + u.avgOutputLatencyPer1KToken, 0) / filteredModelUsage.length) 
+                        : 0} ms
+                    </td>
+                  </tr>
+                </tfoot>
               </table>
             </CardContent>
           </Card>

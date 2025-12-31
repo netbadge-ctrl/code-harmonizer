@@ -73,7 +73,7 @@ export function CustomerList({ onSelectCustomer }: CustomerListProps) {
   const filteredCustomers = mockCustomers.filter(customer => {
     const matchesSearch = 
       customer.companyName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      customer.domain.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      customer.customerCode.toLowerCase().includes(searchQuery.toLowerCase()) ||
       customer.contactEmail.toLowerCase().includes(searchQuery.toLowerCase());
     
     const matchesPlan = planFilter === 'all' || customer.subscription.plan === planFilter;
@@ -201,6 +201,7 @@ export function CustomerList({ onSelectCustomer }: CustomerListProps) {
               <thead>
                 <tr>
                   <th>公司信息</th>
+                  <th>版本信息</th>
                   <th>订阅状态</th>
                   <th>认证配置</th>
                   <th>使用情况</th>
@@ -218,7 +219,13 @@ export function CustomerList({ onSelectCustomer }: CustomerListProps) {
                     <td>
                       <div className="flex flex-col">
                         <span className="font-medium text-foreground">{customer.companyName}</span>
-                        <span className="text-xs text-muted-foreground">{customer.domain}</span>
+                        <span className="text-xs text-muted-foreground">{customer.customerCode}</span>
+                      </div>
+                    </td>
+                    <td>
+                      <div className="flex flex-col gap-1">
+                        <span className="text-sm">客户端: {customer.clientVersion}</span>
+                        <span className="text-sm text-muted-foreground">服务端: {customer.serverVersion}</span>
                       </div>
                     </td>
                     <td>
