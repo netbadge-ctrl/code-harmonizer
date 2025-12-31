@@ -92,62 +92,6 @@ export function CustomerList({ onSelectCustomer }: CustomerListProps) {
 
   return (
     <div className="space-y-6">
-      {/* 统计卡片 */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="enterprise-card">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10">
-                <Building2 className="w-5 h-5 text-primary" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-foreground">{stats.total}</p>
-                <p className="text-xs text-muted-foreground">总客户数</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="enterprise-card">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-success/10">
-                <Building2 className="w-5 h-5 text-success" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-foreground">{stats.active}</p>
-                <p className="text-xs text-muted-foreground">活跃客户</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="enterprise-card">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-info/10">
-                <Users className="w-5 h-5 text-info" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-foreground">{stats.totalUsers}</p>
-                <p className="text-xs text-muted-foreground">总活跃用户</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="enterprise-card">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-warning/10">
-                <Zap className="w-5 h-5 text-warning" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-foreground">{formatTokens(stats.totalTokens)}</p>
-                <p className="text-xs text-muted-foreground">本月 Token 消耗</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
       {/* 筛选栏 */}
       <Card className="enterprise-card">
         <CardContent className="p-4">
