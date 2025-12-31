@@ -609,6 +609,108 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
               </div>
             </CardContent>
           </Card>
+
+          {/* 错误码分布和调用失败详情 */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* 错误码分布饼图 */}
+            <Card className="enterprise-card">
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 text-destructive" />
+                  调用失败错误码分布
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={customer.errorCodeDistribution}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={40}
+                        outerRadius={70}
+                        paddingAngle={2}
+                        dataKey="count"
+                        nameKey="errorCode"
+                        label={({ errorCode, percentage }) => `${errorCode}: ${percentage}%`}
+                        labelLine={false}
+                      >
+                        {customer.errorCodeDistribution.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip 
+                        formatter={(value: number, name: string, props: any) => [
+                          `${value} 次`,
+                          props.payload.errorName
+                        ]}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="space-y-2 mt-4">
+                  {customer.errorCodeDistribution.map((item, index) => (
+                    <div key={item.errorCode} className="flex items-center justify-between text-sm">
+                      <div className="flex items-center gap-2">
+                        <div 
+                          className="w-3 h-3 rounded-full" 
+                          style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                        />
+                        <span className="font-mono">{item.errorCode}</span>
+                        <span className="text-muted-foreground">{item.errorName}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span>{item.count}次</span>
+                        <span className="text-muted-foreground">({item.percentage}%)</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* 调用失败详情列表 */}
+            <Card className="enterprise-card">
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <XCircle className="w-4 h-4 text-destructive" />
+                  调用失败详情
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="max-h-[400px] overflow-y-auto">
+                  <table className="data-table">
+                    <thead className="sticky top-0 bg-background z-10">
+                      <tr>
+                        <th>时间</th>
+                        <th>模型</th>
+                        <th>错误码</th>
+                        <th>用户</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {customer.callFailures.slice(0, 20).map((failure) => (
+                        <tr key={failure.id}>
+                          <td className="text-xs">{formatDateTime(failure.timestamp)}</td>
+                          <td>
+                            <span className="text-xs">{failure.model}</span>
+                          </td>
+                          <td>
+                            <div className="flex flex-col">
+                              <span className="font-mono text-destructive">{failure.errorCode}</span>
+                              <span className="text-xs text-muted-foreground">{failure.errorMessage}</span>
+                            </div>
+                          </td>
+                          <td className="text-xs text-muted-foreground">{failure.userName}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
 
         <TabsContent value="users" className="space-y-4">

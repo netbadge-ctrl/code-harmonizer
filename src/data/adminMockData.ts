@@ -284,6 +284,40 @@ export const getCustomerDetail = (customerId: string): CustomerDetail | null => 
         activeUsers: Math.floor(Math.random() * 30) + 20,
       };
     }),
+    callFailures: (() => {
+      const errorCodes = [
+        { code: '429', message: '请求频率超限' },
+        { code: '500', message: '服务器内部错误' },
+        { code: '503', message: '服务暂时不可用' },
+        { code: '400', message: '请求参数错误' },
+        { code: '401', message: '认证失败' },
+        { code: '408', message: '请求超时' },
+      ];
+      const models = ['GPT-4 Turbo', 'Claude 3.5 Sonnet', 'GPT-4o', 'GPT-4o Mini'];
+      return Array.from({ length: 25 }, (_, i) => {
+        const date = new Date();
+        date.setMinutes(date.getMinutes() - Math.floor(Math.random() * 1440));
+        const error = errorCodes[Math.floor(Math.random() * errorCodes.length)];
+        return {
+          id: `fail_${i + 1}`,
+          timestamp: date.toISOString(),
+          model: models[Math.floor(Math.random() * models.length)],
+          errorCode: error.code,
+          errorMessage: error.message,
+          requestId: `req_${Date.now()}_${i}`,
+          userId: `u${Math.floor(Math.random() * 35) + 1}`,
+          userName: `开发者${String.fromCharCode(65 + (Math.floor(Math.random() * 26)))}`,
+        };
+      }).sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    })(),
+    errorCodeDistribution: [
+      { errorCode: '429', errorName: '请求频率超限', count: 45, percentage: 36 },
+      { errorCode: '500', errorName: '服务器内部错误', count: 28, percentage: 22 },
+      { errorCode: '503', errorName: '服务暂时不可用', count: 22, percentage: 18 },
+      { errorCode: '408', errorName: '请求超时', count: 15, percentage: 12 },
+      { errorCode: '400', errorName: '请求参数错误', count: 10, percentage: 8 },
+      { errorCode: '401', errorName: '认证失败', count: 5, percentage: 4 },
+    ],
     topUsers: Array.from({ length: 35 }, (_, i) => {
       const date = new Date();
       date.setHours(date.getHours() - Math.floor(Math.random() * 72));

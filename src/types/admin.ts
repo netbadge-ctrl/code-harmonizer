@@ -80,6 +80,26 @@ export interface CustomerDetail extends Customer {
     activeUsers: number;
   }[];
   
+  // 调用失败详情
+  callFailures: {
+    id: string;
+    timestamp: string;
+    model: string;
+    errorCode: string;
+    errorMessage: string;
+    requestId: string;
+    userId: string;
+    userName: string;
+  }[];
+  
+  // 错误码分布
+  errorCodeDistribution: {
+    errorCode: string;
+    errorName: string;
+    count: number;
+    percentage: number;
+  }[];
+  
   // 活跃用户列表
   topUsers: {
     id: string;
