@@ -272,13 +272,18 @@ export const getCustomerDetail = (customerId: string): CustomerDetail | null => 
         activeUsers: Math.floor(Math.random() * 30) + 20,
       };
     }),
-    topUsers: [
-      { id: 'u1', name: '开发者A', email: 'dev-a@company.com', tokens: 2500000, requests: 850, lastActiveAt: '2024-12-28T10:30:00Z' },
-      { id: 'u2', name: '开发者B', email: 'dev-b@company.com', tokens: 2100000, requests: 720, lastActiveAt: '2024-12-28T09:45:00Z' },
-      { id: 'u3', name: '开发者C', email: 'dev-c@company.com', tokens: 1800000, requests: 650, lastActiveAt: '2024-12-28T08:20:00Z' },
-      { id: 'u4', name: '开发者D', email: 'dev-d@company.com', tokens: 1500000, requests: 520, lastActiveAt: '2024-12-27T17:30:00Z' },
-      { id: 'u5', name: '开发者E', email: 'dev-e@company.com', tokens: 1200000, requests: 480, lastActiveAt: '2024-12-27T16:15:00Z' },
-    ],
+    topUsers: Array.from({ length: 35 }, (_, i) => {
+      const date = new Date();
+      date.setHours(date.getHours() - Math.floor(Math.random() * 72));
+      return {
+        id: `u${i + 1}`,
+        name: `开发者${String.fromCharCode(65 + (i % 26))}${i >= 26 ? Math.floor(i / 26) : ''}`,
+        email: `dev-${String.fromCharCode(97 + (i % 26))}${i >= 26 ? Math.floor(i / 26) : ''}@company.com`,
+        tokens: Math.floor(Math.random() * 2000000) + 500000,
+        requests: Math.floor(Math.random() * 600) + 200,
+        lastActiveAt: date.toISOString(),
+      };
+    }).sort((a, b) => b.tokens - a.tokens),
     recentLogs: [
       { id: 'log1', action: '模型配置变更', actor: '管理员', timestamp: '2024-12-28T10:00:00Z', details: '启用了 GPT-4 Turbo 模型' },
       { id: 'log2', action: '成员添加', actor: '管理员', timestamp: '2024-12-27T15:30:00Z', details: '添加了新成员 dev-f@company.com' },

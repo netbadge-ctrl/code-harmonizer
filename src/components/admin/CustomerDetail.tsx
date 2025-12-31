@@ -1,6 +1,15 @@
 import React, { useState, useMemo } from 'react';
 import { format } from 'date-fns';
-import { ArrowLeft, Building2, Users, Zap, Shield, Clock, Activity, Settings, Globe, Eye, CalendarIcon, Cloud, Server, Database, Network, HardDrive, Cpu, MemoryStick, AlertTriangle, CheckCircle2, XCircle, Filter } from 'lucide-react';
+import { ArrowLeft, Building2, Users, Zap, Shield, Clock, Activity, Settings, Globe, Eye, CalendarIcon, Cloud, Server, Database, Network, HardDrive, Cpu, MemoryStick, AlertTriangle, CheckCircle2, XCircle, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+  PaginationEllipsis,
+} from '@/components/ui/pagination';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -85,11 +94,36 @@ function formatDateTime(dateString: string): string {
 
 export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
   const customer = getCustomerDetail(customerId);
+  const [timeRangePreset, setTimeRangePreset] = useState<string>('7days');
   const [usageDateRange, setUsageDateRange] = useState<{ from: Date | undefined; to: Date | undefined }>({
     from: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
     to: new Date(),
   });
   const [selectedModel, setSelectedModel] = useState<string>('all');
+  const [userCurrentPage, setUserCurrentPage] = useState(1);
+  const usersPerPage = 10;
+
+  // 时间范围预设选项
+  const timeRangePresets = [
+    { value: '15min', label: '最近15分钟', duration: 15 * 60 * 1000 },
+    { value: '4hours', label: '最近4小时', duration: 4 * 60 * 60 * 1000 },
+    { value: '24hours', label: '最近24小时', duration: 24 * 60 * 60 * 1000 },
+    { value: '7days', label: '最近7天', duration: 7 * 24 * 60 * 60 * 1000 },
+    { value: 'custom', label: '自定义' },
+  ];
+
+  const handleTimeRangePresetChange = (preset: string) => {
+    setTimeRangePreset(preset);
+    if (preset !== 'custom') {
+      const presetConfig = timeRangePresets.find(p => p.value === preset);
+      if (presetConfig && presetConfig.duration) {
+        setUsageDateRange({
+          from: new Date(Date.now() - presetConfig.duration),
+          to: new Date(),
+        });
+      }
+    }
+  };
 
   // 获取可选模型列表
   const availableModels = useMemo(() => {
@@ -385,23 +419,45 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
             </div>
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground">时间范围：</span>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" size="sm" className="gap-2">
-                    <CalendarIcon className="w-4 h-4" />
-                    {usageDateRange.from ? format(usageDateRange.from, 'yyyy-MM-dd') : '开始日期'} - {usageDateRange.to ? format(usageDateRange.to, 'yyyy-MM-dd') : '结束日期'}
+              <div className="flex items-center gap-1">
+                {timeRangePresets.filter(p => p.value !== 'custom').map(preset => (
+                  <Button
+                    key={preset.value}
+                    variant={timeRangePreset === preset.value ? 'default' : 'outline'}
+                    size="sm"
+                    className="h-8"
+                    onClick={() => handleTimeRangePresetChange(preset.value)}
+                  >
+                    {preset.label}
                   </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="range"
-                    selected={usageDateRange}
-                    onSelect={(range) => setUsageDateRange({ from: range?.from, to: range?.to })}
-                    numberOfMonths={2}
-                    className="pointer-events-auto"
-                  />
-                </PopoverContent>
-              </Popover>
+                ))}
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button 
+                      variant={timeRangePreset === 'custom' ? 'default' : 'outline'} 
+                      size="sm" 
+                      className="gap-2 h-8"
+                    >
+                      <CalendarIcon className="w-4 h-4" />
+                      {timeRangePreset === 'custom' 
+                        ? `${usageDateRange.from ? format(usageDateRange.from, 'MM-dd') : ''} - ${usageDateRange.to ? format(usageDateRange.to, 'MM-dd') : ''}`
+                        : '自定义'}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="range"
+                      selected={usageDateRange}
+                      onSelect={(range) => {
+                        setUsageDateRange({ from: range?.from, to: range?.to });
+                        setTimeRangePreset('custom');
+                      }}
+                      numberOfMonths={2}
+                      className="pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
             </div>
           </div>
 
@@ -592,13 +648,17 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
 
         <TabsContent value="users" className="space-y-4">
           <Card className="enterprise-card">
-            <CardHeader>
-              <CardTitle className="text-base">活跃用户 Top 5</CardTitle>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="text-base">当月活跃用户</CardTitle>
+              <span className="text-sm text-muted-foreground">
+                共 {customer.topUsers.length} 位用户
+              </span>
             </CardHeader>
             <CardContent className="p-0">
               <table className="data-table">
                 <thead>
                   <tr>
+                    <th>排名</th>
                     <th>用户</th>
                     <th>Token 消耗</th>
                     <th>请求数</th>
@@ -606,21 +666,76 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                   </tr>
                 </thead>
                 <tbody>
-                  {customer.topUsers.map((user) => (
-                    <tr key={user.id}>
-                      <td>
-                        <div className="flex flex-col">
-                          <span className="font-medium">{user.name}</span>
-                          <span className="text-xs text-muted-foreground">{user.email}</span>
-                        </div>
-                      </td>
-                      <td>{formatTokens(user.tokens)}</td>
-                      <td>{user.requests.toLocaleString()}</td>
-                      <td className="text-muted-foreground">{formatDateTime(user.lastActiveAt)}</td>
-                    </tr>
-                  ))}
+                  {customer.topUsers
+                    .slice((userCurrentPage - 1) * usersPerPage, userCurrentPage * usersPerPage)
+                    .map((user, index) => (
+                      <tr key={user.id}>
+                        <td className="text-center font-medium">
+                          {(userCurrentPage - 1) * usersPerPage + index + 1}
+                        </td>
+                        <td>
+                          <div className="flex flex-col">
+                            <span className="font-medium">{user.name}</span>
+                            <span className="text-xs text-muted-foreground">{user.email}</span>
+                          </div>
+                        </td>
+                        <td>{formatTokens(user.tokens)}</td>
+                        <td>{user.requests.toLocaleString()}</td>
+                        <td className="text-muted-foreground">{formatDateTime(user.lastActiveAt)}</td>
+                      </tr>
+                    ))}
                 </tbody>
               </table>
+              {/* 分页控件 */}
+              {customer.topUsers.length > usersPerPage && (
+                <div className="flex items-center justify-between px-4 py-3 border-t border-border">
+                  <span className="text-sm text-muted-foreground">
+                    第 {(userCurrentPage - 1) * usersPerPage + 1} - {Math.min(userCurrentPage * usersPerPage, customer.topUsers.length)} 条，共 {customer.topUsers.length} 条
+                  </span>
+                  <Pagination>
+                    <PaginationContent>
+                      <PaginationItem>
+                        <PaginationPrevious 
+                          onClick={() => setUserCurrentPage(p => Math.max(1, p - 1))}
+                          className={userCurrentPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                        />
+                      </PaginationItem>
+                      {Array.from({ length: Math.ceil(customer.topUsers.length / usersPerPage) }, (_, i) => i + 1)
+                        .filter(page => {
+                          const totalPages = Math.ceil(customer.topUsers.length / usersPerPage);
+                          if (totalPages <= 5) return true;
+                          if (page === 1 || page === totalPages) return true;
+                          if (Math.abs(page - userCurrentPage) <= 1) return true;
+                          return false;
+                        })
+                        .map((page, i, arr) => (
+                          <React.Fragment key={page}>
+                            {i > 0 && arr[i - 1] !== page - 1 && (
+                              <PaginationItem>
+                                <PaginationEllipsis />
+                              </PaginationItem>
+                            )}
+                            <PaginationItem>
+                              <PaginationLink
+                                onClick={() => setUserCurrentPage(page)}
+                                isActive={userCurrentPage === page}
+                                className="cursor-pointer"
+                              >
+                                {page}
+                              </PaginationLink>
+                            </PaginationItem>
+                          </React.Fragment>
+                        ))}
+                      <PaginationItem>
+                        <PaginationNext 
+                          onClick={() => setUserCurrentPage(p => Math.min(Math.ceil(customer.topUsers.length / usersPerPage), p + 1))}
+                          className={userCurrentPage === Math.ceil(customer.topUsers.length / usersPerPage) ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                        />
+                      </PaginationItem>
+                    </PaginationContent>
+                  </Pagination>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
