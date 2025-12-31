@@ -20,16 +20,14 @@ interface CustomerListProps {
 }
 
 const planLabels: Record<string, string> = {
-  trial: '试用版',
   starter: '基础版',
   professional: '专业版',
-  enterprise: '企业版',
 };
 
 const statusLabels: Record<string, string> = {
+  trial: '试用',
   active: '正常',
   expired: '已过期',
-  suspended: '已暂停',
 };
 
 function formatTokens(tokens: number): string {
@@ -170,10 +168,8 @@ export function CustomerList({ onSelectCustomer }: CustomerListProps) {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">全部版本</SelectItem>
-                  <SelectItem value="trial">试用版</SelectItem>
                   <SelectItem value="starter">基础版</SelectItem>
                   <SelectItem value="professional">专业版</SelectItem>
-                  <SelectItem value="enterprise">企业版</SelectItem>
                 </SelectContent>
               </Select>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -182,9 +178,9 @@ export function CustomerList({ onSelectCustomer }: CustomerListProps) {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">全部状态</SelectItem>
+                  <SelectItem value="trial">试用</SelectItem>
                   <SelectItem value="active">正常</SelectItem>
                   <SelectItem value="expired">已过期</SelectItem>
-                  <SelectItem value="suspended">已暂停</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -230,8 +226,7 @@ export function CustomerList({ onSelectCustomer }: CustomerListProps) {
                         <div className="flex items-center gap-2">
                           <span className={cn(
                             "status-badge",
-                            customer.subscription.plan === 'enterprise' ? 'status-badge-success' :
-                            customer.subscription.plan === 'professional' ? 'status-badge-warning' :
+                            customer.subscription.plan === 'professional' ? 'status-badge-success' :
                             'status-badge-neutral'
                           )}>
                             {planLabels[customer.subscription.plan]}
@@ -240,7 +235,7 @@ export function CustomerList({ onSelectCustomer }: CustomerListProps) {
                             "status-badge",
                             customer.subscription.status === 'active' ? 'status-badge-success' :
                             customer.subscription.status === 'expired' ? 'status-badge-error' :
-                            'status-badge-neutral'
+                            'status-badge-warning'
                           )}>
                             {statusLabels[customer.subscription.status]}
                           </span>
@@ -285,9 +280,6 @@ export function CustomerList({ onSelectCustomer }: CustomerListProps) {
                           <Zap className="w-3 h-3 text-muted-foreground" />
                           <span className="text-sm">{formatTokens(customer.usage.monthlyTokens)} Token/月</span>
                         </div>
-                        <span className="text-xs text-muted-foreground">
-                          {customer.models.enabledCount}/{customer.models.totalCount} 模型 · {customer.models.primaryModel}
-                        </span>
                       </div>
                     </td>
                     <td>

@@ -9,7 +9,7 @@ export const mockCustomers: Customer[] = [
     contactEmail: 'zhangsan@techinnov.com',
     contactPhone: '13800138001',
     subscription: {
-      plan: 'enterprise',
+      plan: 'professional',
       status: 'active',
       billingType: 'postpaid',
       startDate: '2024-01-15',
@@ -122,8 +122,8 @@ export const mockCustomers: Customer[] = [
     contactEmail: 'zhaoliu@smartmfg.com',
     contactPhone: '13700137004',
     subscription: {
-      plan: 'trial',
-      status: 'active',
+      plan: 'starter',
+      status: 'trial',
       billingType: 'prepaid',
       startDate: '2024-12-20',
       expiresAt: '2025-01-20',
@@ -160,7 +160,7 @@ export const mockCustomers: Customer[] = [
     contactEmail: 'sunqi@healthtech.com',
     contactPhone: '13600136005',
     subscription: {
-      plan: 'enterprise',
+      plan: 'professional',
       status: 'active',
       billingType: 'postpaid',
       startDate: '2024-02-01',
@@ -236,11 +236,11 @@ export const getCustomerDetail = (customerId: string): CustomerDetail | null => 
   return {
     ...customer,
     modelUsage: [
-      { model: 'GPT-4 Turbo', tokens: 45000000, requests: 15200, percentage: 36, avgInputLatencyPer1KToken: 45, avgOutputLatencyPer1KToken: 128 },
-      { model: 'Claude 3.5 Sonnet', tokens: 35000000, requests: 12800, percentage: 28, avgInputLatencyPer1KToken: 38, avgOutputLatencyPer1KToken: 115 },
-      { model: 'GPT-4o', tokens: 25000000, requests: 9500, percentage: 20, avgInputLatencyPer1KToken: 32, avgOutputLatencyPer1KToken: 95 },
-      { model: 'GPT-4o Mini', tokens: 15000000, requests: 5800, percentage: 12, avgInputLatencyPer1KToken: 18, avgOutputLatencyPer1KToken: 52 },
-      { model: '其他', tokens: 5000000, requests: 1930, percentage: 4, avgInputLatencyPer1KToken: 25, avgOutputLatencyPer1KToken: 78 },
+      { model: 'GPT-4 Turbo', tokens: 45000000, requests: 15200, successfulRequests: 15120, percentage: 36, avgInputLatencyPer1KToken: 45, avgOutputLatencyPer1KToken: 128 },
+      { model: 'Claude 3.5 Sonnet', tokens: 35000000, requests: 12800, successfulRequests: 12750, percentage: 28, avgInputLatencyPer1KToken: 38, avgOutputLatencyPer1KToken: 115 },
+      { model: 'GPT-4o', tokens: 25000000, requests: 9500, successfulRequests: 9480, percentage: 20, avgInputLatencyPer1KToken: 32, avgOutputLatencyPer1KToken: 95 },
+      { model: 'GPT-4o Mini', tokens: 15000000, requests: 5800, successfulRequests: 5790, percentage: 12, avgInputLatencyPer1KToken: 18, avgOutputLatencyPer1KToken: 52 },
+      { model: '其他', tokens: 5000000, requests: 1930, successfulRequests: 1920, percentage: 4, avgInputLatencyPer1KToken: 25, avgOutputLatencyPer1KToken: 78 },
     ],
     modelLatencyTrend: (() => {
       const models = ['GPT-4 Turbo', 'Claude 3.5 Sonnet', 'GPT-4o', 'GPT-4o Mini'];

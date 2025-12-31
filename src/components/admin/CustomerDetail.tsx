@@ -33,16 +33,14 @@ interface CustomerDetailProps {
 }
 
 const planLabels: Record<string, string> = {
-  trial: '试用版',
   starter: '基础版',
   professional: '专业版',
-  enterprise: '企业版',
 };
 
 const statusLabels: Record<string, string> = {
+  trial: '试用',
   active: '正常',
   expired: '已过期',
-  suspended: '已暂停',
 };
 
 const authMethodLabels: Record<string, string> = {
@@ -257,8 +255,7 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                   <span className="text-sm text-muted-foreground">版本</span>
                   <span className={cn(
                     "status-badge",
-                    customer.subscription.plan === 'enterprise' ? 'status-badge-success' :
-                    customer.subscription.plan === 'professional' ? 'status-badge-warning' :
+                    customer.subscription.plan === 'professional' ? 'status-badge-success' :
                     'status-badge-neutral'
                   )}>
                     {planLabels[customer.subscription.plan]}
@@ -283,12 +280,12 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
               </CardContent>
             </Card>
 
-            {/* 认证配置 */}
+            {/* 配置信息 - 合并认证配置和模型配置 */}
             <Card className="enterprise-card">
               <CardHeader>
                 <CardTitle className="text-base flex items-center gap-2">
-                  <Shield className="w-4 h-4" />
-                  认证配置
+                  <Settings className="w-4 h-4" />
+                  配置信息
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
@@ -334,18 +331,6 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                     )}
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-
-            {/* 模型配置 */}
-            <Card className="enterprise-card">
-              <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Settings className="w-4 h-4" />
-                  模型配置
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-muted-foreground">已开通模型</span>
                   <div className="flex items-center gap-2">
@@ -501,8 +486,8 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                   <tr>
                     <th>模型</th>
                     <th>Token 消耗</th>
-                    <th>请求数</th>
-                    <th>占比</th>
+                    <th>Token占比</th>
+                    <th>请求数(总/成功)</th>
                     <th>千Token输入平均时长</th>
                     <th>千Token输出平均时长</th>
                   </tr>
@@ -520,8 +505,12 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                         </div>
                       </td>
                       <td>{formatTokens(usage.tokens)}</td>
-                      <td>{usage.requests.toLocaleString()}</td>
                       <td>{usage.percentage}%</td>
+                      <td>
+                        <span>{usage.requests.toLocaleString()}</span>
+                        <span className="text-muted-foreground"> / </span>
+                        <span className="text-success">{usage.successfulRequests.toLocaleString()}</span>
+                      </td>
                       <td>{usage.avgInputLatencyPer1KToken} ms</td>
                       <td>{usage.avgOutputLatencyPer1KToken} ms</td>
                     </tr>

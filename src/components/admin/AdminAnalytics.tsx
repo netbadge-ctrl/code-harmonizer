@@ -83,10 +83,8 @@ export function AdminAnalytics() {
 
   // 按版本分布
   const planDistribution = [
-    { name: '企业版', value: mockCustomers.filter(c => c.subscription.plan === 'enterprise').length },
     { name: '专业版', value: mockCustomers.filter(c => c.subscription.plan === 'professional').length },
     { name: '基础版', value: mockCustomers.filter(c => c.subscription.plan === 'starter').length },
-    { name: '试用版', value: mockCustomers.filter(c => c.subscription.plan === 'trial').length },
   ];
 
   // 按客户 Token 消耗排名

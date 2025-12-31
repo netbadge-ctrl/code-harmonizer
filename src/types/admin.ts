@@ -10,8 +10,8 @@ export interface Customer {
   
   // 订阅信息
   subscription: {
-    plan: 'trial' | 'starter' | 'professional' | 'enterprise';
-    status: 'active' | 'expired' | 'suspended';
+    plan: 'starter' | 'professional'; // 基础版 | 专业版
+    status: 'trial' | 'active' | 'expired'; // 试用 | 正常 | 已过期
     billingType: 'prepaid' | 'postpaid';
     startDate: string;
     expiresAt: string;
@@ -56,7 +56,8 @@ export interface CustomerDetail extends Customer {
     model: string;
     tokens: number;
     requests: number;
-    percentage: number;
+    successfulRequests: number; // 成功请求数
+    percentage: number; // Token占比
     avgInputLatencyPer1KToken: number;  // 千token输入平均时长(ms)
     avgOutputLatencyPer1KToken: number; // 千token输出平均时长(ms)
   }[];
