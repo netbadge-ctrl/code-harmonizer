@@ -4,7 +4,9 @@ export const mockCustomers: Customer[] = [
   {
     id: 'cust_001',
     companyName: '科技创新有限公司',
-    domain: 'techinnov.com',
+    customerCode: 'TECH-001',
+    clientVersion: 'v2.3.1',
+    serverVersion: 'v1.8.0',
     contactName: '张三',
     contactEmail: 'zhangsan@techinnov.com',
     contactPhone: '13800138001',
@@ -42,7 +44,9 @@ export const mockCustomers: Customer[] = [
   {
     id: 'cust_002',
     companyName: '金融数据服务公司',
-    domain: 'findata.cn',
+    customerCode: 'FIN-002',
+    clientVersion: 'v2.2.5',
+    serverVersion: 'v1.7.2',
     contactName: '李四',
     contactEmail: 'lisi@findata.cn',
     contactPhone: '13900139002',
@@ -80,7 +84,9 @@ export const mockCustomers: Customer[] = [
   {
     id: 'cust_003',
     companyName: '教育科技集团',
-    domain: 'edutech.edu.cn',
+    customerCode: 'EDU-003',
+    clientVersion: 'v2.1.0',
+    serverVersion: 'v1.6.5',
     contactName: '王五',
     contactEmail: 'wangwu@edutech.edu.cn',
     subscription: {
@@ -117,7 +123,9 @@ export const mockCustomers: Customer[] = [
   {
     id: 'cust_004',
     companyName: '智能制造有限公司',
-    domain: 'smartmfg.com',
+    customerCode: 'SMART-004',
+    clientVersion: 'v2.3.0',
+    serverVersion: 'v1.8.0',
     contactName: '赵六',
     contactEmail: 'zhaoliu@smartmfg.com',
     contactPhone: '13700137004',
@@ -155,7 +163,9 @@ export const mockCustomers: Customer[] = [
   {
     id: 'cust_005',
     companyName: '医疗健康科技',
-    domain: 'healthtech.com',
+    customerCode: 'HEALTH-005',
+    clientVersion: 'v2.3.1',
+    serverVersion: 'v1.8.1',
     contactName: '孙七',
     contactEmail: 'sunqi@healthtech.com',
     contactPhone: '13600136005',
@@ -193,7 +203,9 @@ export const mockCustomers: Customer[] = [
   {
     id: 'cust_006',
     companyName: '电商平台科技',
-    domain: 'ecomtech.cn',
+    customerCode: 'ECOM-006',
+    clientVersion: 'v2.0.3',
+    serverVersion: 'v1.5.0',
     contactName: '周八',
     contactEmail: 'zhouba@ecomtech.cn',
     subscription: {
