@@ -1,7 +1,13 @@
-import React from 'react';
-import { Building2, Users, Zap, TrendingUp, Activity, AlertTriangle, Clock } from 'lucide-react';
+import React, { useState } from 'react';
+import { Building2, Users, Zap, TrendingUp, Activity, AlertTriangle, Clock, CalendarIcon } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { mockCustomers } from '@/data/adminMockData';
+import { format, subDays, subHours, subMinutes } from 'date-fns';
+import { zhCN } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 import {
   BarChart,
   Bar,
@@ -67,7 +73,33 @@ const latencyPerKTokenMinute = [
   { time: '10:09', inputLatency: 0.42, outputLatency: 1.87 },
 ];
 
+type TimeRangePreset = '15min' | '4hours' | '24hours' | '7days' | 'custom';
+
 export function AdminAnalytics() {
+  const [timeRangePreset, setTimeRangePreset] = useState<TimeRangePreset>('7days');
+  const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
+    from: subDays(new Date(), 7),
+    to: new Date(),
+  });
+
+  const handlePresetChange = (preset: TimeRangePreset) => {
+    setTimeRangePreset(preset);
+    const now = new Date();
+    switch (preset) {
+      case '15min':
+        setDateRange({ from: subMinutes(now, 15), to: now });
+        break;
+      case '4hours':
+        setDateRange({ from: subHours(now, 4), to: now });
+        break;
+      case '24hours':
+        setDateRange({ from: subHours(now, 24), to: now });
+        break;
+      case '7days':
+        setDateRange({ from: subDays(now, 7), to: now });
+        break;
+    }
+  };
   // 统计数据
   const stats = {
     totalCustomers: mockCustomers.length,
@@ -113,6 +145,76 @@ export function AdminAnalytics() {
 
   return (
     <div className="space-y-6">
+      {/* 时间范围选择 */}
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-sm text-muted-foreground">查询时间：</span>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant={timeRangePreset === '15min' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => handlePresetChange('15min')}
+          >
+            最近15分钟
+          </Button>
+          <Button
+            variant={timeRangePreset === '4hours' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => handlePresetChange('4hours')}
+          >
+            最近4小时
+          </Button>
+          <Button
+            variant={timeRangePreset === '24hours' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => handlePresetChange('24hours')}
+          >
+            最近24小时
+          </Button>
+          <Button
+            variant={timeRangePreset === '7days' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => handlePresetChange('7days')}
+          >
+            最近7天
+          </Button>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant={timeRangePreset === 'custom' ? 'default' : 'outline'}
+                size="sm"
+                className="min-w-[200px] justify-start"
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {timeRangePreset === 'custom' ? (
+                  <>
+                    {format(dateRange.from, 'yyyy/MM/dd', { locale: zhCN })} - {format(dateRange.to, 'yyyy/MM/dd', { locale: zhCN })}
+                  </>
+                ) : (
+                  '自定义日期'
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="range"
+                selected={{ from: dateRange.from, to: dateRange.to }}
+                onSelect={(range) => {
+                  if (range?.from && range?.to) {
+                    setDateRange({ from: range.from, to: range.to });
+                    setTimeRangePreset('custom');
+                  } else if (range?.from) {
+                    setDateRange({ from: range.from, to: range.from });
+                    setTimeRangePreset('custom');
+                  }
+                }}
+                numberOfMonths={2}
+                className={cn("p-3 pointer-events-auto")}
+              />
+            </PopoverContent>
+          </Popover>
+        </div>
+      </div>
+
       {/* 统计卡片 */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card className="enterprise-card">
