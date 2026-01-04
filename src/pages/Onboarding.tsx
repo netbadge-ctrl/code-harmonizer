@@ -19,7 +19,8 @@ import {
   Globe,
   Copy,
   ShoppingCart,
-  Loader2
+  Loader2,
+  Info
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -27,6 +28,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 interface Step {
   id: string;
@@ -108,8 +115,16 @@ interface CloudConfig {
 }
 
 const versionOptions = [
-  { id: 'basic', name: '基础版' },
-  { id: 'professional', name: '专业版' },
+  { 
+    id: 'basic', 
+    name: '基础版',
+    features: ['代码补全', '代码解释', '单轮对话', '基础模型支持', '基础安全审计']
+  },
+  { 
+    id: 'professional', 
+    name: '专业版',
+    features: ['代码补全', '代码解释', '多轮对话', '高级模型支持', '企业级安全审计', 'API接口调用', '私有化部署', '专属技术支持']
+  },
 ];
 
 const seatOptions = [20, 50, 100, 200, 500, 1000, 1500, 2000];
@@ -358,10 +373,9 @@ export function Onboarding() {
                         <p className="text-xs text-muted-foreground mt-1">适用于固定时间服务或临时扩展测试的场景</p>
                       </button>
 
-                      {/* 试用 */}
                       <button
                         type="button"
-                        onClick={() => setCloudConfig(prev => ({ ...prev, billingMethod: 'trial' }))}
+                        onClick={() => setCloudConfig(prev => ({ ...prev, billingMethod: 'trial', version: 'professional', seatCount: 20 }))}
                         className={`flex-1 p-4 rounded-lg border-2 text-left transition-all ${
                           cloudConfig.billingMethod === 'trial'
                             ? 'border-primary bg-primary/5'
@@ -378,52 +392,99 @@ export function Onboarding() {
                       </p>
                     )}
 
-                    {/* Version and Seat Selection for prepaid/postpaid */}
-                    {(cloudConfig.billingMethod === 'prepaid' || cloudConfig.billingMethod === 'postpaid') && (
-                      <div className="mt-4 pt-4 border-t border-border space-y-4">
-                        {/* Version Selection */}
-                        <div>
-                          <Label className="text-sm text-foreground mb-2 block">开通版本</Label>
-                          <div className="flex gap-3">
-                            {versionOptions.map((version) => (
-                              <button
-                                key={version.id}
-                                type="button"
-                                onClick={() => setCloudConfig(prev => ({ ...prev, version: version.id as 'basic' | 'professional' }))}
-                                className={`px-6 py-2 rounded-lg border text-sm font-medium transition-all ${
-                                  cloudConfig.version === version.id
-                                    ? 'border-primary bg-primary text-primary-foreground'
-                                    : 'border-border bg-background text-foreground hover:border-primary/50'
-                                }`}
-                              >
-                                {version.name}
-                              </button>
-                            ))}
-                          </div>
+                    {/* Version and Seat Selection */}
+                    <div className="mt-4 pt-4 border-t border-border space-y-4">
+                      {/* Version Selection */}
+                      <div>
+                        <Label className="text-sm text-foreground mb-2 block">开通版本</Label>
+                        <div className="flex gap-3">
+                          <TooltipProvider>
+                            {versionOptions.map((version) => {
+                              const isTrial = cloudConfig.billingMethod === 'trial';
+                              const isDisabled = isTrial && version.id === 'basic';
+                              const isSelected = cloudConfig.version === version.id;
+                              
+                              return (
+                                <div key={version.id} className="flex items-center gap-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      if (!isTrial) {
+                                        setCloudConfig(prev => ({ ...prev, version: version.id as 'basic' | 'professional' }));
+                                      }
+                                    }}
+                                    disabled={isDisabled}
+                                    className={cn(
+                                      "px-6 py-2 rounded-lg border text-sm font-medium transition-all",
+                                      isSelected
+                                        ? 'border-primary bg-primary text-primary-foreground'
+                                        : 'border-border bg-background text-foreground',
+                                      !isDisabled && !isSelected && 'hover:border-primary/50',
+                                      isDisabled && 'opacity-50 cursor-not-allowed'
+                                    )}
+                                  >
+                                    {version.name}
+                                  </button>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <button type="button" className="p-1 text-muted-foreground hover:text-foreground transition-colors">
+                                        <Info className="w-4 h-4" />
+                                      </button>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="top" className="max-w-xs">
+                                      <p className="font-medium mb-2">{version.name}功能</p>
+                                      <ul className="text-xs space-y-1">
+                                        {version.features.map((feature, idx) => (
+                                          <li key={idx} className="flex items-center gap-1">
+                                            <Check className="w-3 h-3 text-primary" />
+                                            {feature}
+                                          </li>
+                                        ))}
+                                      </ul>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </div>
+                              );
+                            })}
+                          </TooltipProvider>
                         </div>
+                      </div>
 
-                        {/* Seat Count Selection */}
-                        <div>
-                          <Label className="text-sm text-foreground mb-2 block">开通席位数</Label>
-                          <div className="flex flex-wrap gap-2">
-                            {seatOptions.map((seat) => (
+                      {/* Seat Count Selection */}
+                      <div>
+                        <Label className="text-sm text-foreground mb-2 block">开通席位数</Label>
+                        <div className="flex flex-wrap gap-2">
+                          {seatOptions.map((seat) => {
+                            const isTrial = cloudConfig.billingMethod === 'trial';
+                            const isDisabled = isTrial && seat !== 20;
+                            const isSelected = cloudConfig.seatCount === seat;
+                            
+                            return (
                               <button
                                 key={seat}
                                 type="button"
-                                onClick={() => setCloudConfig(prev => ({ ...prev, seatCount: seat }))}
-                                className={`px-4 py-2 rounded-lg border text-sm font-medium transition-all ${
-                                  cloudConfig.seatCount === seat
+                                onClick={() => {
+                                  if (!isTrial) {
+                                    setCloudConfig(prev => ({ ...prev, seatCount: seat }));
+                                  }
+                                }}
+                                disabled={isDisabled}
+                                className={cn(
+                                  "px-4 py-2 rounded-lg border text-sm font-medium transition-all",
+                                  isSelected
                                     ? 'border-primary bg-primary text-primary-foreground'
-                                    : 'border-border bg-background text-foreground hover:border-primary/50'
-                                }`}
+                                    : 'border-border bg-background text-foreground',
+                                  !isDisabled && !isSelected && 'hover:border-primary/50',
+                                  isDisabled && 'opacity-50 cursor-not-allowed'
+                                )}
                               >
                                 {seat}
                               </button>
-                            ))}
-                          </div>
+                            );
+                          })}
                         </div>
                       </div>
-                    )}
+                    </div>
                   </div>
                 </div>
 
