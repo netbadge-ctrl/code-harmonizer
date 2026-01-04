@@ -256,7 +256,7 @@ export function AdminAnalytics() {
               <div>
                 <p className="text-2xl font-bold text-foreground">{formatTokens(stats.monthlyTokens)}</p>
                 <p className="text-xs text-muted-foreground">
-                  本月 Token ({formatTokens(stats.totalTokens)} 累计)
+                  所选日期累计 Token
                 </p>
               </div>
             </div>
@@ -271,7 +271,7 @@ export function AdminAnalytics() {
               <div>
                 <p className="text-2xl font-bold text-foreground">{stats.monthlyRequests.toLocaleString()}</p>
                 <p className="text-xs text-muted-foreground">
-                  本月请求 ({stats.totalRequests.toLocaleString()} 累计)
+                  所选日期累计请求数
                 </p>
               </div>
             </div>
