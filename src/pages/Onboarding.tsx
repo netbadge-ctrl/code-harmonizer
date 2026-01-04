@@ -78,6 +78,8 @@ interface DiagnosticItem {
 
 interface CloudConfig {
   billingMethod: 'prepaid' | 'postpaid' | 'trial';
+  version: 'basic' | 'professional';
+  seatCount: number;
   region: string;
   slb: {
     enabled: boolean;
@@ -105,6 +107,13 @@ interface CloudConfig {
   };
 }
 
+const versionOptions = [
+  { id: 'basic', name: '基础版' },
+  { id: 'professional', name: '专业版' },
+];
+
+const seatOptions = [20, 50, 100, 200, 500, 1000, 1500, 2000];
+
 // Navigation sections for scroll tracking
 const configSections = [
   { id: 'integration', title: '企业集成配置' },
@@ -127,6 +136,8 @@ export function Onboarding() {
   // Cloud services config with prices
   const [cloudConfig, setCloudConfig] = useState<CloudConfig>({
     billingMethod: 'prepaid',
+    version: 'basic',
+    seatCount: 20,
     region: 'cn-beijing',
     slb: { enabled: true, pricePerDay: 2.5 },
     ecs: {
@@ -365,6 +376,53 @@ export function Onboarding() {
                       <p className="text-xs text-muted-foreground mt-3 leading-relaxed">
                         将为您开通7天包含基础云资源和1亿Token有限模型的KSGC试用服务。试用到期或试用Token耗尽，可通过开通正式服务继续使用。
                       </p>
+                    )}
+
+                    {/* Version and Seat Selection for prepaid/postpaid */}
+                    {(cloudConfig.billingMethod === 'prepaid' || cloudConfig.billingMethod === 'postpaid') && (
+                      <div className="mt-4 pt-4 border-t border-border space-y-4">
+                        {/* Version Selection */}
+                        <div>
+                          <Label className="text-sm text-foreground mb-2 block">开通版本</Label>
+                          <div className="flex gap-3">
+                            {versionOptions.map((version) => (
+                              <button
+                                key={version.id}
+                                type="button"
+                                onClick={() => setCloudConfig(prev => ({ ...prev, version: version.id as 'basic' | 'professional' }))}
+                                className={`px-6 py-2 rounded-lg border text-sm font-medium transition-all ${
+                                  cloudConfig.version === version.id
+                                    ? 'border-primary bg-primary text-primary-foreground'
+                                    : 'border-border bg-background text-foreground hover:border-primary/50'
+                                }`}
+                              >
+                                {version.name}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Seat Count Selection */}
+                        <div>
+                          <Label className="text-sm text-foreground mb-2 block">开通席位数</Label>
+                          <div className="flex flex-wrap gap-2">
+                            {seatOptions.map((seat) => (
+                              <button
+                                key={seat}
+                                type="button"
+                                onClick={() => setCloudConfig(prev => ({ ...prev, seatCount: seat }))}
+                                className={`px-4 py-2 rounded-lg border text-sm font-medium transition-all ${
+                                  cloudConfig.seatCount === seat
+                                    ? 'border-primary bg-primary text-primary-foreground'
+                                    : 'border-border bg-background text-foreground hover:border-primary/50'
+                                }`}
+                              >
+                                {seat}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
                     )}
                   </div>
                 </div>
