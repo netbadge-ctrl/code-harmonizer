@@ -77,7 +77,7 @@ interface DiagnosticItem {
 }
 
 interface CloudConfig {
-  billingMethod: 'trial';
+  billingMethod: 'prepaid' | 'postpaid' | 'trial';
   region: string;
   slb: {
     enabled: boolean;
@@ -126,7 +126,7 @@ export function Onboarding() {
 
   // Cloud services config with prices
   const [cloudConfig, setCloudConfig] = useState<CloudConfig>({
-    billingMethod: 'trial',
+    billingMethod: 'prepaid',
     region: 'cn-beijing',
     slb: { enabled: true, pricePerDay: 2.5 },
     ecs: {
@@ -309,7 +309,7 @@ export function Onboarding() {
                   <p className="text-muted-foreground">配置云资源和企业身份源，完成后系统将自动完成部署和验证</p>
                 </div>
 
-                {/* Billing Method - Trial Only */}
+                {/* Billing Method */}
                 <div className="bg-card border border-border rounded-xl overflow-hidden mb-6">
                   <div className="bg-muted/30 px-5 py-3 border-b border-border">
                     <h2 className="font-semibold text-foreground flex items-center gap-2">
@@ -318,18 +318,54 @@ export function Onboarding() {
                     </h2>
                   </div>
                   <div className="p-5">
-                    <div className="flex items-center gap-3 p-4 rounded-lg border-2 border-primary bg-primary/5">
-                      <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                        <Clock className="w-5 h-5 text-primary" />
-                      </div>
-                      <div className="flex-1">
+                    <div className="flex gap-3">
+                      {/* 包年包月 */}
+                      <button
+                        type="button"
+                        onClick={() => setCloudConfig(prev => ({ ...prev, billingMethod: 'prepaid' }))}
+                        className={`flex-1 p-4 rounded-lg border-2 text-left transition-all ${
+                          cloudConfig.billingMethod === 'prepaid'
+                            ? 'border-primary bg-primary/5'
+                            : 'border-border hover:border-primary/50 hover:bg-muted/30'
+                        }`}
+                      >
+                        <p className="font-medium text-foreground">包年包月</p>
+                        <p className="text-xs text-muted-foreground mt-1">适用于提前预估资源需求量的场景</p>
+                      </button>
+
+                      {/* 按量付费（按日月结） */}
+                      <button
+                        type="button"
+                        onClick={() => setCloudConfig(prev => ({ ...prev, billingMethod: 'postpaid' }))}
+                        className={`flex-1 p-4 rounded-lg border-2 text-left transition-all ${
+                          cloudConfig.billingMethod === 'postpaid'
+                            ? 'border-primary bg-primary/5'
+                            : 'border-border hover:border-primary/50 hover:bg-muted/30'
+                        }`}
+                      >
+                        <p className="font-medium text-foreground">按量付费（按日月结）</p>
+                        <p className="text-xs text-muted-foreground mt-1">适用于固定时间服务或临时扩展测试的场景</p>
+                      </button>
+
+                      {/* 试用 */}
+                      <button
+                        type="button"
+                        onClick={() => setCloudConfig(prev => ({ ...prev, billingMethod: 'trial' }))}
+                        className={`flex-1 p-4 rounded-lg border-2 text-left transition-all ${
+                          cloudConfig.billingMethod === 'trial'
+                            ? 'border-primary bg-primary/5'
+                            : 'border-border hover:border-primary/50 hover:bg-muted/30'
+                        }`}
+                      >
                         <p className="font-medium text-foreground">试用</p>
-                        <p className="text-xs text-muted-foreground">免费试用期间体验全部功能</p>
-                      </div>
+                        <p className="text-xs text-muted-foreground mt-1">免费试用期间体验全部功能</p>
+                      </button>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-3 leading-relaxed">
-                      将为您开通7天包含基础云资源和1亿Token有限模型的KSGC试用服务。试用到期或试用Token耗尽，可通过开通正式服务继续使用。
-                    </p>
+                    {cloudConfig.billingMethod === 'trial' && (
+                      <p className="text-xs text-muted-foreground mt-3 leading-relaxed">
+                        将为您开通7天包含基础云资源和1亿Token有限模型的KSGC试用服务。试用到期或试用Token耗尽，可通过开通正式服务继续使用。
+                      </p>
+                    )}
                   </div>
                 </div>
 
