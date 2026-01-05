@@ -257,12 +257,6 @@ export function ModelFallbackRules() {
         </span>
       </div>
 
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="text-sm text-muted-foreground">
-          已配置 {rules.length} 条切换规则，{rules.filter(r => r.enabled).length} 条已启用
-        </div>
-      </div>
 
       {/* Rules List */}
       <div className="space-y-4">
@@ -287,14 +281,6 @@ export function ModelFallbackRules() {
                     onClick={() => openEditDialog(rule)}
                   >
                     <Settings2 className="w-4 h-4" />
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="text-destructive hover:text-destructive"
-                    onClick={() => handleDeleteRule(rule.id)}
-                  >
-                    <Trash2 className="w-4 h-4" />
                   </Button>
                 </div>
               </div>
