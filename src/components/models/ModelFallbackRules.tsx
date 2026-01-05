@@ -326,7 +326,6 @@ export function ModelFallbackRules() {
                       key={modelId} 
                       className="flex items-center gap-2 bg-muted/50 rounded-lg px-3 py-2 border"
                     >
-                      <GripVertical className="w-4 h-4 text-muted-foreground" />
                       <span className="text-sm font-medium">{index + 1}.</span>
                       <span className="text-sm">{getModelName(modelId)}</span>
                       <Badge 
@@ -340,26 +339,6 @@ export function ModelFallbackRules() {
                       >
                         {getModelType(modelId) === "text" ? "文本" : "视觉"}
                       </Badge>
-                      <div className="flex items-center gap-0.5 ml-2">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6"
-                          disabled={index === 0}
-                          onClick={() => handleMoveModel(rule.id, index, "up")}
-                        >
-                          <ArrowUp className="w-3 h-3" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6"
-                          disabled={index === rule.modelSequence.length - 1}
-                          onClick={() => handleMoveModel(rule.id, index, "down")}
-                        >
-                          <ArrowDown className="w-3 h-3" />
-                        </Button>
-                      </div>
                     </div>
                   ))}
                 </div>
