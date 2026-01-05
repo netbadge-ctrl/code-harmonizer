@@ -118,12 +118,40 @@ const versionOptions = [
   { 
     id: 'basic', 
     name: '基础版',
-    features: ['代码补全', '代码解释', '单轮对话', '基础模型支持', '基础安全审计']
+    features: [
+      { text: '无需独立部署GPU服务器', bold: false },
+      { text: '自然语言编程', bold: false },
+      { text: '代码补全', bold: false },
+      { text: '代码分析和解释', bold: false },
+      { text: '企业组织管理', bold: false },
+      { text: '授权管理', bold: false },
+      { text: '成员统计', bold: false },
+      { text: '用量看板', bold: false },
+      { text: '国内开源文本模型', bold: false },
+      { text: 'CLI代码工具', bold: false },
+      { text: 'VSCode插件', bold: false },
+    ]
   },
   { 
     id: 'professional', 
     name: '专业版',
-    features: ['代码补全', '代码解释', '多轮对话', '高级模型支持', '企业级安全审计', 'API接口调用', '私有化部署', '专属技术支持']
+    features: [
+      { text: '无需独立部署GPU服务器', bold: false },
+      { text: '自然语言编程', bold: false },
+      { text: '代码补全', bold: false },
+      { text: '代码分析和解释', bold: false },
+      { text: '企业组织管理', bold: false },
+      { text: '授权管理', bold: false },
+      { text: '成员统计', bold: false },
+      { text: '用量看板', bold: false },
+      { text: '使用明细查询', bold: true },
+      { text: '国内开源多模态模型调用', bold: true },
+      { text: '海外模型调用', bold: true },
+      { text: 'CLI代码工具', bold: false },
+      { text: 'VSCode插件', bold: false },
+      { text: 'JetBrains插件', bold: true },
+      { text: '更高的TPM额度', bold: true },
+    ]
   },
 ];
 
@@ -437,7 +465,7 @@ export function Onboarding() {
                                         {version.features.map((feature, idx) => (
                                           <li key={idx} className="flex items-center gap-1">
                                             <Check className="w-3 h-3 text-primary" />
-                                            {feature}
+                                            <span className={feature.bold ? 'font-bold' : ''}>{feature.text}</span>
                                           </li>
                                         ))}
                                       </ul>
