@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { 
   ArrowDown, 
   ArrowUp, 
@@ -262,10 +262,6 @@ export function ModelFallbackRules() {
         <div className="text-sm text-muted-foreground">
           已配置 {rules.length} 条切换规则，{rules.filter(r => r.enabled).length} 条已启用
         </div>
-        <Button onClick={() => setShowAddDialog(true)} size="sm">
-          <Plus className="w-4 h-4 mr-1" />
-          添加规则
-        </Button>
       </div>
 
       {/* Rules List */}
@@ -619,14 +615,45 @@ export function ModelFallbackRules() {
                   </div>
                   {selectedRule.modelSequence.length > 0 && (
                     <>
-                      <div className="text-xs text-muted-foreground mt-3 mb-2">已选模型（按顺序）</div>
+                      <div className="text-xs text-muted-foreground mt-3 mb-2">已选模型（拖拽调整顺序）</div>
                       <div className="space-y-2">
                         {selectedRule.modelSequence.map((modelId, index) => (
                           <div 
                             key={modelId}
-                            className="flex items-center justify-between bg-muted/50 rounded px-3 py-2"
+                            draggable
+                            onDragStart={(e) => {
+                              e.dataTransfer.setData("text/plain", index.toString());
+                              e.currentTarget.classList.add("opacity-50");
+                            }}
+                            onDragEnd={(e) => {
+                              e.currentTarget.classList.remove("opacity-50");
+                            }}
+                            onDragOver={(e) => {
+                              e.preventDefault();
+                              e.currentTarget.classList.add("border-primary", "border-2");
+                            }}
+                            onDragLeave={(e) => {
+                              e.currentTarget.classList.remove("border-primary", "border-2");
+                            }}
+                            onDrop={(e) => {
+                              e.preventDefault();
+                              e.currentTarget.classList.remove("border-primary", "border-2");
+                              const fromIndex = parseInt(e.dataTransfer.getData("text/plain"));
+                              const toIndex = index;
+                              if (fromIndex !== toIndex) {
+                                const newSequence = [...selectedRule.modelSequence];
+                                const [movedItem] = newSequence.splice(fromIndex, 1);
+                                newSequence.splice(toIndex, 0, movedItem);
+                                setSelectedRule({
+                                  ...selectedRule,
+                                  modelSequence: newSequence,
+                                });
+                              }
+                            }}
+                            className="flex items-center justify-between bg-muted/50 rounded px-3 py-2 cursor-grab active:cursor-grabbing transition-all border border-transparent"
                           >
                             <div className="flex items-center gap-2">
+                              <GripVertical className="w-4 h-4 text-muted-foreground" />
                               <span className="text-sm font-medium">{index + 1}.</span>
                               <span className="text-sm">{getModelName(modelId)}</span>
                             </div>
