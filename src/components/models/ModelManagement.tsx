@@ -21,8 +21,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { ModelFallbackRules } from "./ModelFallbackRules";
 
 interface Model {
   id: string;
@@ -337,8 +339,13 @@ export function ModelManagement() {
   };
 
   return (
-    <div className="space-y-4 animate-fade-in">
-      {/* Info Bar */}
+    <Tabs defaultValue="models" className="space-y-4 animate-fade-in">
+      <TabsList>
+        <TabsTrigger value="models">模型开通管理</TabsTrigger>
+        <TabsTrigger value="fallback">模型自动切换规则</TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="models" className="space-y-4">
       <div className="flex items-center gap-2 bg-accent border border-primary/20 rounded px-4 py-2.5">
         <Info className="w-4 h-4 text-primary flex-shrink-0" />
         <span className="text-sm text-foreground">启用的模型可以在 CLI 工具中通过</span>
@@ -604,6 +611,11 @@ export function ModelManagement() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+      </TabsContent>
+
+      <TabsContent value="fallback">
+        <ModelFallbackRules />
+      </TabsContent>
+    </Tabs>
   );
 }
