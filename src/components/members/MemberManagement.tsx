@@ -6,7 +6,9 @@ import {
   Users,
   Building2,
   RotateCcw,
-  UserPlus
+  UserPlus,
+  X,
+  Cpu
 } from 'lucide-react';
 import { OrganizationTree } from '@/components/organization/OrganizationTree';
 import { Button } from '@/components/ui/button';
@@ -33,15 +35,36 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { SubscriptionUpgradeDialog } from '@/components/subscription/SubscriptionUpgradeDialog';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
+
+// Mock available models list
+const availableModels = [
+  { id: "kimi-k2-thinking-turbo", name: "kimi-k2-thinking-turbo", type: "text" },
+  { id: "qwen3-coder-480b-a35b-instruct", name: "qwen3-coder-480b-a35b-instruct", type: "text" },
+  { id: "kimi-k2-turbo-preview", name: "kimi-k2-turbo-preview", type: "text" },
+  { id: "yi-vision-v2", name: "yi-vision-v2", type: "vision" },
+  { id: "kimi-k2-ksyun", name: "kimi-k2-ksyun", type: "text" },
+  { id: "minimax_m2", name: "minimax_m2", type: "vision" },
+  { id: "deepseek-v3.2", name: "deepseek-v3.2", type: "text" },
+  { id: "glm-4v-plus", name: "glm-4v-plus", type: "vision" },
+];
+
+interface ExtendedMember extends Member {
+  allowedModels?: string[];
+}
 
 export function MemberManagement() {
-  const [members, setMembers] = useState<Member[]>(mockMembers);
+  const [members, setMembers] = useState<ExtendedMember[]>(
+    mockMembers.map(m => ({ ...m, allowedModels: [] }))
+  );
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'pending' | 'inactive'>('all');
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
-  const [editingMember, setEditingMember] = useState<Member | null>(null);
-  const [newMember, setNewMember] = useState({ name: '', email: '' });
+  const [editingMember, setEditingMember] = useState<ExtendedMember | null>(null);
+  const [newMember, setNewMember] = useState({ name: '', email: '', allowedModels: [] as string[] });
   const [isAdding, setIsAdding] = useState(false);
   const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
 
@@ -61,7 +84,7 @@ export function MemberManagement() {
     setIsAdding(true);
     await new Promise(resolve => setTimeout(resolve, 1500));
     
-    const member: Member = {
+    const member: ExtendedMember = {
       id: Date.now().toString(),
       name: newMember.name,
       email: newMember.email,
@@ -69,11 +92,12 @@ export function MemberManagement() {
       source: 'manual',
       status: 'pending',
       createdAt: new Date().toISOString(),
+      allowedModels: newMember.allowedModels,
     };
     
     setMembers(prev => [member, ...prev]);
     setShowAddDialog(false);
-    setNewMember({ name: '', email: '' });
+    setNewMember({ name: '', email: '', allowedModels: [] });
     setIsAdding(false);
     
     toast({ 
@@ -100,10 +124,31 @@ export function MemberManagement() {
     });
   };
 
-  const handleEditMember = (member: Member) => {
-    setEditingMember(member);
+  const handleEditMember = (member: ExtendedMember) => {
+    setEditingMember({ ...member, allowedModels: member.allowedModels || [] });
     setShowEditDialog(true);
   };
+
+  const toggleEditingMemberModel = (modelId: string) => {
+    if (!editingMember) return;
+    const currentModels = editingMember.allowedModels || [];
+    const newModels = currentModels.includes(modelId)
+      ? currentModels.filter(id => id !== modelId)
+      : [...currentModels, modelId];
+    setEditingMember({ ...editingMember, allowedModels: newModels });
+  };
+
+  const toggleNewMemberModel = (modelId: string) => {
+    setNewMember(prev => {
+      const currentModels = prev.allowedModels || [];
+      const newModels = currentModels.includes(modelId)
+        ? currentModels.filter(id => id !== modelId)
+        : [...currentModels, modelId];
+      return { ...prev, allowedModels: newModels };
+    });
+  };
+
+  const getModelName = (id: string) => availableModels.find(m => m.id === id)?.name || id;
 
   const handleSaveEdit = async () => {
     if (!editingMember) return;
@@ -364,6 +409,46 @@ export function MemberManagement() {
                 onChange={(e) => setNewMember(prev => ({ ...prev, email: e.target.value }))}
               />
             </div>
+            {/* 可用模型配置 */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Cpu className="w-4 h-4 text-muted-foreground" />
+                <Label className="text-sm font-medium">可用模型</Label>
+                <span className="text-xs text-muted-foreground">(留空表示使用默认配置)</span>
+              </div>
+              {newMember.allowedModels.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {newMember.allowedModels.map(id => (
+                    <Badge key={id} variant="secondary" className="flex items-center gap-1 text-xs">
+                      {getModelName(id)}
+                      <button onClick={() => toggleNewMemberModel(id)} className="ml-1 hover:text-destructive">
+                        <X className="w-3 h-3" />
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
+              )}
+              <ScrollArea className="h-32 border rounded-md p-2">
+                <div className="space-y-1">
+                  {availableModels.map(model => (
+                    <div
+                      key={model.id}
+                      className={cn(
+                        "flex items-center gap-2 p-2 rounded cursor-pointer hover:bg-muted/50 transition-colors",
+                        newMember.allowedModels.includes(model.id) && "bg-primary/10"
+                      )}
+                      onClick={() => toggleNewMemberModel(model.id)}
+                    >
+                      <Checkbox checked={newMember.allowedModels.includes(model.id)} />
+                      <span className="text-sm">{model.name}</span>
+                      <Badge variant="outline" className="text-xs ml-auto">
+                        {model.type === "text" ? "文本" : "视觉"}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowAddDialog(false)}>
@@ -388,11 +473,11 @@ export function MemberManagement() {
 
       {/* Edit Member Dialog */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent>
+        <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>编辑成员信息</DialogTitle>
             <DialogDescription>
-              修改成员的基本信息
+              修改成员的基本信息和可用模型配置
             </DialogDescription>
           </DialogHeader>
           {editingMember && (
@@ -415,6 +500,46 @@ export function MemberManagement() {
                   value={editingMember.email}
                   onChange={(e) => setEditingMember(prev => prev ? { ...prev, email: e.target.value } : null)}
                 />
+              </div>
+              {/* 可用模型配置 */}
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Cpu className="w-4 h-4 text-muted-foreground" />
+                  <Label className="text-sm font-medium">可用模型</Label>
+                  <span className="text-xs text-muted-foreground">(留空表示使用默认配置)</span>
+                </div>
+                {(editingMember.allowedModels?.length || 0) > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {editingMember.allowedModels?.map(id => (
+                      <Badge key={id} variant="secondary" className="flex items-center gap-1 text-xs">
+                        {getModelName(id)}
+                        <button onClick={() => toggleEditingMemberModel(id)} className="ml-1 hover:text-destructive">
+                          <X className="w-3 h-3" />
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+                <ScrollArea className="h-40 border rounded-md p-2">
+                  <div className="space-y-1">
+                    {availableModels.map(model => (
+                      <div
+                        key={model.id}
+                        className={cn(
+                          "flex items-center gap-2 p-2 rounded cursor-pointer hover:bg-muted/50 transition-colors",
+                          editingMember.allowedModels?.includes(model.id) && "bg-primary/10"
+                        )}
+                        onClick={() => toggleEditingMemberModel(model.id)}
+                      >
+                        <Checkbox checked={editingMember.allowedModels?.includes(model.id) || false} />
+                        <span className="text-sm">{model.name}</span>
+                        <Badge variant="outline" className="text-xs ml-auto">
+                          {model.type === "text" ? "文本" : "视觉"}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
               </div>
             </div>
           )}
