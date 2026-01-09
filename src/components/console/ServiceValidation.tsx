@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { CheckCircle2, XCircle, Loader2, Cloud, Building2, RefreshCw, FileText, Settings, Database, Globe, Shield, Key, UserCheck, FileKey } from 'lucide-react';
+import { CheckCircle2, XCircle, Loader2, Cloud, Building2, RefreshCw, FileText, Database, Globe, Shield, Key, UserCheck, FileKey } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -59,7 +59,6 @@ export function ServiceValidation({ onValidationComplete }: ServiceValidationPro
 
   const [isValidating, setIsValidating] = useState(false);
   const [validationComplete, setValidationComplete] = useState(false);
-  const [showConfig, setShowConfig] = useState(false);
   const [configData, setConfigData] = useState({
     orgId: '',
     authKey: '',
@@ -278,54 +277,39 @@ export function ServiceValidation({ onValidationComplete }: ServiceValidationPro
                   </div>
                 </div>
                 
-                {/* 配置修改区域 */}
+                {/* 配置修改区域 - 错误时直接显示 */}
                 {check.status === 'error' && check.configurable && (
-                  <div className="ml-12 space-y-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-xs h-7"
-                      onClick={() => setShowConfig(!showConfig)}
+                  <div className="p-3 rounded-lg bg-muted/50 border space-y-3 mt-2">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="orgId" className="text-xs">组织 ID</Label>
+                      <Input
+                        id="orgId"
+                        placeholder="请输入组织 ID"
+                        value={configData.orgId}
+                        onChange={(e) => setConfigData(prev => ({ ...prev, orgId: e.target.value }))}
+                        className="h-8 text-sm"
+                      />
+                    </div>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="authKey" className="text-xs">授权密钥</Label>
+                      <Input
+                        id="authKey"
+                        type="password"
+                        placeholder="请输入授权密钥"
+                        value={configData.authKey}
+                        onChange={(e) => setConfigData(prev => ({ ...prev, authKey: e.target.value }))}
+                        className="h-8 text-sm"
+                      />
+                    </div>
+                    <Button 
+                      size="sm" 
+                      className="w-full h-8 text-xs"
+                      disabled={isValidating}
+                      onClick={runValidation}
                     >
-                      <Settings className="h-3 w-3 mr-1" />
-                      {showConfig ? '收起配置' : '修改配置'}
+                      <RefreshCw className={cn("h-3 w-3 mr-1", isValidating && "animate-spin")} />
+                      保存并重新验证
                     </Button>
-                    
-                    {showConfig && (
-                      <div className="p-3 rounded-lg bg-muted/50 border space-y-3">
-                        <div className="space-y-1.5">
-                          <Label htmlFor="orgId" className="text-xs">组织 ID</Label>
-                          <Input
-                            id="orgId"
-                            placeholder="请输入组织 ID"
-                            value={configData.orgId}
-                            onChange={(e) => setConfigData(prev => ({ ...prev, orgId: e.target.value }))}
-                            className="h-8 text-sm"
-                          />
-                        </div>
-                        <div className="space-y-1.5">
-                          <Label htmlFor="authKey" className="text-xs">授权密钥</Label>
-                          <Input
-                            id="authKey"
-                            type="password"
-                            placeholder="请输入授权密钥"
-                            value={configData.authKey}
-                            onChange={(e) => setConfigData(prev => ({ ...prev, authKey: e.target.value }))}
-                            className="h-8 text-sm"
-                          />
-                        </div>
-                        <Button 
-                          size="sm" 
-                          className="w-full h-8 text-xs"
-                          onClick={() => {
-                            setShowConfig(false);
-                            runValidation();
-                          }}
-                        >
-                          保存并重新验证
-                        </Button>
-                      </div>
-                    )}
                   </div>
                 )}
               </div>
@@ -341,18 +325,6 @@ export function ServiceValidation({ onValidationComplete }: ServiceValidationPro
             </div>
           )}
 
-          {hasError && (
-            <div className="pt-2">
-              <Button 
-                onClick={runValidation} 
-                className="w-full"
-                disabled={isValidating}
-              >
-                <RefreshCw className={cn("h-4 w-4 mr-2", isValidating && "animate-spin")} />
-                重新检测
-              </Button>
-            </div>
-          )}
         </CardContent>
       </Card>
     </div>
