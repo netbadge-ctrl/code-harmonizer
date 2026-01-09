@@ -8,6 +8,7 @@ import { CallDetails } from '@/components/usage/CallDetails';
 import { ModelManagement } from '@/components/models/ModelManagement';
 import { IpWhitelistConfig } from '@/components/security/IpWhitelistConfig';
 import { SettingsView } from '@/components/settings/SettingsView';
+import { ServiceValidation } from '@/components/console/ServiceValidation';
 import { cn } from '@/lib/utils';
 
 const viewConfig: Record<string, { title: string; description: string }> = {
@@ -21,8 +22,13 @@ const viewConfig: Record<string, { title: string; description: string }> = {
 };
 
 export function Console() {
+  const [isValidated, setIsValidated] = useState(false);
   const [currentView, setCurrentView] = useState('dashboard');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  if (!isValidated) {
+    return <ServiceValidation onValidationComplete={() => setIsValidated(true)} />;
+  }
 
   const renderView = () => {
     switch (currentView) {
