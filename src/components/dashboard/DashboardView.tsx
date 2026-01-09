@@ -46,7 +46,8 @@ const generateRealtimeCalls = () => [
 
 const trendData = generateTrendData();
 export function DashboardView() {
-  const [copied, setCopied] = useState(false);
+  const [copiedKsgc, setCopiedKsgc] = useState(false);
+  const [copiedCustom, setCopiedCustom] = useState(false);
   const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
   const [realtimeCalls, setRealtimeCalls] = useState(generateRealtimeCalls());
   const [visibleMetrics, setVisibleMetrics] = useState({
@@ -69,13 +70,21 @@ export function DashboardView() {
     orgSlug: 'techflow',
   };
 
-  const cliCommand = `curl -fsSL https://get.ksgc.io/install.sh | bash -s -- --org=${organization.orgSlug} --auth=${organization.identitySource}`;
+  const ksgcCliCommand = `curl -fsSL https://get.ksgc.io/install.sh | bash -s -- --org=${organization.orgSlug} --auth=${organization.identitySource}`;
+  const customCliCommand = `curl -fsSL https://cli.${organization.orgSlug}.io/install.sh | bash -s -- --auth=${organization.identitySource}`;
 
-  const handleCopyCliCommand = () => {
-    navigator.clipboard.writeText(cliCommand);
-    setCopied(true);
-    toast({ title: 'CLI 安装命令已复制' });
-    setTimeout(() => setCopied(false), 2000);
+  const handleCopyKsgcCommand = () => {
+    navigator.clipboard.writeText(ksgcCliCommand);
+    setCopiedKsgc(true);
+    toast({ title: 'KSGC 安装命令已复制' });
+    setTimeout(() => setCopiedKsgc(false), 2000);
+  };
+
+  const handleCopyCustomCommand = () => {
+    navigator.clipboard.writeText(customCliCommand);
+    setCopiedCustom(true);
+    toast({ title: '自定义终端安装命令已复制' });
+    setTimeout(() => setCopiedCustom(false), 2000);
   };
 
   const planLabels: Record<string, string> = {
@@ -133,47 +142,63 @@ export function DashboardView() {
           </div>
         </div>
 
-        {/* CLI Installation Command */}
-        <div className="mt-6 p-4 bg-slate-900 rounded-lg border border-slate-700">
-          <div className="flex gap-6">
-            {/* 左侧：安装命令 */}
-            <div className="flex-1 min-w-0">
-              <p className="text-xs text-slate-400 mb-2 flex items-center gap-2">
-                <span className="inline-block w-1.5 h-1.5 rounded-full bg-success animate-pulse"></span>
-                员工终端安装命令 (Mac/Linux)
-              </p>
-              <div className="flex items-center justify-between gap-4">
-                <code className="text-sm text-amber-400 font-mono flex-1 overflow-x-auto whitespace-nowrap">
-                  {cliCommand}
-                </code>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  onClick={handleCopyCliCommand}
-                  className="flex-shrink-0 text-slate-400 hover:text-white hover:bg-slate-800"
-                >
-                  {copied ? <Check className="w-4 h-4 text-success" /> : <Copy className="w-4 h-4" />}
-                </Button>
+        {/* CLI Installation Commands */}
+        <div className="mt-6 space-y-3">
+          {/* KSGC 安装命令 */}
+          <div className="p-4 bg-slate-900 rounded-lg border border-slate-700">
+            <div className="flex gap-6">
+              <div className="flex-1 min-w-0">
+                <p className="text-xs text-slate-400 mb-2 flex items-center gap-2">
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-success animate-pulse"></span>
+                  KSGC 终端安装命令 (Mac/Linux)
+                </p>
+                <div className="flex items-center justify-between gap-4">
+                  <code className="text-sm text-amber-400 font-mono flex-1 overflow-x-auto whitespace-nowrap">
+                    {ksgcCliCommand}
+                  </code>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    onClick={handleCopyKsgcCommand}
+                    className="flex-shrink-0 text-slate-400 hover:text-white hover:bg-slate-800"
+                  >
+                    {copiedKsgc ? <Check className="w-4 h-4 text-success" /> : <Copy className="w-4 h-4" />}
+                  </Button>
+                </div>
+              </div>
+              <div className="w-48 flex-shrink-0 border-l border-slate-700 pl-6">
+                <p className="text-xs text-slate-400 mb-2">说明</p>
+                <p className="text-xs text-slate-300">标准 KSGC AI Coding 工具</p>
               </div>
             </div>
-            
-            {/* 右侧：使用说明 */}
-            <div className="w-64 flex-shrink-0 border-l border-slate-700 pl-6">
-              <p className="text-xs text-slate-400 mb-2">使用说明</p>
-              <ul className="text-xs text-slate-300 space-y-1.5">
-                <li className="flex items-start gap-2">
-                  <span className="text-amber-400">1.</span>
-                  <span>复制左侧命令到终端执行</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-amber-400">2.</span>
-                  <span>根据提示完成身份认证</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-amber-400">3.</span>
-                  <span>安装完成后即可使用 AI 服务</span>
-                </li>
-              </ul>
+          </div>
+
+          {/* 自定义终端安装命令 */}
+          <div className="p-4 bg-slate-900 rounded-lg border border-slate-700">
+            <div className="flex gap-6">
+              <div className="flex-1 min-w-0">
+                <p className="text-xs text-slate-400 mb-2 flex items-center gap-2">
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></span>
+                  自定义终端安装命令 (Mac/Linux)
+                </p>
+                <div className="flex items-center justify-between gap-4">
+                  <code className="text-sm text-cyan-400 font-mono flex-1 overflow-x-auto whitespace-nowrap">
+                    {customCliCommand}
+                  </code>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    onClick={handleCopyCustomCommand}
+                    className="flex-shrink-0 text-slate-400 hover:text-white hover:bg-slate-800"
+                  >
+                    {copiedCustom ? <Check className="w-4 h-4 text-success" /> : <Copy className="w-4 h-4" />}
+                  </Button>
+                </div>
+              </div>
+              <div className="w-48 flex-shrink-0 border-l border-slate-700 pl-6">
+                <p className="text-xs text-slate-400 mb-2">说明</p>
+                <p className="text-xs text-slate-300">企业自定义 CLI 工具</p>
+              </div>
             </div>
           </div>
         </div>
