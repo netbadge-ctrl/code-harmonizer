@@ -58,7 +58,7 @@ export function ServiceValidation({ onValidationComplete }: ServiceValidationPro
         : check
     ));
 
-    // 模拟组织认证检测
+    // 模拟组织认证检测 - 失败场景
     setChecks(prev => prev.map(check => 
       check.id === 'org' ? { ...check, status: 'checking' } : check
     ));
@@ -67,7 +67,7 @@ export function ServiceValidation({ onValidationComplete }: ServiceValidationPro
     
     setChecks(prev => prev.map(check => 
       check.id === 'org' 
-        ? { ...check, status: 'success', message: '组织认证有效，企业版授权' } 
+        ? { ...check, status: 'error', message: '组织认证失败，授权已过期或无效' } 
         : check
     ));
 
