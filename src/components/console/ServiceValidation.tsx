@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { CheckCircle2, XCircle, Loader2, Cloud, Building2, RefreshCw } from 'lucide-react';
+import { CheckCircle2, XCircle, Loader2, Cloud, Building2, RefreshCw, MessageCircle, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
@@ -170,7 +170,7 @@ export function ServiceValidation({ onValidationComplete }: ServiceValidationPro
           )}
 
           {hasError && (
-            <div className="pt-2">
+            <div className="space-y-3 pt-2">
               <Button 
                 onClick={runValidation} 
                 className="w-full"
@@ -179,6 +179,29 @@ export function ServiceValidation({ onValidationComplete }: ServiceValidationPro
                 <RefreshCw className={cn("h-4 w-4 mr-2", isValidating && "animate-spin")} />
                 重新检测
               </Button>
+              
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  className="flex-1"
+                  onClick={() => window.open('https://help.example.com', '_blank')}
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  帮助文档
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="flex-1"
+                  onClick={() => window.open('mailto:support@example.com', '_blank')}
+                >
+                  <MessageCircle className="h-4 w-4 mr-2" />
+                  联系客服
+                </Button>
+              </div>
+              
+              <p className="text-xs text-muted-foreground text-center">
+                如需帮助，请联系技术支持或查阅帮助文档
+              </p>
             </div>
           )}
         </CardContent>
