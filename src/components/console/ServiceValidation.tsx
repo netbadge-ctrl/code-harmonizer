@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { CheckCircle2, XCircle, Loader2, Cloud, Building2, RefreshCw, MessageCircle, FileText } from 'lucide-react';
+import { CheckCircle2, XCircle, Loader2, Cloud, Building2, RefreshCw, FileText, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 
 interface ValidationCheck {
@@ -11,6 +13,7 @@ interface ValidationCheck {
   icon: React.ReactNode;
   status: 'pending' | 'checking' | 'success' | 'error';
   message?: string;
+  configurable?: boolean;
 }
 
 interface ServiceValidationProps {
@@ -32,11 +35,17 @@ export function ServiceValidation({ onValidationComplete }: ServiceValidationPro
       description: '验证组织身份和访问权限',
       icon: <Building2 className="h-5 w-5" />,
       status: 'pending',
+      configurable: true,
     },
   ]);
 
   const [isValidating, setIsValidating] = useState(false);
   const [validationComplete, setValidationComplete] = useState(false);
+  const [showConfig, setShowConfig] = useState(false);
+  const [configData, setConfigData] = useState({
+    orgId: '',
+    authKey: '',
+  });
 
   const runValidation = async () => {
     setIsValidating(true);
@@ -119,43 +128,106 @@ export function ServiceValidation({ onValidationComplete }: ServiceValidationPro
         <CardContent className="space-y-4">
           <div className="space-y-3">
             {checks.map((check) => (
-              <div
-                key={check.id}
-                className={cn(
-                  "flex items-start gap-4 p-4 rounded-lg border transition-colors",
-                  check.status === 'success' && "bg-green-50 border-green-200 dark:bg-green-950/20 dark:border-green-900",
-                  check.status === 'error' && "bg-destructive/10 border-destructive/30",
-                  check.status === 'checking' && "bg-primary/5 border-primary/20",
-                  check.status === 'pending' && "bg-muted/50"
-                )}
-              >
-                <div className={cn(
-                  "p-2 rounded-lg",
-                  check.status === 'success' && "bg-green-100 text-green-600 dark:bg-green-900/50 dark:text-green-400",
-                  check.status === 'error' && "bg-destructive/20 text-destructive",
-                  check.status === 'checking' && "bg-primary/10 text-primary",
-                  check.status === 'pending' && "bg-muted text-muted-foreground"
-                )}>
-                  {check.icon}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between gap-2">
-                    <h4 className="font-medium text-sm">{check.name}</h4>
-                    {getStatusIcon(check.status)}
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {check.description}
-                  </p>
-                  {check.message && (
-                    <p className={cn(
-                      "text-xs mt-1",
-                      check.status === 'success' && "text-green-600 dark:text-green-400",
-                      check.status === 'error' && "text-destructive"
-                    )}>
-                      {check.message}
-                    </p>
+              <div key={check.id} className="space-y-2">
+                <div
+                  className={cn(
+                    "flex items-start gap-4 p-4 rounded-lg border transition-colors",
+                    check.status === 'success' && "bg-green-50 border-green-200 dark:bg-green-950/20 dark:border-green-900",
+                    check.status === 'error' && "bg-destructive/10 border-destructive/30",
+                    check.status === 'checking' && "bg-primary/5 border-primary/20",
+                    check.status === 'pending' && "bg-muted/50"
                   )}
+                >
+                  <div className={cn(
+                    "p-2 rounded-lg",
+                    check.status === 'success' && "bg-green-100 text-green-600 dark:bg-green-900/50 dark:text-green-400",
+                    check.status === 'error' && "bg-destructive/20 text-destructive",
+                    check.status === 'checking' && "bg-primary/10 text-primary",
+                    check.status === 'pending' && "bg-muted text-muted-foreground"
+                  )}>
+                    {check.icon}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <h4 className="font-medium text-sm">{check.name}</h4>
+                      {getStatusIcon(check.status)}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {check.description}
+                    </p>
+                    {check.message && (
+                      <p className={cn(
+                        "text-xs mt-1",
+                        check.status === 'success' && "text-green-600 dark:text-green-400",
+                        check.status === 'error' && "text-destructive"
+                      )}>
+                        {check.message}
+                      </p>
+                    )}
+                    {check.status === 'error' && (
+                      <a 
+                        href="https://help.example.com/org-auth" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-xs text-primary hover:underline mt-2"
+                      >
+                        <FileText className="h-3 w-3" />
+                        查看帮助文档
+                      </a>
+                    )}
+                  </div>
                 </div>
+                
+                {/* 配置修改区域 */}
+                {check.status === 'error' && check.configurable && (
+                  <div className="ml-12 space-y-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-xs h-7"
+                      onClick={() => setShowConfig(!showConfig)}
+                    >
+                      <Settings className="h-3 w-3 mr-1" />
+                      {showConfig ? '收起配置' : '修改配置'}
+                    </Button>
+                    
+                    {showConfig && (
+                      <div className="p-3 rounded-lg bg-muted/50 border space-y-3">
+                        <div className="space-y-1.5">
+                          <Label htmlFor="orgId" className="text-xs">组织 ID</Label>
+                          <Input
+                            id="orgId"
+                            placeholder="请输入组织 ID"
+                            value={configData.orgId}
+                            onChange={(e) => setConfigData(prev => ({ ...prev, orgId: e.target.value }))}
+                            className="h-8 text-sm"
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label htmlFor="authKey" className="text-xs">授权密钥</Label>
+                          <Input
+                            id="authKey"
+                            type="password"
+                            placeholder="请输入授权密钥"
+                            value={configData.authKey}
+                            onChange={(e) => setConfigData(prev => ({ ...prev, authKey: e.target.value }))}
+                            className="h-8 text-sm"
+                          />
+                        </div>
+                        <Button 
+                          size="sm" 
+                          className="w-full h-8 text-xs"
+                          onClick={() => {
+                            setShowConfig(false);
+                            runValidation();
+                          }}
+                        >
+                          保存并重新验证
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -170,7 +242,7 @@ export function ServiceValidation({ onValidationComplete }: ServiceValidationPro
           )}
 
           {hasError && (
-            <div className="space-y-3 pt-2">
+            <div className="pt-2">
               <Button 
                 onClick={runValidation} 
                 className="w-full"
@@ -179,29 +251,6 @@ export function ServiceValidation({ onValidationComplete }: ServiceValidationPro
                 <RefreshCw className={cn("h-4 w-4 mr-2", isValidating && "animate-spin")} />
                 重新检测
               </Button>
-              
-              <div className="flex gap-2">
-                <Button 
-                  variant="outline" 
-                  className="flex-1"
-                  onClick={() => window.open('https://help.example.com', '_blank')}
-                >
-                  <FileText className="h-4 w-4 mr-2" />
-                  帮助文档
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="flex-1"
-                  onClick={() => window.open('mailto:support@example.com', '_blank')}
-                >
-                  <MessageCircle className="h-4 w-4 mr-2" />
-                  联系客服
-                </Button>
-              </div>
-              
-              <p className="text-xs text-muted-foreground text-center">
-                如需帮助，请联系技术支持或查阅帮助文档
-              </p>
             </div>
           )}
         </CardContent>
