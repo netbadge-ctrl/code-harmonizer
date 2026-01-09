@@ -1,11 +1,12 @@
 import React, { useState } from "react";
-import { Search, Info, Copy, Check, AlertTriangle } from "lucide-react";
+import { Search, Info, Copy, Check, AlertTriangle, Users, Building2, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Select,
   SelectContent,
@@ -37,7 +38,26 @@ interface Model {
   tpmLimit: number;
   description: string;
   enabled: boolean;
+  allowedMembers: string[];
+  allowedDepartments: string[];
 }
+
+// Mock data for members and departments
+const mockMembersList = [
+  { id: "m1", name: "张明", department: "技术部" },
+  { id: "m2", name: "李华", department: "产品部" },
+  { id: "m3", name: "王芳", department: "设计部" },
+  { id: "m4", name: "陈强", department: "研发部" },
+  { id: "m5", name: "刘洋", department: "运营部" },
+];
+
+const mockDepartmentsList = [
+  { id: "d1", name: "技术中心" },
+  { id: "d2", name: "前端开发组" },
+  { id: "d3", name: "后端开发组" },
+  { id: "d4", name: "产品设计部" },
+  { id: "d5", name: "市场运营部" },
+];
 
 const mockModels: Model[] = [
   {
@@ -51,6 +71,8 @@ const mockModels: Model[] = [
     tpmLimit: 150000,
     description: "是 kimi-k2-thinking 模型的高速版，适用于需要深度推理能力和快速响应的场景。",
     enabled: false,
+    allowedMembers: [],
+    allowedDepartments: [],
   },
   {
     id: "qwen3-coder-480b-a35b-instruct",
@@ -63,6 +85,8 @@ const mockModels: Model[] = [
     tpmLimit: 120000,
     description: "Qwen3-Coder-480B-A35B-Instruct 是 Qwen 团队近期超大规模代码模型。",
     enabled: false,
+    allowedMembers: ["m1", "m2"],
+    allowedDepartments: ["d1"],
   },
   {
     id: "kimi-k2-turbo-preview",
@@ -75,6 +99,8 @@ const mockModels: Model[] = [
     tpmLimit: 200000,
     description: "Kimi-K2-Turbo-Preview 是基于 Kimi K2 的高速版本，主要面向长文本处理。",
     enabled: false,
+    allowedMembers: [],
+    allowedDepartments: [],
   },
   {
     id: "yi-vision-v2",
@@ -87,6 +113,8 @@ const mockModels: Model[] = [
     tpmLimit: 80000,
     description: "Yi Vision V2 具有卓越的图像理解能力，支持复杂场景识别。",
     enabled: false,
+    allowedMembers: [],
+    allowedDepartments: ["d2", "d3"],
   },
   {
     id: "kimi-k2-ksyun",
@@ -99,6 +127,8 @@ const mockModels: Model[] = [
     tpmLimit: 150000,
     description: "由 Moonshot AI 发布的国内首个开源万亿参数模型。",
     enabled: false,
+    allowedMembers: [],
+    allowedDepartments: [],
   },
   {
     id: "minimax_m2",
@@ -111,6 +141,8 @@ const mockModels: Model[] = [
     tpmLimit: 100000,
     description: "MiniMax M2 拥有强大的多模态处理能力，适合复杂任务场景。",
     enabled: false,
+    allowedMembers: [],
+    allowedDepartments: [],
   },
   {
     id: "deepseek-v3.2",
@@ -123,6 +155,8 @@ const mockModels: Model[] = [
     tpmLimit: 250000,
     description: "DeepSeek-V3.2 的核心是平衡推理能力与输出长度，适合日常对话。",
     enabled: false,
+    allowedMembers: ["m3"],
+    allowedDepartments: [],
   },
   {
     id: "glm-4v-plus",
@@ -135,6 +169,8 @@ const mockModels: Model[] = [
     tpmLimit: 80000,
     description: "GLM-4V Plus 智谱新一代多模态大模型，视觉能力大幅提升。",
     enabled: false,
+    allowedMembers: [],
+    allowedDepartments: [],
   },
 ];
 
@@ -146,6 +182,8 @@ export function ModelManagement() {
   const [showConfigDialog, setShowConfigDialog] = useState(false);
   const [selectedModel, setSelectedModel] = useState<Model | null>(null);
   const [tempLimits, setTempLimits] = useState({ rpm: 0, tpm: 0 });
+  const [tempAllowedMembers, setTempAllowedMembers] = useState<string[]>([]);
+  const [tempAllowedDepartments, setTempAllowedDepartments] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeFilters, setActiveFilters] = useState<FilterType[]>(["all"]);
@@ -317,6 +355,8 @@ export function ModelManagement() {
   const handleOpenConfig = (model: Model) => {
     setSelectedModel(model);
     setTempLimits({ rpm: model.rpmLimit, tpm: model.tpmLimit });
+    setTempAllowedMembers(model.allowedMembers || []);
+    setTempAllowedDepartments(model.allowedDepartments || []);
     setShowConfigDialog(true);
   };
 
@@ -327,16 +367,41 @@ export function ModelManagement() {
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
     setModels((prev) =>
-      prev.map((m) => (m.id === selectedModel.id ? { ...m, rpmLimit: tempLimits.rpm, tpmLimit: tempLimits.tpm } : m)),
+      prev.map((m) => (m.id === selectedModel.id ? { 
+        ...m, 
+        rpmLimit: tempLimits.rpm, 
+        tpmLimit: tempLimits.tpm,
+        allowedMembers: tempAllowedMembers,
+        allowedDepartments: tempAllowedDepartments,
+      } : m)),
     );
 
     setIsSaving(false);
     setShowConfigDialog(false);
     toast({
       title: "配置已保存",
-      description: `${selectedModel.name} 限流配置已更新`,
+      description: `${selectedModel.name} 配置已更新`,
     });
   };
+
+  const toggleMember = (memberId: string) => {
+    setTempAllowedMembers(prev => 
+      prev.includes(memberId) 
+        ? prev.filter(id => id !== memberId)
+        : [...prev, memberId]
+    );
+  };
+
+  const toggleDepartment = (deptId: string) => {
+    setTempAllowedDepartments(prev => 
+      prev.includes(deptId) 
+        ? prev.filter(id => id !== deptId)
+        : [...prev, deptId]
+    );
+  };
+
+  const getMemberName = (id: string) => mockMembersList.find(m => m.id === id)?.name || id;
+  const getDepartmentName = (id: string) => mockDepartmentsList.find(d => d.id === id)?.name || id;
 
   return (
     <Tabs defaultValue="models" className="space-y-4 animate-fade-in">
@@ -520,29 +585,112 @@ export function ModelManagement() {
 
       {/* Config Dialog */}
       <Dialog open={showConfigDialog} onOpenChange={setShowConfigDialog}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>{selectedModel && `${selectedModel.name} 限流配置`}</DialogTitle>
-            <DialogDescription>设置该模型的请求频率限制，以控制资源使用</DialogDescription>
+            <DialogTitle>{selectedModel && `${selectedModel.name} 配置`}</DialogTitle>
+            <DialogDescription>设置该模型的请求频率限制和可使用范围</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="rpm">每分钟请求数限制</Label>
-              <Input
-                id="rpm"
-                type="number"
-                value={tempLimits.rpm}
-                onChange={(e) => setTempLimits((prev) => ({ ...prev, rpm: parseInt(e.target.value) || 0 }))}
-              />
+          <div className="space-y-6 py-4">
+            {/* 限流配置 */}
+            <div className="space-y-4">
+              <h4 className="text-sm font-medium text-foreground">限流配置</h4>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="rpm">每分钟请求数限制</Label>
+                  <Input
+                    id="rpm"
+                    type="number"
+                    value={tempLimits.rpm}
+                    onChange={(e) => setTempLimits((prev) => ({ ...prev, rpm: parseInt(e.target.value) || 0 }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="tpm">每分钟令牌数限制</Label>
+                  <Input
+                    id="tpm"
+                    type="number"
+                    value={tempLimits.tpm}
+                    onChange={(e) => setTempLimits((prev) => ({ ...prev, tpm: parseInt(e.target.value) || 0 }))}
+                  />
+                </div>
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="tpm">每分钟令牌数限制</Label>
-              <Input
-                id="tpm"
-                type="number"
-                value={tempLimits.tpm}
-                onChange={(e) => setTempLimits((prev) => ({ ...prev, tpm: parseInt(e.target.value) || 0 }))}
-              />
+
+            {/* 可使用成员配置 */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Users className="w-4 h-4 text-muted-foreground" />
+                <Label className="text-sm font-medium">可使用成员</Label>
+                <span className="text-xs text-muted-foreground">(留空表示所有成员可用)</span>
+              </div>
+              {tempAllowedMembers.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {tempAllowedMembers.map(id => (
+                    <Badge key={id} variant="secondary" className="flex items-center gap-1">
+                      {getMemberName(id)}
+                      <button onClick={() => toggleMember(id)} className="ml-1 hover:text-destructive">
+                        <X className="w-3 h-3" />
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
+              )}
+              <ScrollArea className="h-32 border rounded-md p-2">
+                <div className="space-y-1">
+                  {mockMembersList.map(member => (
+                    <div
+                      key={member.id}
+                      className={cn(
+                        "flex items-center gap-2 p-2 rounded cursor-pointer hover:bg-muted/50 transition-colors",
+                        tempAllowedMembers.includes(member.id) && "bg-primary/10"
+                      )}
+                      onClick={() => toggleMember(member.id)}
+                    >
+                      <Checkbox checked={tempAllowedMembers.includes(member.id)} />
+                      <span className="text-sm">{member.name}</span>
+                      <span className="text-xs text-muted-foreground">({member.department})</span>
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+            </div>
+
+            {/* 可使用组织配置 */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Building2 className="w-4 h-4 text-muted-foreground" />
+                <Label className="text-sm font-medium">可使用组织</Label>
+                <span className="text-xs text-muted-foreground">(留空表示所有组织可用)</span>
+              </div>
+              {tempAllowedDepartments.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {tempAllowedDepartments.map(id => (
+                    <Badge key={id} variant="secondary" className="flex items-center gap-1">
+                      {getDepartmentName(id)}
+                      <button onClick={() => toggleDepartment(id)} className="ml-1 hover:text-destructive">
+                        <X className="w-3 h-3" />
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
+              )}
+              <ScrollArea className="h-32 border rounded-md p-2">
+                <div className="space-y-1">
+                  {mockDepartmentsList.map(dept => (
+                    <div
+                      key={dept.id}
+                      className={cn(
+                        "flex items-center gap-2 p-2 rounded cursor-pointer hover:bg-muted/50 transition-colors",
+                        tempAllowedDepartments.includes(dept.id) && "bg-primary/10"
+                      )}
+                      onClick={() => toggleDepartment(dept.id)}
+                    >
+                      <Checkbox checked={tempAllowedDepartments.includes(dept.id)} />
+                      <span className="text-sm">{dept.name}</span>
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
             </div>
           </div>
           <DialogFooter>
