@@ -149,6 +149,75 @@ export function ServiceValidation({ onValidationComplete }: ServiceValidationPro
     setValidationComplete(true);
   };
 
+  // 保存配置后重新验证 - 全部通过
+  const runValidationSuccess = async () => {
+    setIsValidating(true);
+    setValidationComplete(false);
+
+    // 重置状态
+    setChecks(prev => prev.map(check => ({ 
+      ...check, 
+      status: 'pending', 
+      message: undefined,
+      subChecks: check.subChecks?.map(sub => ({ ...sub, status: 'pending' as const })),
+    })));
+
+    // 云基础服务检测
+    setChecks(prev => prev.map(check => 
+      check.id === 'cloud' ? { ...check, status: 'checking' } : check
+    ));
+
+    await new Promise(resolve => setTimeout(resolve, 300));
+    updateSubCheck('cloud', 'provision', 'checking');
+    await new Promise(resolve => setTimeout(resolve, 400));
+    updateSubCheck('cloud', 'provision', 'success');
+
+    updateSubCheck('cloud', 'api', 'checking');
+    await new Promise(resolve => setTimeout(resolve, 300));
+    updateSubCheck('cloud', 'api', 'success');
+
+    updateSubCheck('cloud', 'db', 'checking');
+    await new Promise(resolve => setTimeout(resolve, 400));
+    updateSubCheck('cloud', 'db', 'success');
+
+    updateSubCheck('cloud', 'security', 'checking');
+    await new Promise(resolve => setTimeout(resolve, 300));
+    updateSubCheck('cloud', 'security', 'success');
+    
+    setChecks(prev => prev.map(check => 
+      check.id === 'cloud' 
+        ? { ...check, status: 'success', message: '云服务连接正常，延迟 32ms' } 
+        : check
+    ));
+
+    // 组织认证检测 - 全部成功
+    setChecks(prev => prev.map(check => 
+      check.id === 'org' ? { ...check, status: 'checking' } : check
+    ));
+
+    await new Promise(resolve => setTimeout(resolve, 300));
+    updateSubCheck('org', 'license', 'checking');
+    await new Promise(resolve => setTimeout(resolve, 400));
+    updateSubCheck('org', 'license', 'success');
+
+    updateSubCheck('org', 'identity', 'checking');
+    await new Promise(resolve => setTimeout(resolve, 300));
+    updateSubCheck('org', 'identity', 'success');
+
+    updateSubCheck('org', 'cert', 'checking');
+    await new Promise(resolve => setTimeout(resolve, 300));
+    updateSubCheck('org', 'cert', 'success');
+    
+    setChecks(prev => prev.map(check => 
+      check.id === 'org' 
+        ? { ...check, status: 'success', message: '组织认证通过' } 
+        : check
+    ));
+
+    setIsValidating(false);
+    setValidationComplete(true);
+  };
+
   useEffect(() => {
     runValidation();
   }, []);
@@ -309,7 +378,7 @@ export function ServiceValidation({ onValidationComplete }: ServiceValidationPro
                       size="sm" 
                       className="w-full h-8 text-xs"
                       disabled={isValidating}
-                      onClick={runValidation}
+                      onClick={runValidationSuccess}
                     >
                       <RefreshCw className={cn("h-3 w-3 mr-1", isValidating && "animate-spin")} />
                       保存并重新验证
