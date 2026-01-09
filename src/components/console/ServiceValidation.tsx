@@ -209,9 +209,8 @@ export function ServiceValidation({ onValidationComplete }: ServiceValidationPro
                     {check.icon}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
                       <h4 className="font-medium text-sm">{check.name}</h4>
-                      {getStatusIcon(check.status)}
                     </div>
                     <p className="text-xs text-muted-foreground mt-0.5">
                       {check.description}
