@@ -146,11 +146,37 @@ export function SettingsView() {
   };
 
   const handleUploadPackage = (file: File) => {
+    // 验证文件格式
+    const fileName = file.name.toLowerCase();
+    if (!fileName.endsWith('.tar.gz') && !fileName.endsWith('.tgz')) {
+      toast({ 
+        title: '格式不支持', 
+        description: '仅支持 .tar.gz 或 .tgz 格式的文件',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    // 从文件名提取版本号
+    const versionMatch = file.name.match(/v?(\d+\.\d+\.\d+)/i);
+    const extractedVersion = versionMatch ? `v${versionMatch[1].replace(/^v/i, '')}` : 'v1.0.0';
+
+    // 检查版本号唯一性
+    const versionExists = cliPackages.some(pkg => pkg.version === extractedVersion);
+    if (versionExists) {
+      toast({ 
+        title: '版本号重复', 
+        description: `版本 ${extractedVersion} 已存在，请上传不同版本的安装包`,
+        variant: 'destructive'
+      });
+      return;
+    }
+
     const newPackage: CliPackage = {
       id: Date.now().toString(),
       name: file.name,
       size: formatFileSize(file.size),
-      version: 'v1.0.0',
+      version: extractedVersion,
       uploadedAt: new Date().toISOString().split('T')[0],
     };
     setCliPackages(prev => [...prev, newPackage]);
@@ -322,18 +348,18 @@ export function SettingsView() {
             onDrop={handleFileDrop}
             onClick={() => fileInputRef.current?.click()}
           >
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept=".zip,.tar.gz,.exe,.dmg,.pkg,.msi,.deb,.rpm"
-              className="hidden"
-              onChange={handleFileSelect}
-            />
-            <Upload className="w-8 h-8 mx-auto mb-3 text-muted-foreground" />
-            <p className="text-sm text-foreground mb-1">拖拽文件到此处或点击上传</p>
-            <p className="text-xs text-muted-foreground">
-              支持 .zip, .tar.gz, .exe, .dmg, .pkg, .msi, .deb, .rpm 格式
-            </p>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".tar.gz,.tgz"
+            className="hidden"
+            onChange={handleFileSelect}
+          />
+          <Upload className="w-8 h-8 mx-auto mb-3 text-muted-foreground" />
+          <p className="text-sm text-foreground mb-1">拖拽文件到此处或点击上传</p>
+          <p className="text-xs text-muted-foreground">
+            支持 .tar.gz 或 .tgz 格式
+          </p>
           </div>
 
           {/* Uploaded Packages List */}
