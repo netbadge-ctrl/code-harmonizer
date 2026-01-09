@@ -1,11 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
   Key, 
   Check,
   AlertTriangle,
   Eye,
   EyeOff,
-  ExternalLink
+  ExternalLink,
+  Package,
+  Upload,
+  Trash2,
+  Download,
+  FileArchive,
+  Calendar
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -54,6 +60,14 @@ const identitySources: { value: IdentitySource; label: string; Icon: React.FC; d
   { value: 'dingtalk', label: '钉钉', Icon: DingTalkIcon, docUrl: 'https://open.dingtalk.com/document' },
 ];
 
+interface CliPackage {
+  id: string;
+  name: string;
+  size: string;
+  version: string;
+  uploadedAt: string;
+}
+
 export function SettingsView() {
   const [selectedSource, setSelectedSource] = useState<IdentitySource>('wps365');
   const [pendingSource, setPendingSource] = useState<IdentitySource | null>(null);
@@ -63,6 +77,19 @@ export function SettingsView() {
   const [showAppKey, setShowAppKey] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  
+  // CLI Package Management
+  const [cliPackages, setCliPackages] = useState<CliPackage[]>([
+    {
+      id: '1',
+      name: 'devtools-cli-v2.1.0-darwin-arm64.tar.gz',
+      size: '45.2 MB',
+      version: 'v2.1.0',
+      uploadedAt: '2024-01-08',
+    },
+  ]);
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const currentSource = identitySources.find(s => s.value === selectedSource);
   const currentSourceLabel = currentSource?.label || '';
@@ -99,6 +126,50 @@ export function SettingsView() {
   const handleSaveConfig = () => {
     setHasUnsavedChanges(false);
     toast({ title: '配置已保存' });
+  };
+
+  // CLI Package handlers
+  const handleFileDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length > 0) {
+      handleUploadPackage(files[0]);
+    }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      handleUploadPackage(files[0]);
+    }
+  };
+
+  const handleUploadPackage = (file: File) => {
+    const newPackage: CliPackage = {
+      id: Date.now().toString(),
+      name: file.name,
+      size: formatFileSize(file.size),
+      version: 'v1.0.0',
+      uploadedAt: new Date().toISOString().split('T')[0],
+    };
+    setCliPackages(prev => [...prev, newPackage]);
+    toast({ title: '上传成功', description: `${file.name} 已上传` });
+  };
+
+  const formatFileSize = (bytes: number): string => {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  };
+
+  const handleDownloadPackage = (pkg: CliPackage) => {
+    toast({ title: '开始下载', description: pkg.name });
+  };
+
+  const handleDeletePackage = (id: string) => {
+    setCliPackages(prev => prev.filter(p => p.id !== id));
+    toast({ title: '已删除', description: '安装包已移除' });
   };
 
   return (
@@ -221,6 +292,103 @@ export function SettingsView() {
           <Button onClick={handleSaveConfig} disabled={!hasUnsavedChanges}>
             保存配置
           </Button>
+        </div>
+      </div>
+
+      {/* CLI Package Management */}
+      <div className="enterprise-card p-6 space-y-4">
+        <div className="flex items-center gap-3 pb-4 border-b border-border">
+          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+            <Package className="w-5 h-5 text-primary" />
+          </div>
+          <div>
+            <h3 className="font-semibold text-foreground">客户端安装包管理</h3>
+            <p className="text-sm text-muted-foreground">上传和管理自定义开发CLI工具安装包</p>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          {/* Upload Area */}
+          <div 
+            className={`
+              border-2 border-dashed rounded-lg p-6 text-center transition-all cursor-pointer
+              ${isDragging 
+                ? 'border-primary bg-primary/5' 
+                : 'border-border hover:border-muted-foreground/50'
+              }
+            `}
+            onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+            onDragLeave={() => setIsDragging(false)}
+            onDrop={handleFileDrop}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".zip,.tar.gz,.exe,.dmg,.pkg,.msi,.deb,.rpm"
+              className="hidden"
+              onChange={handleFileSelect}
+            />
+            <Upload className="w-8 h-8 mx-auto mb-3 text-muted-foreground" />
+            <p className="text-sm text-foreground mb-1">拖拽文件到此处或点击上传</p>
+            <p className="text-xs text-muted-foreground">
+              支持 .zip, .tar.gz, .exe, .dmg, .pkg, .msi, .deb, .rpm 格式
+            </p>
+          </div>
+
+          {/* Uploaded Packages List */}
+          {cliPackages.length > 0 && (
+            <div className="space-y-3">
+              <Label>已上传的安装包</Label>
+              <div className="space-y-2">
+                {cliPackages.map((pkg) => (
+                  <div 
+                    key={pkg.id}
+                    className="flex items-center gap-3 p-3 bg-muted/30 rounded-lg border border-border"
+                  >
+                    <div className="w-10 h-10 rounded-lg bg-background flex items-center justify-center border border-border">
+                      <FileArchive className="w-5 h-5 text-muted-foreground" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">{pkg.name}</p>
+                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                        <span>{pkg.size}</span>
+                        <span className="flex items-center gap-1">
+                          <Calendar className="w-3 h-3" />
+                          {pkg.uploadedAt}
+                        </span>
+                        <span className="px-1.5 py-0.5 bg-muted rounded text-xs">{pkg.version}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => handleDownloadPackage(pkg)}
+                      >
+                        <Download className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-destructive hover:text-destructive"
+                        onClick={() => handleDeletePackage(pkg.id)}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {cliPackages.length === 0 && (
+            <p className="text-sm text-muted-foreground text-center py-4">
+              暂无上传的安装包，请上传自定义CLI工具
+            </p>
+          )}
         </div>
       </div>
 
