@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { CheckCircle2, XCircle, Loader2, Cloud, Building2, RefreshCw, FileText, Database, Globe, Shield, Key, UserCheck, FileKey } from 'lucide-react';
+import { CheckCircle2, XCircle, Loader2, Cloud, Building2, RefreshCw, FileText, Database, Globe, Shield, Key, UserCheck, FileKey, Power } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -37,6 +37,7 @@ export function ServiceValidation({ onValidationComplete }: ServiceValidationPro
       icon: <Cloud className="h-5 w-5" />,
       status: 'pending',
       subChecks: [
+        { id: 'provision', name: '服务开通状态', status: 'pending', icon: <Power className="h-3.5 w-3.5" /> },
         { id: 'api', name: 'API 网关连接', status: 'pending', icon: <Globe className="h-3.5 w-3.5" /> },
         { id: 'db', name: '数据库服务', status: 'pending', icon: <Database className="h-3.5 w-3.5" /> },
         { id: 'security', name: '安全服务', status: 'pending', icon: <Shield className="h-3.5 w-3.5" /> },
@@ -96,7 +97,11 @@ export function ServiceValidation({ onValidationComplete }: ServiceValidationPro
     ));
 
     // 云服务子检测项
+    await new Promise(resolve => setTimeout(resolve, 300));
+    updateSubCheck('cloud', 'provision', 'checking');
     await new Promise(resolve => setTimeout(resolve, 400));
+    updateSubCheck('cloud', 'provision', 'success');
+
     updateSubCheck('cloud', 'api', 'checking');
     await new Promise(resolve => setTimeout(resolve, 300));
     updateSubCheck('cloud', 'api', 'success');
