@@ -172,4 +172,4 @@ export interface CustomerDetail extends Customer {
   };
 }
 
-export type AdminView = 'customers' | 'customerDetail' | 'analytics' | 'settings';
+export type AdminView = 'customers' | 'customerDetail' | 'analytics' | 'creditRatio' | 'settings';

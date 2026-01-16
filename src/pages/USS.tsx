@@ -6,6 +6,7 @@ import { CustomerDetail } from '@/components/admin/CustomerDetail';
 import { AdminAnalytics } from '@/components/admin/AdminAnalytics';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Settings } from 'lucide-react';
+import { CreditRatioManagement } from '@/components/admin/CreditRatioManagement';
 import { AdminView } from '@/types/admin';
 import { cn } from '@/lib/utils';
 
@@ -13,6 +14,7 @@ const viewConfig: Record<AdminView, { title: string; description: string }> = {
   customers: { title: '客户管理', description: '查看和管理所有客户信息' },
   customerDetail: { title: '客户详情', description: '查看客户详细信息' },
   analytics: { title: '全局统计', description: '查看平台整体使用情况' },
+  creditRatio: { title: '积分倍率', description: '配置不同模型的积分消耗倍率' },
   settings: { title: '系统设置', description: '管理后台系统配置' },
 };
 
@@ -49,6 +51,8 @@ export function USS() {
         return <CustomerList onSelectCustomer={handleSelectCustomer} />;
       case 'analytics':
         return <AdminAnalytics />;
+      case 'creditRatio':
+        return <CreditRatioManagement />;
       case 'settings':
         return (
           <Card className="enterprise-card">

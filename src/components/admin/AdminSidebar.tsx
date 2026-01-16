@@ -6,7 +6,8 @@ import {
   Settings,
   ChevronLeft,
   ChevronDown,
-  ArrowLeft
+  ArrowLeft,
+  Coins
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AdminView } from '@/types/admin';
@@ -21,6 +22,7 @@ interface AdminSidebarProps {
 const menuItems = [
   { id: 'customers' as AdminView, label: '客户管理', icon: Building2 },
   { id: 'analytics' as AdminView, label: '全局统计', icon: BarChart3 },
+  { id: 'creditRatio' as AdminView, label: '积分倍率', icon: Coins },
   { id: 'settings' as AdminView, label: '系统设置', icon: Settings },
 ];
 
