@@ -25,7 +25,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-import { ModelFallbackRules } from "./ModelFallbackRules";
+import { ModelSwitching } from "./ModelSwitching";
 
 interface Model {
   id: string;
@@ -407,7 +407,7 @@ export function ModelManagement() {
     <Tabs defaultValue="models" className="space-y-4 animate-fade-in">
       <TabsList>
         <TabsTrigger value="models">模型开通管理</TabsTrigger>
-        <TabsTrigger value="fallback">模型自动切换规则</TabsTrigger>
+        <TabsTrigger value="switching">模型切换</TabsTrigger>
       </TabsList>
 
       <TabsContent value="models" className="space-y-4">
@@ -761,8 +761,8 @@ export function ModelManagement() {
       </Dialog>
       </TabsContent>
 
-      <TabsContent value="fallback">
-        <ModelFallbackRules />
+      <TabsContent value="switching">
+        <ModelSwitching />
       </TabsContent>
     </Tabs>
   );
