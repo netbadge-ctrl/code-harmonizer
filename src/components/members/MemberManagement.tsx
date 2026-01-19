@@ -57,8 +57,19 @@ interface ExtendedMember extends Member {
 }
 
 export function MemberManagement() {
+  // Initialize members with some personal model privileges for demo
   const [members, setMembers] = useState<ExtendedMember[]>(
-    mockMembers.map(m => ({ ...m, allowedModels: [] }))
+    mockMembers.map(m => {
+      // 张明: 前端开发组 inherits ['kimi', 'qwen'], has personal privilege for deepseek-v3.2
+      if (m.id === '1') {
+        return { ...m, allowedModels: ['deepseek-v3.2'] };
+      }
+      // 李华: 产品经理组 inherits ['kimi'], has personal privilege for yi-vision-v2
+      if (m.id === '2') {
+        return { ...m, allowedModels: ['yi-vision-v2'] };
+      }
+      return { ...m, allowedModels: [] };
+    })
   );
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'pending' | 'inactive'>('all');
