@@ -61,7 +61,7 @@ export const mockDepartments: Department[] = [
     parentId: null,
     memberCount: 45,
     aiEnabled: true,
-    allowedModels: ['kimi', 'qwen', 'deepseek'],
+    allowedModels: ['kimi-k2-thinking-turbo', 'qwen3-coder-480b-a35b-instruct', 'deepseek-v3.2'],
     children: [
       {
         id: 'dept-1-1',
@@ -69,7 +69,7 @@ export const mockDepartments: Department[] = [
         parentId: 'dept-1',
         memberCount: 12,
         aiEnabled: true,
-        allowedModels: ['kimi', 'qwen'],
+        allowedModels: ['kimi-k2-thinking-turbo', 'qwen3-coder-480b-a35b-instruct'],
         children: [],
       },
       {
@@ -78,7 +78,7 @@ export const mockDepartments: Department[] = [
         parentId: 'dept-1',
         memberCount: 18,
         aiEnabled: true,
-        allowedModels: ['kimi', 'qwen', 'deepseek'],
+        allowedModels: ['kimi-k2-thinking-turbo', 'qwen3-coder-480b-a35b-instruct', 'deepseek-v3.2'],
         children: [
           {
             id: 'dept-1-2-1',
@@ -86,7 +86,7 @@ export const mockDepartments: Department[] = [
             parentId: 'dept-1-2',
             memberCount: 8,
             aiEnabled: true,
-            allowedModels: ['kimi', 'qwen'],
+            allowedModels: ['kimi-k2-thinking-turbo', 'qwen3-coder-480b-a35b-instruct'],
             children: [],
           },
           {
@@ -95,7 +95,7 @@ export const mockDepartments: Department[] = [
             parentId: 'dept-1-2',
             memberCount: 10,
             aiEnabled: true,
-            allowedModels: ['deepseek'],
+            allowedModels: ['deepseek-v3.2'],
             children: [],
           },
         ],
@@ -117,7 +117,7 @@ export const mockDepartments: Department[] = [
     parentId: null,
     memberCount: 20,
     aiEnabled: true,
-    allowedModels: ['kimi'],
+    allowedModels: ['kimi-k2-thinking-turbo'],
     children: [
       {
         id: 'dept-2-1',
@@ -125,7 +125,7 @@ export const mockDepartments: Department[] = [
         parentId: 'dept-2',
         memberCount: 10,
         aiEnabled: true,
-        allowedModels: ['kimi'],
+        allowedModels: ['kimi-k2-thinking-turbo', 'yi-vision-v2'],
         children: [],
       },
       {
@@ -134,7 +134,7 @@ export const mockDepartments: Department[] = [
         parentId: 'dept-2',
         memberCount: 10,
         aiEnabled: true,
-        allowedModels: ['kimi'],
+        allowedModels: ['kimi-k2-thinking-turbo'],
         children: [],
       },
     ],
