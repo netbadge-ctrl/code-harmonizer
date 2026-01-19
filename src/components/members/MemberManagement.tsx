@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   Plus, 
   Mail, 
@@ -8,13 +8,14 @@ import {
   RotateCcw,
   UserPlus,
   X,
-  Cpu
+  Cpu,
+  Lock
 } from 'lucide-react';
 import { OrganizationTree } from '@/components/organization/OrganizationTree';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { mockMembers } from '@/data/mockData';
-import { Member } from '@/types';
+import { mockMembers, mockDepartments } from '@/data/mockData';
+import { Member, Department } from '@/types';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
 import {
@@ -129,8 +130,36 @@ export function MemberManagement() {
     setShowEditDialog(true);
   };
 
-  const toggleEditingMemberModel = (modelId: string) => {
+  // Helper function to find department by name recursively
+  const findDepartmentByName = (departments: Department[], name: string): Department | null => {
+    for (const dept of departments) {
+      if (dept.name === name) return dept;
+      if (dept.children && dept.children.length > 0) {
+        const found = findDepartmentByName(dept.children, name);
+        if (found) return found;
+      }
+    }
+    return null;
+  };
+
+  // Get organization inherited models for the editing member
+  const organizationInheritedModels = useMemo(() => {
+    if (!editingMember?.department) return [];
+    const dept = findDepartmentByName(mockDepartments, editingMember.department);
+    return dept?.allowedModels || [];
+  }, [editingMember?.department]);
+
+  const toggleEditingMemberModel = (modelId: string, isInherited: boolean) => {
     if (!editingMember) return;
+    // Prevent unchecking inherited models
+    if (isInherited) {
+      toast({
+        title: '无法取消组织继承的模型',
+        description: '该模型由组织统一配置，如需修改请联系组织管理员',
+        variant: 'destructive',
+      });
+      return;
+    }
     const currentModels = editingMember.allowedModels || [];
     const newModels = currentModels.includes(modelId)
       ? currentModels.filter(id => id !== modelId)
@@ -506,38 +535,85 @@ export function MemberManagement() {
                 <div className="flex items-center gap-2">
                   <Cpu className="w-4 h-4 text-muted-foreground" />
                   <Label className="text-sm font-medium">可用模型</Label>
-                  <span className="text-xs text-muted-foreground">(留空表示使用默认配置)</span>
                 </div>
-                {(editingMember.allowedModels?.length || 0) > 0 && (
-                  <div className="flex flex-wrap gap-2">
-                    {editingMember.allowedModels?.map(id => (
-                      <Badge key={id} variant="secondary" className="flex items-center gap-1 text-xs">
-                        {getModelName(id)}
-                        <button onClick={() => toggleEditingMemberModel(id)} className="ml-1 hover:text-destructive">
-                          <X className="w-3 h-3" />
-                        </button>
-                      </Badge>
-                    ))}
+                {organizationInheritedModels.length > 0 && (
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 px-3 py-2 rounded-md">
+                    <Lock className="w-3 h-3" />
+                    <span>带有"组织继承"标记的模型由组织统一配置，无法在成员管理中取消</span>
                   </div>
                 )}
+                {/* Selected models badges */}
+                {(() => {
+                  const allSelectedModels = [...new Set([
+                    ...organizationInheritedModels,
+                    ...(editingMember.allowedModels || [])
+                  ])];
+                  return allSelectedModels.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {allSelectedModels.map(id => {
+                        const isInherited = organizationInheritedModels.includes(id);
+                        return (
+                          <Badge 
+                            key={id} 
+                            variant={isInherited ? "default" : "secondary"} 
+                            className={cn(
+                              "flex items-center gap-1 text-xs",
+                              isInherited && "bg-primary/20 text-primary border-primary/30"
+                            )}
+                          >
+                            {isInherited && <Lock className="w-3 h-3" />}
+                            {getModelName(id)}
+                            {!isInherited && (
+                              <button 
+                                onClick={() => toggleEditingMemberModel(id, false)} 
+                                className="ml-1 hover:text-destructive"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            )}
+                          </Badge>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
                 <ScrollArea className="h-40 border rounded-md p-2">
                   <div className="space-y-1">
-                    {availableModels.map(model => (
-                      <div
-                        key={model.id}
-                        className={cn(
-                          "flex items-center gap-2 p-2 rounded cursor-pointer hover:bg-muted/50 transition-colors",
-                          editingMember.allowedModels?.includes(model.id) && "bg-primary/10"
-                        )}
-                        onClick={() => toggleEditingMemberModel(model.id)}
-                      >
-                        <Checkbox checked={editingMember.allowedModels?.includes(model.id) || false} />
-                        <span className="text-sm">{model.name}</span>
-                        <Badge variant="outline" className="text-xs ml-auto">
-                          {model.type === "text" ? "文本" : "视觉"}
-                        </Badge>
-                      </div>
-                    ))}
+                    {availableModels.map(model => {
+                      const isInherited = organizationInheritedModels.includes(model.id);
+                      const isChecked = isInherited || (editingMember.allowedModels?.includes(model.id) || false);
+                      return (
+                        <div
+                          key={model.id}
+                          className={cn(
+                            "flex items-center gap-2 p-2 rounded transition-colors",
+                            isInherited 
+                              ? "bg-primary/5 cursor-not-allowed" 
+                              : "cursor-pointer hover:bg-muted/50",
+                            isChecked && !isInherited && "bg-primary/10"
+                          )}
+                          onClick={() => toggleEditingMemberModel(model.id, isInherited)}
+                        >
+                          <Checkbox 
+                            checked={isChecked} 
+                            disabled={isInherited}
+                            className={isInherited ? "opacity-70" : ""}
+                          />
+                          <span className={cn("text-sm", isInherited && "text-muted-foreground")}>
+                            {model.name}
+                          </span>
+                          {isInherited && (
+                            <Badge variant="outline" className="text-xs bg-primary/10 text-primary border-primary/30">
+                              <Lock className="w-3 h-3 mr-1" />
+                              组织继承
+                            </Badge>
+                          )}
+                          <Badge variant="outline" className="text-xs ml-auto">
+                            {model.type === "text" ? "文本" : "视觉"}
+                          </Badge>
+                        </div>
+                      );
+                    })}
                   </div>
                 </ScrollArea>
               </div>
