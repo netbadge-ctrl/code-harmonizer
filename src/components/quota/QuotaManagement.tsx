@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,7 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
-import { Save, Settings2, Users, Building2, User, Edit, AlertCircle } from 'lucide-react';
+import { Save, Settings2, Building2, User, Edit, AlertCircle } from 'lucide-react';
 
 // Mock data
 const mockDepartments = [
@@ -30,8 +29,6 @@ const mockMembers = [
 ];
 
 export function QuotaManagement() {
-  const [activeTab, setActiveTab] = useState('global');
-  
   // Global quota state
   const [globalQuota, setGlobalQuota] = useState({
     enabled: true,
@@ -96,289 +93,254 @@ export function QuotaManagement() {
 
   return (
     <div className="space-y-6">
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
-          <TabsTrigger value="global" className="gap-2">
-            <Settings2 className="w-4 h-4" />
+      {/* Global Configuration */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Settings2 className="w-5 h-5" />
             全局配置
-          </TabsTrigger>
-          <TabsTrigger value="department" className="gap-2">
-            <Building2 className="w-4 h-4" />
+          </CardTitle>
+          <CardDescription>
+            设置组织级别的配额策略，这些设置将作为部门和成员的默认值
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label>启用配额管理</Label>
+              <p className="text-sm text-muted-foreground">
+                开启后将根据配额限制用户使用
+              </p>
+            </div>
+            <Switch
+              checked={globalQuota.enabled}
+              onCheckedChange={(checked) => 
+                setGlobalQuota(prev => ({ ...prev, enabled: checked }))
+              }
+            />
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+            <div className="space-y-2">
+              <Label htmlFor="monthlyBudget">月度总预算（元）</Label>
+              <Input
+                id="monthlyBudget"
+                type="number"
+                value={globalQuota.monthlyBudget}
+                onChange={(e) => 
+                  setGlobalQuota(prev => ({ ...prev, monthlyBudget: Number(e.target.value) }))
+                }
+                disabled={!globalQuota.enabled}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="alertThreshold">预警阈值（%）</Label>
+              <Input
+                id="alertThreshold"
+                type="number"
+                min={0}
+                max={100}
+                value={globalQuota.alertThreshold}
+                onChange={(e) => 
+                  setGlobalQuota(prev => ({ ...prev, alertThreshold: Number(e.target.value) }))
+                }
+                disabled={!globalQuota.enabled}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="defaultUserQuota">默认成员配额（元/月）</Label>
+              <Input
+                id="defaultUserQuota"
+                type="number"
+                value={globalQuota.defaultUserQuota}
+                onChange={(e) => 
+                  setGlobalQuota(prev => ({ ...prev, defaultUserQuota: Number(e.target.value) }))
+                }
+                disabled={!globalQuota.enabled}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="defaultDepartmentQuota">默认部门配额（元/月）</Label>
+              <Input
+                id="defaultDepartmentQuota"
+                type="number"
+                value={globalQuota.defaultDepartmentQuota}
+                onChange={(e) => 
+                  setGlobalQuota(prev => ({ ...prev, defaultDepartmentQuota: Number(e.target.value) }))
+                }
+                disabled={!globalQuota.enabled}
+              />
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between pt-4 border-t">
+            <div className="space-y-1">
+              <div className="flex items-center gap-4 text-sm">
+                <span className="text-muted-foreground">本月使用</span>
+                <span className="font-medium">¥32,500 / ¥{globalQuota.monthlyBudget.toLocaleString()}</span>
+                <Progress value={65} className="h-2 w-32" />
+                <span className="text-muted-foreground">65%</span>
+              </div>
+            </div>
+            <Button onClick={handleSaveGlobalQuota} className="gap-2">
+              <Save className="w-4 h-4" />
+              保存设置
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Department Configuration */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Building2 className="w-5 h-5" />
             部门配置
-          </TabsTrigger>
-          <TabsTrigger value="member" className="gap-2">
-            <User className="w-4 h-4" />
-            成员配置
-          </TabsTrigger>
-        </TabsList>
+          </CardTitle>
+          <CardDescription>
+            为各部门设置独立的配额限制，未单独配置的部门将使用全局默认值
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>部门名称</TableHead>
+                <TableHead>成员数</TableHead>
+                <TableHead>月度配额（元）</TableHead>
+                <TableHead>已使用</TableHead>
+                <TableHead>使用率</TableHead>
+                <TableHead>配置来源</TableHead>
+                <TableHead className="text-right">操作</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {departments.map((dept) => {
+                const percentage = getUsagePercentage(dept.used, dept.quota);
+                return (
+                  <TableRow key={dept.id}>
+                    <TableCell className="font-medium">{dept.name}</TableCell>
+                    <TableCell>{dept.memberCount}</TableCell>
+                    <TableCell>¥{dept.quota.toLocaleString()}</TableCell>
+                    <TableCell>¥{dept.used.toLocaleString()}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Progress value={percentage} className="h-2 w-20" />
+                        <Badge variant={getUsageStatus(percentage)}>
+                          {percentage}%
+                        </Badge>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={dept.inherited ? 'outline' : 'default'}>
+                        {dept.inherited ? '继承全局' : '自定义'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setEditingDepartment(dept);
+                          setDepartmentDialogOpen(true);
+                        }}
+                      >
+                        <Edit className="w-4 h-4 mr-1" />
+                        编辑
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
 
-        {/* Global Configuration Tab */}
-        <TabsContent value="global" className="space-y-6">
-          <Card>
-            <CardContent className="pt-6 space-y-6">
-              <div className="flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <Label>启用配额管理</Label>
-                  <p className="text-sm text-muted-foreground">
-                    开启后将根据配额限制用户使用
-                  </p>
-                </div>
-                <Switch
-                  checked={globalQuota.enabled}
-                  onCheckedChange={(checked) => 
-                    setGlobalQuota(prev => ({ ...prev, enabled: checked }))
-                  }
-                />
-              </div>
-
-              <div className="grid gap-6 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="monthlyBudget">月度总预算（元）</Label>
-                  <Input
-                    id="monthlyBudget"
-                    type="number"
-                    value={globalQuota.monthlyBudget}
-                    onChange={(e) => 
-                      setGlobalQuota(prev => ({ ...prev, monthlyBudget: Number(e.target.value) }))
-                    }
-                    disabled={!globalQuota.enabled}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    组织每月可使用的最大金额
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="alertThreshold">预警阈值（%）</Label>
-                  <Input
-                    id="alertThreshold"
-                    type="number"
-                    min={0}
-                    max={100}
-                    value={globalQuota.alertThreshold}
-                    onChange={(e) => 
-                      setGlobalQuota(prev => ({ ...prev, alertThreshold: Number(e.target.value) }))
-                    }
-                    disabled={!globalQuota.enabled}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    达到此比例时发送预警通知
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="defaultUserQuota">默认成员配额（元/月）</Label>
-                  <Input
-                    id="defaultUserQuota"
-                    type="number"
-                    value={globalQuota.defaultUserQuota}
-                    onChange={(e) => 
-                      setGlobalQuota(prev => ({ ...prev, defaultUserQuota: Number(e.target.value) }))
-                    }
-                    disabled={!globalQuota.enabled}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    新成员的默认月度配额
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="defaultDepartmentQuota">默认部门配额（元/月）</Label>
-                  <Input
-                    id="defaultDepartmentQuota"
-                    type="number"
-                    value={globalQuota.defaultDepartmentQuota}
-                    onChange={(e) => 
-                      setGlobalQuota(prev => ({ ...prev, defaultDepartmentQuota: Number(e.target.value) }))
-                    }
-                    disabled={!globalQuota.enabled}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    新部门的默认月度配额
-                  </p>
-                </div>
-              </div>
-
-              <div className="pt-4 border-t">
-                <Button onClick={handleSaveGlobalQuota} className="gap-2">
-                  <Save className="w-4 h-4" />
-                  保存设置
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Usage Overview */}
-          <Card>
-            <CardHeader>
-              <CardTitle>本月使用概览</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>总预算使用</span>
-                  <span className="font-medium">¥32,500 / ¥{globalQuota.monthlyBudget.toLocaleString()}</span>
-                </div>
-                <Progress value={65} className="h-2" />
-                <p className="text-xs text-muted-foreground">已使用 65%，距离预警阈值还有 15%</p>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Department Configuration Tab */}
-        <TabsContent value="department" className="space-y-6">
-          <Card>
-            <CardHeader>
+      {/* Member Configuration */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
               <CardTitle className="flex items-center gap-2">
-                <Building2 className="w-5 h-5" />
-                部门配额配置
+                <User className="w-5 h-5" />
+                成员配置
               </CardTitle>
               <CardDescription>
-                为各部门设置独立的配额限制，未单独配置的部门将使用全局默认值
+                为特定成员设置独立配额，未单独配置的成员将继承部门或全局配额
               </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>部门名称</TableHead>
-                    <TableHead>成员数</TableHead>
-                    <TableHead>月度配额（元）</TableHead>
-                    <TableHead>已使用</TableHead>
-                    <TableHead>使用率</TableHead>
-                    <TableHead>配置来源</TableHead>
-                    <TableHead className="text-right">操作</TableHead>
+            </div>
+            <Input
+              placeholder="搜索成员..."
+              value={memberSearch}
+              onChange={(e) => setMemberSearch(e.target.value)}
+              className="w-64"
+            />
+          </div>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>成员</TableHead>
+                <TableHead>部门</TableHead>
+                <TableHead>月度配额（元）</TableHead>
+                <TableHead>已使用</TableHead>
+                <TableHead>使用率</TableHead>
+                <TableHead>配置来源</TableHead>
+                <TableHead className="text-right">操作</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredMembers.map((member) => {
+                const percentage = getUsagePercentage(member.used, member.quota);
+                return (
+                  <TableRow key={member.id}>
+                    <TableCell>
+                      <div>
+                        <p className="font-medium">{member.name}</p>
+                        <p className="text-xs text-muted-foreground">{member.email}</p>
+                      </div>
+                    </TableCell>
+                    <TableCell>{member.department}</TableCell>
+                    <TableCell>¥{member.quota.toLocaleString()}</TableCell>
+                    <TableCell>¥{member.used.toLocaleString()}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Progress value={percentage} className="h-2 w-20" />
+                        <Badge variant={getUsageStatus(percentage)}>
+                          {percentage}%
+                        </Badge>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={member.customQuota ? 'default' : 'outline'}>
+                        {member.customQuota ? '自定义' : '继承'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setEditingMember(member);
+                          setMemberDialogOpen(true);
+                        }}
+                      >
+                        <Edit className="w-4 h-4 mr-1" />
+                        编辑
+                      </Button>
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {departments.map((dept) => {
-                    const percentage = getUsagePercentage(dept.used, dept.quota);
-                    return (
-                      <TableRow key={dept.id}>
-                        <TableCell className="font-medium">{dept.name}</TableCell>
-                        <TableCell>{dept.memberCount}</TableCell>
-                        <TableCell>¥{dept.quota.toLocaleString()}</TableCell>
-                        <TableCell>¥{dept.used.toLocaleString()}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Progress value={percentage} className="h-2 w-20" />
-                            <Badge variant={getUsageStatus(percentage)}>
-                              {percentage}%
-                            </Badge>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={dept.inherited ? 'outline' : 'default'}>
-                            {dept.inherited ? '继承全局' : '自定义'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setEditingDepartment(dept);
-                              setDepartmentDialogOpen(true);
-                            }}
-                          >
-                            <Edit className="w-4 h-4 mr-1" />
-                            编辑
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Member Configuration Tab */}
-        <TabsContent value="member" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <User className="w-5 h-5" />
-                    成员配额配置
-                  </CardTitle>
-                  <CardDescription>
-                    为特定成员设置独立配额，未单独配置的成员将继承部门或全局配额
-                  </CardDescription>
-                </div>
-                <Input
-                  placeholder="搜索成员..."
-                  value={memberSearch}
-                  onChange={(e) => setMemberSearch(e.target.value)}
-                  className="w-64"
-                />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>成员</TableHead>
-                    <TableHead>部门</TableHead>
-                    <TableHead>月度配额（元）</TableHead>
-                    <TableHead>已使用</TableHead>
-                    <TableHead>使用率</TableHead>
-                    <TableHead>配置来源</TableHead>
-                    <TableHead className="text-right">操作</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredMembers.map((member) => {
-                    const percentage = getUsagePercentage(member.used, member.quota);
-                    return (
-                      <TableRow key={member.id}>
-                        <TableCell>
-                          <div>
-                            <p className="font-medium">{member.name}</p>
-                            <p className="text-xs text-muted-foreground">{member.email}</p>
-                          </div>
-                        </TableCell>
-                        <TableCell>{member.department}</TableCell>
-                        <TableCell>¥{member.quota.toLocaleString()}</TableCell>
-                        <TableCell>¥{member.used.toLocaleString()}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Progress value={percentage} className="h-2 w-20" />
-                            <Badge variant={getUsageStatus(percentage)}>
-                              {percentage}%
-                            </Badge>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={member.customQuota ? 'default' : 'outline'}>
-                            {member.customQuota ? '自定义' : '继承'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setEditingMember(member);
-                              setMemberDialogOpen(true);
-                            }}
-                          >
-                            <Edit className="w-4 h-4 mr-1" />
-                            编辑
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
 
       {/* Department Edit Dialog */}
       <Dialog open={departmentDialogOpen} onOpenChange={setDepartmentDialogOpen}>
