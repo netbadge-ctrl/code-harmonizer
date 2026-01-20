@@ -34,6 +34,7 @@ import {
   Cell,
   LineChart,
   Line,
+  ComposedChart,
 } from 'recharts';
 
 interface CustomerDetailProps {
@@ -206,10 +207,10 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
 
 
       {/* 详细信息 Tabs */}
-      <Tabs defaultValue="overview" className="space-y-4">
+      <Tabs defaultValue="usage" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="overview">基本信息</TabsTrigger>
           <TabsTrigger value="usage">使用统计</TabsTrigger>
+          <TabsTrigger value="overview">基本信息</TabsTrigger>
           <TabsTrigger value="users">活跃用户</TabsTrigger>
           <TabsTrigger value="logs">操作日志</TabsTrigger>
           <TabsTrigger value="cloud">云服务信息</TabsTrigger>
@@ -403,38 +404,125 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* 每日使用趋势 */}
+            {/* 使用趋势 - 动态时间粒度 */}
             <Card className="enterprise-card">
               <CardHeader>
-                <CardTitle className="text-base">每日使用趋势</CardTitle>
+                <CardTitle className="text-base">使用趋势</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="h-64">
                   <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={customer.dailyUsage}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                      <XAxis 
-                        dataKey="date" 
-                        tick={{ fontSize: 12 }}
-                        tickFormatter={(value) => value.slice(5)}
-                      />
-                      <YAxis 
-                        tick={{ fontSize: 12 }}
-                        tickFormatter={(value) => formatTokens(value)}
-                      />
-                      <Tooltip 
-                        formatter={(value: number) => formatTokens(value)}
-                        labelFormatter={(label) => `日期: ${label}`}
-                      />
-                      <Line 
-                        type="monotone" 
-                        dataKey="tokens" 
-                        stroke="hsl(213, 94%, 50%)" 
-                        strokeWidth={2}
-                        name="Token 消耗"
-                      />
-                    </LineChart>
+                    {(() => {
+                      // 计算时间范围（毫秒）
+                      const timeRangeMs = usageDateRange.from && usageDateRange.to 
+                        ? usageDateRange.to.getTime() - usageDateRange.from.getTime()
+                        : 7 * 24 * 60 * 60 * 1000;
+                      
+                      const fourHoursMs = 4 * 60 * 60 * 1000;
+                      const ninetySixHoursMs = 96 * 60 * 60 * 1000;
+                      
+                      // 根据时间范围生成模拟数据
+                      let trendData: Array<{ time: string; tokens: number; requests: number; activeUsers: number }> = [];
+                      let timeFormat: (value: string) => string;
+                      let tooltipLabel: string;
+                      
+                      if (timeRangeMs <= fourHoursMs) {
+                        // 分钟粒度
+                        const minutes = Math.ceil(timeRangeMs / (60 * 1000));
+                        const dataPoints = Math.min(minutes, 60);
+                        for (let i = 0; i < dataPoints; i++) {
+                          const date = new Date(usageDateRange.from!.getTime() + (i * timeRangeMs / dataPoints));
+                          trendData.push({
+                            time: `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`,
+                            tokens: Math.floor(Math.random() * 50000) + 10000,
+                            requests: Math.floor(Math.random() * 100) + 20,
+                            activeUsers: Math.floor(Math.random() * 15) + 5,
+                          });
+                        }
+                        timeFormat = (value) => value;
+                        tooltipLabel = '时间';
+                      } else if (timeRangeMs <= ninetySixHoursMs) {
+                        // 小时粒度
+                        const hours = Math.ceil(timeRangeMs / (60 * 60 * 1000));
+                        const dataPoints = Math.min(hours, 96);
+                        for (let i = 0; i < dataPoints; i++) {
+                          const date = new Date(usageDateRange.from!.getTime() + (i * timeRangeMs / dataPoints));
+                          trendData.push({
+                            time: `${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')} ${date.getHours().toString().padStart(2, '0')}:00`,
+                            tokens: Math.floor(Math.random() * 200000) + 50000,
+                            requests: Math.floor(Math.random() * 500) + 100,
+                            activeUsers: Math.floor(Math.random() * 30) + 10,
+                          });
+                        }
+                        timeFormat = (value) => value.slice(-5);
+                        tooltipLabel = '时间';
+                      } else {
+                        // 天粒度 - 使用现有 dailyUsage 数据并增加 activeUsers
+                        trendData = customer.dailyUsage.map(d => ({
+                          time: d.date,
+                          tokens: d.tokens,
+                          requests: d.requests,
+                          activeUsers: Math.floor(Math.random() * 50) + 20,
+                        }));
+                        timeFormat = (value) => value.slice(5);
+                        tooltipLabel = '日期';
+                      }
+                      
+                      return (
+                        <ComposedChart data={trendData}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                          <XAxis 
+                            dataKey="time" 
+                            tick={{ fontSize: 11 }}
+                            tickFormatter={timeFormat}
+                          />
+                          <YAxis 
+                            yAxisId="left"
+                            tick={{ fontSize: 12 }}
+                            tickFormatter={(value) => formatTokens(value)}
+                          />
+                          <YAxis 
+                            yAxisId="right"
+                            orientation="right"
+                            tick={{ fontSize: 12 }}
+                          />
+                          <Tooltip 
+                            formatter={(value: number, name: string) => {
+                              if (name === 'Token 消耗') return formatTokens(value);
+                              return value;
+                            }}
+                            labelFormatter={(label) => `${tooltipLabel}: ${label}`}
+                          />
+                          <Bar 
+                            yAxisId="right"
+                            dataKey="activeUsers" 
+                            fill="hsl(142, 76%, 36%)" 
+                            name="活跃用户"
+                            radius={[4, 4, 0, 0]}
+                          />
+                          <Line 
+                            yAxisId="left"
+                            type="monotone" 
+                            dataKey="tokens" 
+                            stroke="hsl(213, 94%, 50%)" 
+                            strokeWidth={2}
+                            name="Token 消耗"
+                            dot={false}
+                          />
+                        </ComposedChart>
+                      );
+                    })()}
                   </ResponsiveContainer>
+                </div>
+                <div className="flex items-center justify-center gap-4 mt-2 text-xs text-muted-foreground">
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 rounded" style={{ backgroundColor: 'hsl(142, 76%, 36%)' }} />
+                    <span>活跃用户</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(213, 94%, 50%)' }} />
+                    <span>Token 消耗</span>
+                  </div>
                 </div>
               </CardContent>
             </Card>
