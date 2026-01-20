@@ -12,8 +12,9 @@ import { Progress } from '@/components/ui/progress';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { toast } from 'sonner';
-import { Save, Settings2, Building2, User, Edit, AlertCircle, Plus, Trash2, Check, ChevronsUpDown, ChevronRight, ChevronDown } from 'lucide-react';
+import { Save, Settings2, Building2, User, Edit, AlertCircle, Plus, Trash2, Check, ChevronsUpDown, ChevronRight, ChevronDown, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 // Hierarchical organization structure (3 levels)
 interface DepartmentNode {
@@ -258,16 +259,16 @@ function DepartmentTreeSelector({
 }
 
 export function QuotaManagement() {
-  // Global quota state - default off
+  // Global quota state - default off, no default values
   const [globalQuota, setGlobalQuota] = useState({
     enabled: false,
-    monthlyBudget: 50000,
+    monthlyBudget: 0,
     alertThreshold: 80,
   });
 
-  // Department quota state - default off
+  // Department quota state - default off, no default values
   const [departmentQuotaEnabled, setDepartmentQuotaEnabled] = useState(false);
-  const [defaultDepartmentQuota, setDefaultDepartmentQuota] = useState(5000);
+  const [defaultDepartmentQuota, setDefaultDepartmentQuota] = useState(0);
   const [customDepartments, setCustomDepartments] = useState<DepartmentQuota[]>([
     { id: '1-1-1', name: '前端组', memberCount: 8, quota: 8000, used: 5200 },
   ]);
@@ -275,13 +276,13 @@ export function QuotaManagement() {
   const [departmentDialogOpen, setDepartmentDialogOpen] = useState(false);
   const [addDepartmentDialogOpen, setAddDepartmentDialogOpen] = useState(false);
   const [selectedDepartmentId, setSelectedDepartmentId] = useState('');
-  const [newDepartmentQuota, setNewDepartmentQuota] = useState(5000);
+  const [newDepartmentQuota, setNewDepartmentQuota] = useState(0);
   const [departmentPopoverOpen, setDepartmentPopoverOpen] = useState(false);
   const [expandedNodes, setExpandedNodes] = useState<Record<string, boolean>>({});
   
-  // Member quota state - default off
+  // Member quota state - default off, no default values
   const [memberQuotaEnabled, setMemberQuotaEnabled] = useState(false);
-  const [defaultMemberQuota, setDefaultMemberQuota] = useState(200);
+  const [defaultMemberQuota, setDefaultMemberQuota] = useState(0);
   const [customMembers, setCustomMembers] = useState<MemberQuota[]>([
     { id: '1', name: '张三', email: 'zhangsan@company.com', department: '技术研发部', quota: 500, used: 320 },
     { id: '4', name: '赵六', email: 'zhaoliu@company.com', department: '市场运营部', quota: 300, used: 200 },
@@ -290,7 +291,7 @@ export function QuotaManagement() {
   const [memberDialogOpen, setMemberDialogOpen] = useState(false);
   const [addMemberDialogOpen, setAddMemberDialogOpen] = useState(false);
   const [selectedMemberId, setSelectedMemberId] = useState('');
-  const [newMemberQuota, setNewMemberQuota] = useState(200);
+  const [newMemberQuota, setNewMemberQuota] = useState(0);
   const [memberSearch, setMemberSearch] = useState('');
   const [memberPopoverOpen, setMemberPopoverOpen] = useState(false);
 
@@ -367,7 +368,7 @@ export function QuotaManagement() {
       }]);
       setAddDepartmentDialogOpen(false);
       setSelectedDepartmentId('');
-      setNewDepartmentQuota(5000);
+      setNewDepartmentQuota(0);
       setExpandedNodes({});
       toast.success('已添加部门自定义配额');
     }
@@ -402,7 +403,7 @@ export function QuotaManagement() {
       }]);
       setAddMemberDialogOpen(false);
       setSelectedMemberId('');
-      setNewMemberQuota(200);
+      setNewMemberQuota(0);
       toast.success('已添加成员自定义配额');
     }
   };
@@ -454,6 +455,14 @@ export function QuotaManagement() {
 
   return (
     <div className="space-y-6">
+      {/* Feature Description */}
+      <Alert className="bg-muted/50 border-muted-foreground/20">
+        <Info className="h-4 w-4" />
+        <AlertDescription className="text-sm text-muted-foreground">
+          限制token消费额度，token消费单价以实际计费价格为准。受结算周期影响，可能会出现使用量轻微超出配额的情况。修改配额后，配额限制立即生效。
+        </AlertDescription>
+      </Alert>
+
       {/* Global Configuration */}
       <Card>
         <CardHeader className="pb-4">
