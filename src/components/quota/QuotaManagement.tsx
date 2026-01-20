@@ -115,16 +115,7 @@ export function QuotaManagement() {
         {/* Global Configuration Tab */}
         <TabsContent value="global" className="space-y-6">
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Settings2 className="w-5 h-5" />
-                全局配额设置
-              </CardTitle>
-              <CardDescription>
-                设置组织级别的配额策略，这些设置将作为部门和成员的默认值
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="pt-6 space-y-6">
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
                   <Label>启用配额管理</Label>
