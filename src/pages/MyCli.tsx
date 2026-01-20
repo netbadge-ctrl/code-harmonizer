@@ -294,44 +294,67 @@ export default function MyCli() {
 
           {/* Token Usage Tab */}
           <TabsContent value="usage" className="space-y-6">
-            {/* Credits Overview Card */}
-            <Card className="bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Coins className="w-5 h-5 text-primary" />
-                  消费额度（元）
-                </CardTitle>
-                <CardDescription>
-                  不同模型单价不同：高级模型 ¥0.10-0.12/K，标准模型 ¥0.03-0.04/K，基础模型 ¥0.02/K
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex items-end justify-between">
-                  <div>
-                    <div className="text-3xl font-bold text-primary">
-                      ¥{(tokenUsage.totalQuota - tokenUsage.monthlyCost).toFixed(2)}
+            {/* Usage Overview - 2x2 Grid */}
+            <div className="grid gap-4 md:grid-cols-2">
+              {/* Quota Card */}
+              <Card className="bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Coins className="w-5 h-5 text-primary" />
+                    消费额度（元）
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex items-end justify-between">
+                    <div>
+                      <div className="text-3xl font-bold text-primary">
+                        ¥{(tokenUsage.totalQuota - tokenUsage.monthlyCost).toFixed(2)}
+                      </div>
+                      <p className="text-sm text-muted-foreground">剩余额度</p>
                     </div>
-                    <p className="text-sm text-muted-foreground">剩余额度</p>
+                    <div className="text-right">
+                      <div className="text-lg font-semibold">¥{tokenUsage.totalQuota.toFixed(2)}</div>
+                      <p className="text-xs text-muted-foreground">总配额</p>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <div className="text-lg font-semibold">¥{tokenUsage.totalQuota.toFixed(2)}</div>
-                    <p className="text-xs text-muted-foreground">总配额</p>
-                  </div>
-                </div>
-                <Progress value={costUsagePercent} className="h-2" />
-                <p className="text-xs text-muted-foreground">
-                  本月已使用 {costUsagePercent.toFixed(1)}%
-                </p>
-              </CardContent>
-            </Card>
+                  <Progress value={costUsagePercent} className="h-2" />
+                  <p className="text-xs text-muted-foreground">
+                    本月已使用 {costUsagePercent.toFixed(1)}%
+                  </p>
+                </CardContent>
+              </Card>
 
-            {/* Usage Overview Cards */}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              {/* Monthly Cost Card */}
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Activity className="w-5 h-5" />
+                    月累计消费
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex items-end justify-between">
+                    <div>
+                      <div className="text-3xl font-bold">¥{tokenUsage.monthlyCost.toFixed(2)}</div>
+                      <p className="text-sm text-muted-foreground">本月消费</p>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-lg font-semibold">{(tokenUsage.monthlyTokens / 1000).toFixed(1)}K</div>
+                      <p className="text-xs text-muted-foreground">Token 消耗</p>
+                    </div>
+                  </div>
+                  <p className={`text-xs ${tokenUsage.monthlyChange < 0 ? 'text-green-600' : 'text-muted-foreground'}`}>
+                    较上月 {tokenUsage.monthlyChange > 0 ? '+' : ''}{tokenUsage.monthlyChange}%
+                  </p>
+                </CardContent>
+              </Card>
+
+              {/* Today Token Card */}
               <Card>
                 <CardHeader className="pb-2">
                   <CardDescription className="flex items-center gap-2">
                     <Clock className="w-4 h-4" />
-                    今日 Token
+                    今日 Token 消耗
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -342,6 +365,7 @@ export default function MyCli() {
                 </CardContent>
               </Card>
               
+              {/* Today Cost Card */}
               <Card>
                 <CardHeader className="pb-2">
                   <CardDescription className="flex items-center gap-2">
@@ -351,38 +375,8 @@ export default function MyCli() {
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold text-amber-600">¥{tokenUsage.todayCost.toFixed(2)}</div>
-                  <p className="text-xs text-muted-foreground">
-                    平均单价 ¥{(tokenUsage.todayCost / (tokenUsage.todayTokens / 1000)).toFixed(4)}/K
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardDescription className="flex items-center gap-2">
-                    <Activity className="w-4 h-4" />
-                    月累计 Token
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{(tokenUsage.monthlyTokens / 1000).toFixed(1)}K</div>
-                  <p className={`text-xs ${tokenUsage.monthlyChange < 0 ? 'text-green-600' : 'text-muted-foreground'}`}>
-                    较上月 {tokenUsage.monthlyChange > 0 ? '+' : ''}{tokenUsage.monthlyChange}%
-                  </p>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardDescription className="flex items-center gap-2">
-                    <Coins className="w-4 h-4" />
-                    月累计消费（元）
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-primary">¥{tokenUsage.monthlyCost.toFixed(2)}</div>
-                  <p className="text-xs text-muted-foreground">
-                    平均单价 ¥{(tokenUsage.monthlyCost / (tokenUsage.monthlyTokens / 1000)).toFixed(4)}/K
+                  <p className={`text-xs ${tokenUsage.todayChange < 0 ? 'text-green-600' : 'text-destructive'}`}>
+                    较昨日 {tokenUsage.todayChange > 0 ? '+' : ''}{tokenUsage.todayChange}%
                   </p>
                 </CardContent>
               </Card>
