@@ -258,15 +258,15 @@ function DepartmentTreeSelector({
 }
 
 export function QuotaManagement() {
-  // Global quota state
+  // Global quota state - default off
   const [globalQuota, setGlobalQuota] = useState({
-    enabled: true,
+    enabled: false,
     monthlyBudget: 50000,
     alertThreshold: 80,
   });
 
-  // Department quota state
-  const [departmentQuotaEnabled, setDepartmentQuotaEnabled] = useState(true);
+  // Department quota state - default off
+  const [departmentQuotaEnabled, setDepartmentQuotaEnabled] = useState(false);
   const [defaultDepartmentQuota, setDefaultDepartmentQuota] = useState(5000);
   const [customDepartments, setCustomDepartments] = useState<DepartmentQuota[]>([
     { id: '1-1-1', name: '前端组', memberCount: 8, quota: 8000, used: 5200 },
@@ -279,8 +279,8 @@ export function QuotaManagement() {
   const [departmentPopoverOpen, setDepartmentPopoverOpen] = useState(false);
   const [expandedNodes, setExpandedNodes] = useState<Record<string, boolean>>({});
   
-  // Member quota state
-  const [memberQuotaEnabled, setMemberQuotaEnabled] = useState(true);
+  // Member quota state - default off
+  const [memberQuotaEnabled, setMemberQuotaEnabled] = useState(false);
   const [defaultMemberQuota, setDefaultMemberQuota] = useState(200);
   const [customMembers, setCustomMembers] = useState<MemberQuota[]>([
     { id: '1', name: '张三', email: 'zhangsan@company.com', department: '技术研发部', quota: 500, used: 320 },
@@ -294,15 +294,53 @@ export function QuotaManagement() {
   const [memberSearch, setMemberSearch] = useState('');
   const [memberPopoverOpen, setMemberPopoverOpen] = useState(false);
 
+  // Validation helpers
+  const isGlobalQuotaValid = globalQuota.monthlyBudget > 0;
+  const isDepartmentQuotaValid = defaultDepartmentQuota > 0 && defaultDepartmentQuota <= globalQuota.monthlyBudget;
+  const isMemberQuotaValid = defaultMemberQuota > 0 && defaultMemberQuota <= defaultDepartmentQuota;
+
+  const validateDepartmentQuota = (quota: number): string | null => {
+    if (quota <= 0) return '配额必须大于0';
+    if (globalQuota.enabled && quota > globalQuota.monthlyBudget) {
+      return `部门配额不能超过全局配额 ¥${globalQuota.monthlyBudget.toLocaleString()}`;
+    }
+    return null;
+  };
+
+  const validateMemberQuota = (quota: number): string | null => {
+    if (quota <= 0) return '配额必须大于0';
+    if (departmentQuotaEnabled && quota > defaultDepartmentQuota) {
+      return `成员配额不能超过部门默认配额 ¥${defaultDepartmentQuota.toLocaleString()}`;
+    }
+    if (globalQuota.enabled && quota > globalQuota.monthlyBudget) {
+      return `成员配额不能超过全局配额 ¥${globalQuota.monthlyBudget.toLocaleString()}`;
+    }
+    return null;
+  };
+
   const handleSaveGlobalQuota = () => {
+    if (!isGlobalQuotaValid) {
+      toast.error('请填写有效的月度预算');
+      return;
+    }
     toast.success('全局配额设置已保存');
   };
 
   const handleSaveDepartmentDefaults = () => {
+    const error = validateDepartmentQuota(defaultDepartmentQuota);
+    if (error) {
+      toast.error(error);
+      return;
+    }
     toast.success('部门默认配额已保存');
   };
 
   const handleSaveMemberDefaults = () => {
+    const error = validateMemberQuota(defaultMemberQuota);
+    if (error) {
+      toast.error(error);
+      return;
+    }
     toast.success('成员默认配额已保存');
   };
 
@@ -418,7 +456,7 @@ export function QuotaManagement() {
     <div className="space-y-6">
       {/* Global Configuration */}
       <Card>
-        <CardHeader>
+        <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="flex items-center gap-2">
@@ -429,63 +467,83 @@ export function QuotaManagement() {
                 设置组织级别的配额策略
               </CardDescription>
             </div>
-            <Switch
-              checked={globalQuota.enabled}
-              onCheckedChange={(checked) => 
-                setGlobalQuota(prev => ({ ...prev, enabled: checked }))
-              }
-            />
           </div>
         </CardHeader>
-        {globalQuota.enabled && (
-          <CardContent className="space-y-6">
-            <div className="grid gap-6 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="monthlyBudget">月度总预算（元）</Label>
-                <Input
-                  id="monthlyBudget"
-                  type="number"
-                  value={globalQuota.monthlyBudget}
-                  onChange={(e) => 
-                    setGlobalQuota(prev => ({ ...prev, monthlyBudget: Number(e.target.value) }))
-                  }
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="alertThreshold">预警阈值（%）</Label>
-                <Input
-                  id="alertThreshold"
-                  type="number"
-                  min={0}
-                  max={100}
-                  value={globalQuota.alertThreshold}
-                  onChange={(e) => 
-                    setGlobalQuota(prev => ({ ...prev, alertThreshold: Number(e.target.value) }))
-                  }
-                />
-              </div>
+        <CardContent className="space-y-6">
+          {/* Switch and Default Quota Row */}
+          <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+            <div className="flex items-center gap-4">
+              <Switch
+                checked={globalQuota.enabled}
+                onCheckedChange={(checked) => 
+                  setGlobalQuota(prev => ({ ...prev, enabled: checked }))
+                }
+              />
+              <Label className="text-sm font-medium">启用全局配额管理</Label>
             </div>
-
-            <div className="flex items-center justify-between pt-4 border-t">
-              <div className="flex items-center gap-4 text-sm">
-                <span className="text-muted-foreground">本月使用</span>
-                <span className="font-medium">¥32,500 / ¥{globalQuota.monthlyBudget.toLocaleString()}</span>
-                <Progress value={65} className="h-2 w-32" />
-                <span className="text-muted-foreground">65%</span>
+            {globalQuota.enabled && (
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="monthlyBudget" className="text-sm text-muted-foreground whitespace-nowrap">
+                    月度总预算
+                  </Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">¥</span>
+                    <Input
+                      id="monthlyBudget"
+                      type="number"
+                      min={1}
+                      required
+                      value={globalQuota.monthlyBudget}
+                      onChange={(e) => 
+                        setGlobalQuota(prev => ({ ...prev, monthlyBudget: Number(e.target.value) }))
+                      }
+                      className="w-32 pl-7"
+                    />
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="alertThreshold" className="text-sm text-muted-foreground whitespace-nowrap">
+                    预警阈值
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      id="alertThreshold"
+                      type="number"
+                      min={0}
+                      max={100}
+                      value={globalQuota.alertThreshold}
+                      onChange={(e) => 
+                        setGlobalQuota(prev => ({ ...prev, alertThreshold: Number(e.target.value) }))
+                      }
+                      className="w-20 pr-7"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">%</span>
+                  </div>
+                </div>
+                <Button onClick={handleSaveGlobalQuota} size="sm" className="gap-2">
+                  <Save className="w-4 h-4" />
+                  保存
+                </Button>
               </div>
-              <Button onClick={handleSaveGlobalQuota} className="gap-2">
-                <Save className="w-4 h-4" />
-                保存设置
-              </Button>
+            )}
+          </div>
+
+          {/* Usage Stats - only show when enabled */}
+          {globalQuota.enabled && (
+            <div className="flex items-center gap-4 text-sm pt-2">
+              <span className="text-muted-foreground">本月使用</span>
+              <span className="font-medium">¥32,500 / ¥{globalQuota.monthlyBudget.toLocaleString()}</span>
+              <Progress value={65} className="h-2 w-32" />
+              <span className="text-muted-foreground">65%</span>
             </div>
-          </CardContent>
-        )}
+          )}
+        </CardContent>
       </Card>
 
       {/* Department Configuration */}
       <Card>
-        <CardHeader>
+        <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="flex items-center gap-2">
@@ -493,33 +551,59 @@ export function QuotaManagement() {
                 部门配置
               </CardTitle>
               <CardDescription>
-                为部门设置配额限制
+                为部门设置配额限制（支持多级组织架构）
               </CardDescription>
             </div>
-            <Switch
-              checked={departmentQuotaEnabled}
-              onCheckedChange={setDepartmentQuotaEnabled}
-            />
           </div>
         </CardHeader>
-        {departmentQuotaEnabled && (
-          <CardContent className="space-y-6">
-            <div className="flex items-end gap-4">
-              <div className="flex-1 max-w-xs space-y-2">
-                <Label htmlFor="defaultDepartmentQuota">默认部门配额（元/月）</Label>
-                <Input
-                  id="defaultDepartmentQuota"
-                  type="number"
-                  value={defaultDepartmentQuota}
-                  onChange={(e) => setDefaultDepartmentQuota(Number(e.target.value))}
-                />
-              </div>
-              <Button variant="outline" onClick={handleSaveDepartmentDefaults} className="gap-2">
-                <Save className="w-4 h-4" />
-                保存默认配额
-              </Button>
+        <CardContent className="space-y-6">
+          {/* Switch and Default Quota Row */}
+          <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+            <div className="flex items-center gap-4">
+              <Switch
+                checked={departmentQuotaEnabled}
+                onCheckedChange={setDepartmentQuotaEnabled}
+              />
+              <Label className="text-sm font-medium">启用部门配额管理</Label>
             </div>
+            {departmentQuotaEnabled && (
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="defaultDepartmentQuota" className="text-sm text-muted-foreground whitespace-nowrap">
+                    默认配额
+                  </Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">¥</span>
+                    <Input
+                      id="defaultDepartmentQuota"
+                      type="number"
+                      min={1}
+                      required
+                      value={defaultDepartmentQuota}
+                      onChange={(e) => setDefaultDepartmentQuota(Number(e.target.value))}
+                      className="w-32 pl-7"
+                    />
+                  </div>
+                  <span className="text-sm text-muted-foreground">/月</span>
+                </div>
+                <Button onClick={handleSaveDepartmentDefaults} size="sm" className="gap-2">
+                  <Save className="w-4 h-4" />
+                  保存
+                </Button>
+              </div>
+            )}
+          </div>
 
+          {/* Validation hint */}
+          {departmentQuotaEnabled && globalQuota.enabled && defaultDepartmentQuota > globalQuota.monthlyBudget && (
+            <div className="flex items-center gap-2 text-sm text-destructive">
+              <AlertCircle className="w-4 h-4" />
+              部门默认配额不能超过全局配额 ¥{globalQuota.monthlyBudget.toLocaleString()}
+            </div>
+          )}
+
+          {/* Custom Department Quotas - only show when enabled */}
+          {departmentQuotaEnabled && (
             <div className="border-t pt-4">
               <div className="flex items-center justify-between mb-4">
                 <h4 className="text-sm font-medium">自定义部门配额</h4>
@@ -596,13 +680,13 @@ export function QuotaManagement() {
                 </div>
               )}
             </div>
-          </CardContent>
-        )}
+          )}
+        </CardContent>
       </Card>
 
       {/* Member Configuration */}
       <Card>
-        <CardHeader>
+        <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="flex items-center gap-2">
@@ -613,30 +697,62 @@ export function QuotaManagement() {
                 为成员设置配额限制
               </CardDescription>
             </div>
-            <Switch
-              checked={memberQuotaEnabled}
-              onCheckedChange={setMemberQuotaEnabled}
-            />
           </div>
         </CardHeader>
-        {memberQuotaEnabled && (
-          <CardContent className="space-y-6">
-            <div className="flex items-end gap-4">
-              <div className="flex-1 max-w-xs space-y-2">
-                <Label htmlFor="defaultMemberQuota">默认成员配额（元/月）</Label>
-                <Input
-                  id="defaultMemberQuota"
-                  type="number"
-                  value={defaultMemberQuota}
-                  onChange={(e) => setDefaultMemberQuota(Number(e.target.value))}
-                />
-              </div>
-              <Button variant="outline" onClick={handleSaveMemberDefaults} className="gap-2">
-                <Save className="w-4 h-4" />
-                保存默认配额
-              </Button>
+        <CardContent className="space-y-6">
+          {/* Switch and Default Quota Row */}
+          <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+            <div className="flex items-center gap-4">
+              <Switch
+                checked={memberQuotaEnabled}
+                onCheckedChange={setMemberQuotaEnabled}
+              />
+              <Label className="text-sm font-medium">启用成员配额管理</Label>
             </div>
+            {memberQuotaEnabled && (
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="defaultMemberQuota" className="text-sm text-muted-foreground whitespace-nowrap">
+                    默认配额
+                  </Label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">¥</span>
+                    <Input
+                      id="defaultMemberQuota"
+                      type="number"
+                      min={1}
+                      required
+                      value={defaultMemberQuota}
+                      onChange={(e) => setDefaultMemberQuota(Number(e.target.value))}
+                      className="w-32 pl-7"
+                    />
+                  </div>
+                  <span className="text-sm text-muted-foreground">/月</span>
+                </div>
+                <Button onClick={handleSaveMemberDefaults} size="sm" className="gap-2">
+                  <Save className="w-4 h-4" />
+                  保存
+                </Button>
+              </div>
+            )}
+          </div>
 
+          {/* Validation hints */}
+          {memberQuotaEnabled && departmentQuotaEnabled && defaultMemberQuota > defaultDepartmentQuota && (
+            <div className="flex items-center gap-2 text-sm text-destructive">
+              <AlertCircle className="w-4 h-4" />
+              成员默认配额不能超过部门默认配额 ¥{defaultDepartmentQuota.toLocaleString()}
+            </div>
+          )}
+          {memberQuotaEnabled && globalQuota.enabled && !departmentQuotaEnabled && defaultMemberQuota > globalQuota.monthlyBudget && (
+            <div className="flex items-center gap-2 text-sm text-destructive">
+              <AlertCircle className="w-4 h-4" />
+              成员默认配额不能超过全局配额 ¥{globalQuota.monthlyBudget.toLocaleString()}
+            </div>
+          )}
+
+          {/* Custom Member Quotas - only show when enabled */}
+          {memberQuotaEnabled && (
             <div className="border-t pt-4">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-4">
@@ -730,8 +846,8 @@ export function QuotaManagement() {
                 </div>
               )}
             </div>
-          </CardContent>
-        )}
+          )}
+        </CardContent>
       </Card>
 
       {/* Add Department Dialog */}
@@ -781,16 +897,26 @@ export function QuotaManagement() {
               <Input
                 id="newDeptQuota"
                 type="number"
+                min={1}
                 value={newDepartmentQuota}
                 onChange={(e) => setNewDepartmentQuota(Number(e.target.value))}
               />
+              {validateDepartmentQuota(newDepartmentQuota) && (
+                <p className="text-sm text-destructive flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3" />
+                  {validateDepartmentQuota(newDepartmentQuota)}
+                </p>
+              )}
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setAddDepartmentDialogOpen(false)}>
               取消
             </Button>
-            <Button onClick={handleAddDepartmentQuota} disabled={!selectedDepartmentId}>
+            <Button 
+              onClick={handleAddDepartmentQuota} 
+              disabled={!selectedDepartmentId || !!validateDepartmentQuota(newDepartmentQuota)}
+            >
               添加
             </Button>
           </DialogFooter>
@@ -907,16 +1033,26 @@ export function QuotaManagement() {
               <Input
                 id="newMemberQuota"
                 type="number"
+                min={1}
                 value={newMemberQuota}
                 onChange={(e) => setNewMemberQuota(Number(e.target.value))}
               />
+              {validateMemberQuota(newMemberQuota) && (
+                <p className="text-sm text-destructive flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3" />
+                  {validateMemberQuota(newMemberQuota)}
+                </p>
+              )}
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setAddMemberDialogOpen(false)}>
               取消
             </Button>
-            <Button onClick={handleAddMemberQuota} disabled={!selectedMemberId}>
+            <Button 
+              onClick={handleAddMemberQuota} 
+              disabled={!selectedMemberId || !!validateMemberQuota(newMemberQuota)}
+            >
               添加
             </Button>
           </DialogFooter>
