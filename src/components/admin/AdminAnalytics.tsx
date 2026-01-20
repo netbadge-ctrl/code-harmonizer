@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Building2, Users, Zap, TrendingUp, Activity, AlertTriangle, Clock, CalendarIcon, Search } from 'lucide-react';
+import { Building2, Users, Zap, TrendingUp, Activity, AlertTriangle, Clock, CalendarIcon, Check, ChevronsUpDown } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -34,12 +34,13 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
 
 const COLORS = ['hsl(213, 94%, 50%)', 'hsl(142, 76%, 36%)', 'hsl(38, 92%, 50%)', 'hsl(0, 84%, 60%)'];
 
@@ -102,7 +103,7 @@ export function AdminAnalytics() {
     to: new Date(),
   });
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>('');
-  const [customerSearchQuery, setCustomerSearchQuery] = useState('');
+  const [customerPopoverOpen, setCustomerPopoverOpen] = useState(false);
 
   const handleGlobalPresetChange = (preset: TimeRangePreset) => {
     setGlobalTimeRangePreset(preset);
@@ -141,16 +142,6 @@ export function AdminAnalytics() {
         break;
     }
   };
-
-  // 筛选客户列表
-  const filteredCustomers = useMemo(() => {
-    if (!customerSearchQuery) return mockCustomers;
-    const query = customerSearchQuery.toLowerCase();
-    return mockCustomers.filter(
-      c => c.companyName.toLowerCase().includes(query) || 
-           c.customerCode.toLowerCase().includes(query)
-    );
-  }, [customerSearchQuery]);
 
   const selectedCustomer = mockCustomers.find(c => c.id === selectedCustomerId);
 
@@ -600,6 +591,56 @@ export function AdminAnalytics() {
 
   const renderCustomerTab = () => (
     <div className="space-y-6">
+      {/* 客户筛选和时间范围选择 */}
+      <div className="flex flex-wrap items-center gap-4 mb-6">
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground">选择客户：</span>
+          <Popover open={customerPopoverOpen} onOpenChange={setCustomerPopoverOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                aria-expanded={customerPopoverOpen}
+                className="w-[280px] justify-between"
+              >
+                {selectedCustomer
+                  ? `${selectedCustomer.companyName} (${selectedCustomer.customerCode})`
+                  : "请选择客户"}
+                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[280px] p-0">
+              <Command>
+                <CommandInput placeholder="搜索客户名称或识别码..." />
+                <CommandList>
+                  <CommandEmpty>未找到客户</CommandEmpty>
+                  <CommandGroup>
+                    {mockCustomers.map((customer) => (
+                      <CommandItem
+                        key={customer.id}
+                        value={`${customer.companyName} ${customer.customerCode}`}
+                        onSelect={() => {
+                          setSelectedCustomerId(customer.id);
+                          setCustomerPopoverOpen(false);
+                        }}
+                      >
+                        <Check
+                          className={cn(
+                            "mr-2 h-4 w-4",
+                            selectedCustomerId === customer.id ? "opacity-100" : "opacity-0"
+                          )}
+                        />
+                        {customer.companyName} ({customer.customerCode})
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
+        </div>
+      </div>
+      
       {/* 时间范围选择 */}
       {renderTimeRangePicker(
         customerTimeRangePreset,
@@ -608,56 +649,9 @@ export function AdminAnalytics() {
         setCustomerDateRange,
         setCustomerTimeRangePreset
       )}
-      
-      {/* 客户筛选 */}
-      <div className="flex flex-wrap items-center gap-4">
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">选择客户：</span>
-          <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
-            <SelectTrigger className="w-[280px]">
-              <SelectValue placeholder="请选择客户" />
-            </SelectTrigger>
-            <SelectContent>
-              {filteredCustomers.map(customer => (
-                <SelectItem key={customer.id} value={customer.id}>
-                  {customer.companyName} ({customer.customerCode})
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="relative flex-1 max-w-xs">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="搜索客户名称或识别码..."
-            value={customerSearchQuery}
-            onChange={(e) => setCustomerSearchQuery(e.target.value)}
-            className="pl-9"
-          />
-        </div>
-      </div>
 
       {selectedCustomer ? (
         <>
-          {/* 客户信息卡片 */}
-          <Card className="enterprise-card">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Building2 className="w-6 h-6 text-primary" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold">{selectedCustomer.companyName}</h3>
-                  <p className="text-sm text-muted-foreground">客户识别码：{selectedCustomer.customerCode}</p>
-                  <p className="text-xs text-muted-foreground">
-                    版本：{selectedCustomer.subscription.plan === 'professional' ? '专业版' : '基础版'} | 
-                    活跃用户：{selectedCustomer.usage.activeUsers}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
           {/* 客户统计卡片 */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <Card className="enterprise-card">
