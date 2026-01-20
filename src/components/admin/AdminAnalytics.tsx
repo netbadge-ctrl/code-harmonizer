@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
-import { Building2, Users, Zap, TrendingUp, Activity, AlertTriangle, Clock, CalendarIcon } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { Building2, Users, Zap, TrendingUp, Activity, AlertTriangle, Clock, CalendarIcon, Search } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Input } from '@/components/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { mockCustomers } from '@/data/adminMockData';
-import { format, subDays, subHours, subMinutes } from 'date-fns';
+import { format, subDays, subHours, subMinutes, differenceInHours } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import {
@@ -21,6 +23,7 @@ import {
   Cell,
   LineChart,
   Line,
+  ComposedChart,
 } from 'recharts';
 import {
   Table,
@@ -30,6 +33,13 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 const COLORS = ['hsl(213, 94%, 50%)', 'hsl(142, 76%, 36%)', 'hsl(38, 92%, 50%)', 'hsl(0, 84%, 60%)'];
 
@@ -73,14 +83,29 @@ const latencyPerKTokenMinute = [
   { time: '10:09', inputLatency: 0.42, outputLatency: 1.87 },
 ];
 
+// 模拟用户列表
+const mockUsers = [
+  { id: 'user-1', name: '张明', email: 'zhangming@tech.com', customerId: 'cust-001', customerName: '科技创新有限公司' },
+  { id: 'user-2', name: '李华', email: 'lihua@tech.com', customerId: 'cust-001', customerName: '科技创新有限公司' },
+  { id: 'user-3', name: '王芳', email: 'wangfang@finance.com', customerId: 'cust-002', customerName: '金融数据服务公司' },
+  { id: 'user-4', name: '陈强', email: 'chenqiang@health.com', customerId: 'cust-003', customerName: '医疗健康科技' },
+  { id: 'user-5', name: '刘洋', email: 'liuyang@edu.com', customerId: 'cust-004', customerName: '教育科技集团' },
+  { id: 'user-6', name: '赵敏', email: 'zhaomin@manufacture.com', customerId: 'cust-005', customerName: '智能制造有限公司' },
+];
+
 type TimeRangePreset = '15min' | '4hours' | '24hours' | '7days' | 'custom';
 
 export function AdminAnalytics() {
+  const [activeTab, setActiveTab] = useState<'global' | 'user'>('global');
   const [timeRangePreset, setTimeRangePreset] = useState<TimeRangePreset>('7days');
   const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
     from: subDays(new Date(), 7),
     to: new Date(),
   });
+  
+  // User data tab state
+  const [selectedUserId, setSelectedUserId] = useState<string>('');
+  const [userSearchQuery, setUserSearchQuery] = useState('');
 
   const handlePresetChange = (preset: TimeRangePreset) => {
     setTimeRangePreset(preset);
@@ -100,6 +125,20 @@ export function AdminAnalytics() {
         break;
     }
   };
+
+  // 筛选用户列表
+  const filteredUsers = useMemo(() => {
+    if (!userSearchQuery) return mockUsers;
+    const query = userSearchQuery.toLowerCase();
+    return mockUsers.filter(
+      u => u.name.toLowerCase().includes(query) || 
+           u.email.toLowerCase().includes(query) ||
+           u.customerName.toLowerCase().includes(query)
+    );
+  }, [userSearchQuery]);
+
+  const selectedUser = mockUsers.find(u => u.id === selectedUserId);
+
   // 统计数据
   const stats = {
     totalCustomers: mockCustomers.length,
@@ -143,78 +182,114 @@ export function AdminAnalytics() {
   const avgInputLatency = (latencyPerKTokenMinute.reduce((sum, l) => sum + l.inputLatency, 0) / latencyPerKTokenMinute.length).toFixed(2);
   const avgOutputLatency = (latencyPerKTokenMinute.reduce((sum, l) => sum + l.outputLatency, 0) / latencyPerKTokenMinute.length).toFixed(2);
 
-  return (
-    <div className="space-y-6">
-      {/* 时间范围选择 */}
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-sm text-muted-foreground">查询时间：</span>
-        <div className="flex flex-wrap gap-2">
-          <Button
-            variant={timeRangePreset === '15min' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => handlePresetChange('15min')}
-          >
-            最近15分钟
-          </Button>
-          <Button
-            variant={timeRangePreset === '4hours' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => handlePresetChange('4hours')}
-          >
-            最近4小时
-          </Button>
-          <Button
-            variant={timeRangePreset === '24hours' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => handlePresetChange('24hours')}
-          >
-            最近24小时
-          </Button>
-          <Button
-            variant={timeRangePreset === '7days' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => handlePresetChange('7days')}
-          >
-            最近7天
-          </Button>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant={timeRangePreset === 'custom' ? 'default' : 'outline'}
-                size="sm"
-                className="min-w-[200px] justify-start"
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {timeRangePreset === 'custom' ? (
-                  <>
-                    {format(dateRange.from, 'yyyy/MM/dd', { locale: zhCN })} - {format(dateRange.to, 'yyyy/MM/dd', { locale: zhCN })}
-                  </>
-                ) : (
-                  '自定义日期'
-                )}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                mode="range"
-                selected={{ from: dateRange.from, to: dateRange.to }}
-                onSelect={(range) => {
-                  if (range?.from && range?.to) {
-                    setDateRange({ from: range.from, to: range.to });
-                    setTimeRangePreset('custom');
-                  } else if (range?.from) {
-                    setDateRange({ from: range.from, to: range.from });
-                    setTimeRangePreset('custom');
-                  }
-                }}
-                numberOfMonths={2}
-                className={cn("p-3 pointer-events-auto")}
-              />
-            </PopoverContent>
-          </Popover>
-        </div>
-      </div>
+  // 根据时间范围生成用户趋势数据
+  const generateUserTrendData = () => {
+    const hours = differenceInHours(dateRange.to, dateRange.from);
+    
+    if (hours <= 4) {
+      // 分钟级
+      return Array.from({ length: Math.min(60, hours * 60) }, (_, i) => ({
+        time: `${Math.floor(i / 60)}:${String(i % 60).padStart(2, '0')}`,
+        tokens: Math.floor(Math.random() * 50000) + 10000,
+        requests: Math.floor(Math.random() * 100) + 20,
+      }));
+    } else if (hours <= 96) {
+      // 小时级
+      return Array.from({ length: Math.min(hours, 96) }, (_, i) => ({
+        time: `${i}时`,
+        tokens: Math.floor(Math.random() * 500000) + 100000,
+        requests: Math.floor(Math.random() * 500) + 100,
+      }));
+    } else {
+      // 天级
+      const days = Math.ceil(hours / 24);
+      return Array.from({ length: Math.min(days, 30) }, (_, i) => {
+        const date = new Date(dateRange.from);
+        date.setDate(date.getDate() + i);
+        return {
+          time: date.toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit' }),
+          tokens: Math.floor(Math.random() * 2000000) + 500000,
+          requests: Math.floor(Math.random() * 2000) + 500,
+        };
+      });
+    }
+  };
 
+  const userTrendData = generateUserTrendData();
+
+  const renderTimeRangePicker = () => (
+    <div className="flex flex-wrap items-center gap-2">
+      <span className="text-sm text-muted-foreground">查询时间：</span>
+      <div className="flex flex-wrap gap-2">
+        <Button
+          variant={timeRangePreset === '15min' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => handlePresetChange('15min')}
+        >
+          最近15分钟
+        </Button>
+        <Button
+          variant={timeRangePreset === '4hours' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => handlePresetChange('4hours')}
+        >
+          最近4小时
+        </Button>
+        <Button
+          variant={timeRangePreset === '24hours' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => handlePresetChange('24hours')}
+        >
+          最近24小时
+        </Button>
+        <Button
+          variant={timeRangePreset === '7days' ? 'default' : 'outline'}
+          size="sm"
+          onClick={() => handlePresetChange('7days')}
+        >
+          最近7天
+        </Button>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant={timeRangePreset === 'custom' ? 'default' : 'outline'}
+              size="sm"
+              className="min-w-[200px] justify-start"
+            >
+              <CalendarIcon className="mr-2 h-4 w-4" />
+              {timeRangePreset === 'custom' ? (
+                <>
+                  {format(dateRange.from, 'yyyy/MM/dd', { locale: zhCN })} - {format(dateRange.to, 'yyyy/MM/dd', { locale: zhCN })}
+                </>
+              ) : (
+                '自定义日期'
+              )}
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-0" align="start">
+            <Calendar
+              mode="range"
+              selected={{ from: dateRange.from, to: dateRange.to }}
+              onSelect={(range) => {
+                if (range?.from && range?.to) {
+                  setDateRange({ from: range.from, to: range.to });
+                  setTimeRangePreset('custom');
+                } else if (range?.from) {
+                  setDateRange({ from: range.from, to: range.from });
+                  setTimeRangePreset('custom');
+                }
+              }}
+              numberOfMonths={2}
+              className={cn("p-3 pointer-events-auto")}
+            />
+          </PopoverContent>
+        </Popover>
+      </div>
+    </div>
+  );
+
+  const renderGlobalTab = () => (
+    <div className="space-y-6">
       {/* 统计卡片 */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card className="enterprise-card">
@@ -487,6 +562,234 @@ export function AdminAnalytics() {
           </Table>
         </CardContent>
       </Card>
+    </div>
+  );
+
+  const renderUserTab = () => (
+    <div className="space-y-6">
+      {/* 用户筛选 */}
+      <div className="flex flex-wrap items-center gap-4">
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground">选择用户：</span>
+          <Select value={selectedUserId} onValueChange={setSelectedUserId}>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder="请选择用户" />
+            </SelectTrigger>
+            <SelectContent>
+              {filteredUsers.map(user => (
+                <SelectItem key={user.id} value={user.id}>
+                  {user.name} ({user.customerName})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="relative flex-1 max-w-xs">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            placeholder="搜索用户名、邮箱或客户名..."
+            value={userSearchQuery}
+            onChange={(e) => setUserSearchQuery(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+      </div>
+
+      {selectedUser ? (
+        <>
+          {/* 用户信息卡片 */}
+          <Card className="enterprise-card">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Users className="w-6 h-6 text-primary" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold">{selectedUser.name}</h3>
+                  <p className="text-sm text-muted-foreground">{selectedUser.email}</p>
+                  <p className="text-xs text-muted-foreground">所属客户：{selectedUser.customerName}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* 用户统计卡片 */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <Card className="enterprise-card">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-warning/10">
+                    <Zap className="w-5 h-5 text-warning" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-foreground">{formatTokens(Math.floor(Math.random() * 5000000) + 1000000)}</p>
+                    <p className="text-xs text-muted-foreground">Token 消耗</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="enterprise-card">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-info/10">
+                    <Activity className="w-5 h-5 text-info" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-foreground">{(Math.floor(Math.random() * 3000) + 500).toLocaleString()}</p>
+                    <p className="text-xs text-muted-foreground">请求次数</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="enterprise-card">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-destructive/10">
+                    <AlertTriangle className="w-5 h-5 text-destructive" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-foreground">{Math.floor(Math.random() * 20)}</p>
+                    <p className="text-xs text-muted-foreground">错误次数</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="enterprise-card">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-secondary/50">
+                    <Clock className="w-5 h-5 text-secondary-foreground" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-foreground">{(Math.random() * 2 + 0.5).toFixed(2)}s</p>
+                    <p className="text-xs text-muted-foreground">平均响应时间</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* 用户使用趋势 */}
+          <Card className="enterprise-card">
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <TrendingUp className="w-4 h-4" />
+                使用趋势
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <ComposedChart data={userTrendData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis dataKey="time" tick={{ fontSize: 12 }} />
+                    <YAxis 
+                      yAxisId="left"
+                      tick={{ fontSize: 12 }}
+                      tickFormatter={(value) => formatTokens(value)}
+                    />
+                    <YAxis 
+                      yAxisId="right"
+                      orientation="right"
+                      tick={{ fontSize: 12 }}
+                    />
+                    <Tooltip 
+                      formatter={(value: number, name: string) => 
+                        name === 'Token 消耗' ? formatTokens(value) : value
+                      }
+                    />
+                    <Bar 
+                      yAxisId="right"
+                      dataKey="requests" 
+                      fill="hsl(142, 76%, 36%)"
+                      opacity={0.6}
+                      name="请求次数"
+                    />
+                    <Line 
+                      yAxisId="left"
+                      type="monotone" 
+                      dataKey="tokens" 
+                      stroke="hsl(213, 94%, 50%)" 
+                      strokeWidth={2}
+                      name="Token 消耗"
+                    />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* 模型使用分布 */}
+          <Card className="enterprise-card">
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Building2 className="w-4 h-4" />
+                模型使用分布
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={[
+                        { name: 'GPT-4 Turbo', value: 45 },
+                        { name: 'Claude 3.5', value: 30 },
+                        { name: 'GPT-4o', value: 15 },
+                        { name: '其他', value: 10 },
+                      ]}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={50}
+                      outerRadius={80}
+                      paddingAngle={2}
+                      dataKey="value"
+                      nameKey="name"
+                      label={({ name, value }) => `${name}: ${value}%`}
+                      labelLine={false}
+                    >
+                      {[0, 1, 2, 3].map((index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+        </>
+      ) : (
+        <Card className="enterprise-card">
+          <CardContent className="p-8 text-center">
+            <Users className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+            <p className="text-muted-foreground">请选择一个用户查看详细数据</p>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+
+  return (
+    <div className="space-y-6">
+      {/* 时间范围选择 */}
+      {renderTimeRangePicker()}
+
+      {/* Tab 切换 */}
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'global' | 'user')}>
+        <TabsList>
+          <TabsTrigger value="global">全局数据</TabsTrigger>
+          <TabsTrigger value="user">用户数据</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="global" className="mt-6">
+          {renderGlobalTab()}
+        </TabsContent>
+        
+        <TabsContent value="user" className="mt-6">
+          {renderUserTab()}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
