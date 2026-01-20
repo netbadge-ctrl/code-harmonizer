@@ -6,6 +6,7 @@ import { MemberManagement } from '@/components/members/MemberManagement';
 import { UsageDashboard } from '@/components/usage/UsageDashboard';
 import { CallDetails } from '@/components/usage/CallDetails';
 import { ModelManagement } from '@/components/models/ModelManagement';
+import { QuotaManagement } from '@/components/quota/QuotaManagement';
 import { IpWhitelistConfig } from '@/components/security/IpWhitelistConfig';
 import { SettingsView } from '@/components/settings/SettingsView';
 import { cn } from '@/lib/utils';
@@ -16,6 +17,7 @@ const viewConfig: Record<string, { title: string; description: string }> = {
   callDetails: { title: '调用明细', description: '查看 API 调用详细记录' },
   models: { title: '模型管理', description: '配置可用的 AI 模型' },
   members: { title: '组织成员管理', description: '管理组织成员及访问权限' },
+  quota: { title: '配额管理', description: '管理用户配额（按金额）' },
   security: { title: 'IP白名单', description: '管理 IP 白名单规则' },
   settings: { title: '系统设置', description: '系统配置' },
 };
@@ -36,6 +38,8 @@ export function Console() {
         return <ModelManagement />;
       case 'members':
         return <MemberManagement />;
+      case 'quota':
+        return <QuotaManagement />;
       case 'security':
         return <IpWhitelistConfig />;
       case 'settings':

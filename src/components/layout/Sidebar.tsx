@@ -11,7 +11,8 @@ import {
   ChevronDown,
   Sparkles,
   FileText,
-  Terminal
+  Terminal,
+  Wallet
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -42,6 +43,7 @@ const menuGroups = [
     items: [
       { id: 'models', label: '模型管理', icon: Boxes },
       { id: 'members', label: '组织成员管理', icon: Users },
+      { id: 'quota', label: '配额管理', icon: Wallet },
       { id: 'security', label: 'IP白名单', icon: Shield },
       { id: 'settings', label: '系统设置', icon: Settings },
     ],
