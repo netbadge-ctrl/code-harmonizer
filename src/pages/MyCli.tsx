@@ -57,33 +57,33 @@ const currentUser = {
   avatar: '',
 };
 
-// Model credits ratio - different models consume different credits per token
-const modelCreditsRatio: Record<string, { ratio: number; tier: 'standard' | 'premium' | 'basic' }> = {
-  'Claude 3.5 Sonnet': { ratio: 1.5, tier: 'premium' },
-  'GPT-4o': { ratio: 1.2, tier: 'premium' },
-  'DeepSeek V3': { ratio: 0.5, tier: 'basic' },
-  'Claude 3 Haiku': { ratio: 0.8, tier: 'standard' },
-  'GPT-4o Mini': { ratio: 0.6, tier: 'standard' },
+// Model price ratio - different models have different token prices (元/K tokens)
+const modelPriceRatio: Record<string, { ratio: number; tier: 'standard' | 'premium' | 'basic' }> = {
+  'Claude 3.5 Sonnet': { ratio: 0.12, tier: 'premium' },
+  'GPT-4o': { ratio: 0.10, tier: 'premium' },
+  'DeepSeek V3': { ratio: 0.02, tier: 'basic' },
+  'Claude 3 Haiku': { ratio: 0.04, tier: 'standard' },
+  'GPT-4o Mini': { ratio: 0.03, tier: 'standard' },
 };
 
 // Mock token usage data
 const tokenUsage = {
   todayTokens: 40000,
   monthlyTokens: 328450,
-  todayCredits: 52000, // credits consumed today
-  monthlyCredits: 426785, // credits consumed this month
-  totalCredits: 1000000, // total credits allocated
+  todayCost: 3.28, // cost consumed today (元)
+  monthlyCost: 26.82, // cost consumed this month (元)
+  totalQuota: 100.00, // total quota allocated (元)
   todayChange: -5.1, // percentage change from yesterday
   monthlyChange: 12.3, // percentage change from last month
 };
 
-// Helper function to calculate credits from tokens
-const calculateCredits = (tokens: number, model: string): number => {
-  const ratio = modelCreditsRatio[model]?.ratio || 1;
-  return Math.round(tokens * ratio);
+// Helper function to calculate cost from tokens (元)
+const calculateCost = (tokens: number, model: string): number => {
+  const ratio = modelPriceRatio[model]?.ratio || 0.05;
+  return Number(((tokens / 1000) * ratio).toFixed(4));
 };
 
-// Mock today's call details with credits
+// Mock today's call details with cost
 const todayCallDetails = [
   { id: '1', time: '10:32:15', model: 'Claude 3.5 Sonnet', inputTokens: 1250, outputTokens: 3420, totalTokens: 4670, task: '代码审查 - UserService.java' },
   { id: '2', time: '10:28:03', model: 'GPT-4o', inputTokens: 890, outputTokens: 2150, totalTokens: 3040, task: '单元测试生成 - AuthController' },
@@ -97,7 +97,7 @@ const todayCallDetails = [
   { id: '10', time: '08:38:29', model: 'Claude 3.5 Sonnet', inputTokens: 1100, outputTokens: 2900, totalTokens: 4000, task: '接口设计评审' },
 ].map(call => ({
   ...call,
-  credits: calculateCredits(call.totalTokens, call.model),
+  cost: calculateCost(call.totalTokens, call.model),
 }));
 
 // Mock skills data
@@ -251,30 +251,30 @@ export default function MyCli() {
 
   // Calculate totals from today's calls
   const todayTotalTokens = todayCallDetails.reduce((sum, call) => sum + call.totalTokens, 0);
-  const todayTotalCredits = todayCallDetails.reduce((sum, call) => sum + call.credits, 0);
-  const creditsUsagePercent = (tokenUsage.monthlyCredits / tokenUsage.totalCredits) * 100;
+  const todayTotalCost = todayCallDetails.reduce((sum, call) => sum + call.cost, 0);
+  const costUsagePercent = (tokenUsage.monthlyCost / tokenUsage.totalQuota) * 100;
 
   const getTierBadge = (model: string) => {
-    const tier = modelCreditsRatio[model]?.tier || 'standard';
-    const ratio = modelCreditsRatio[model]?.ratio || 1;
+    const tier = modelPriceRatio[model]?.tier || 'standard';
+    const price = modelPriceRatio[model]?.ratio || 0.05;
     switch (tier) {
       case 'premium':
         return (
           <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-600 border-amber-500/20">
             <Star className="w-3 h-3 mr-1" />
-            {ratio}x
+            ¥{price}/K
           </Badge>
         );
       case 'basic':
         return (
           <Badge variant="outline" className="text-xs bg-green-500/10 text-green-600 border-green-500/20">
-            {ratio}x
+            ¥{price}/K
           </Badge>
         );
       default:
         return (
           <Badge variant="outline" className="text-xs">
-            {ratio}x
+            ¥{price}/K
           </Badge>
         );
     }
@@ -324,28 +324,28 @@ export default function MyCli() {
               <CardHeader className="pb-2">
                 <CardTitle className="text-base flex items-center gap-2">
                   <Coins className="w-5 h-5 text-primary" />
-                  积分余额
+                  消费额度（元）
                 </CardTitle>
                 <CardDescription>
-                  不同模型消耗积分倍率不同：高级模型 1.2-1.5x，标准模型 0.6-0.8x，基础模型 0.5x
+                  不同模型单价不同：高级模型 ¥0.10-0.12/K，标准模型 ¥0.03-0.04/K，基础模型 ¥0.02/K
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="flex items-end justify-between">
                   <div>
                     <div className="text-3xl font-bold text-primary">
-                      {((tokenUsage.totalCredits - tokenUsage.monthlyCredits) / 1000).toFixed(1)}K
+                      ¥{(tokenUsage.totalQuota - tokenUsage.monthlyCost).toFixed(2)}
                     </div>
-                    <p className="text-sm text-muted-foreground">剩余积分</p>
+                    <p className="text-sm text-muted-foreground">剩余额度</p>
                   </div>
                   <div className="text-right">
-                    <div className="text-lg font-semibold">{(tokenUsage.totalCredits / 1000).toFixed(0)}K</div>
+                    <div className="text-lg font-semibold">¥{tokenUsage.totalQuota.toFixed(2)}</div>
                     <p className="text-xs text-muted-foreground">总配额</p>
                   </div>
                 </div>
-                <Progress value={creditsUsagePercent} className="h-2" />
+                <Progress value={costUsagePercent} className="h-2" />
                 <p className="text-xs text-muted-foreground">
-                  本月已使用 {creditsUsagePercent.toFixed(1)}%
+                  本月已使用 {costUsagePercent.toFixed(1)}%
                 </p>
               </CardContent>
             </Card>
@@ -371,13 +371,13 @@ export default function MyCli() {
                 <CardHeader className="pb-2">
                   <CardDescription className="flex items-center gap-2">
                     <Coins className="w-4 h-4" />
-                    今日积分
+                    今日消费（元）
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-amber-600">{(tokenUsage.todayCredits / 1000).toFixed(1)}K</div>
+                  <div className="text-2xl font-bold text-amber-600">¥{tokenUsage.todayCost.toFixed(2)}</div>
                   <p className="text-xs text-muted-foreground">
-                    消耗倍率 {(tokenUsage.todayCredits / tokenUsage.todayTokens).toFixed(2)}x
+                    平均单价 ¥{(tokenUsage.todayCost / (tokenUsage.todayTokens / 1000)).toFixed(4)}/K
                   </p>
                 </CardContent>
               </Card>
@@ -401,13 +401,13 @@ export default function MyCli() {
                 <CardHeader className="pb-2">
                   <CardDescription className="flex items-center gap-2">
                     <Coins className="w-4 h-4" />
-                    月累计积分
+                    月累计消费（元）
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-primary">{(tokenUsage.monthlyCredits / 1000).toFixed(1)}K</div>
+                  <div className="text-2xl font-bold text-primary">¥{tokenUsage.monthlyCost.toFixed(2)}</div>
                   <p className="text-xs text-muted-foreground">
-                    平均倍率 {(tokenUsage.monthlyCredits / tokenUsage.monthlyTokens).toFixed(2)}x
+                    平均单价 ¥{(tokenUsage.monthlyCost / (tokenUsage.monthlyTokens / 1000)).toFixed(4)}/K
                   </p>
                 </CardContent>
               </Card>
@@ -421,7 +421,7 @@ export default function MyCli() {
                   今日调用明细
                 </CardTitle>
                 <CardDescription>
-                  共 {todayCallDetails.length} 次调用，消耗 {(todayTotalTokens / 1000).toFixed(1)}K tokens / {(todayTotalCredits / 1000).toFixed(1)}K 积分
+                  共 {todayCallDetails.length} 次调用，消耗 {(todayTotalTokens / 1000).toFixed(1)}K tokens / ¥{todayTotalCost.toFixed(2)}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -430,11 +430,11 @@ export default function MyCli() {
                     <TableRow>
                       <TableHead className="w-[100px]">时间</TableHead>
                       <TableHead>模型</TableHead>
-                      <TableHead className="text-center">倍率</TableHead>
+                      <TableHead className="text-center">单价</TableHead>
                       <TableHead className="text-right">输入</TableHead>
                       <TableHead className="text-right">输出</TableHead>
                       <TableHead className="text-right">Token</TableHead>
-                      <TableHead className="text-right">积分</TableHead>
+                      <TableHead className="text-right">费用（元）</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -452,7 +452,7 @@ export default function MyCli() {
                         <TableCell className="text-right text-muted-foreground">{call.inputTokens.toLocaleString()}</TableCell>
                         <TableCell className="text-right text-muted-foreground">{call.outputTokens.toLocaleString()}</TableCell>
                         <TableCell className="text-right">{call.totalTokens.toLocaleString()}</TableCell>
-                        <TableCell className="text-right font-medium text-amber-600">{call.credits.toLocaleString()}</TableCell>
+                        <TableCell className="text-right font-medium text-amber-600">¥{call.cost.toFixed(4)}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
