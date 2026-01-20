@@ -83,61 +83,76 @@ const latencyPerKTokenMinute = [
   { time: '10:09', inputLatency: 0.42, outputLatency: 1.87 },
 ];
 
-// 模拟用户列表
-const mockUsers = [
-  { id: 'user-1', name: '张明', email: 'zhangming@tech.com', customerId: 'cust-001', customerName: '科技创新有限公司' },
-  { id: 'user-2', name: '李华', email: 'lihua@tech.com', customerId: 'cust-001', customerName: '科技创新有限公司' },
-  { id: 'user-3', name: '王芳', email: 'wangfang@finance.com', customerId: 'cust-002', customerName: '金融数据服务公司' },
-  { id: 'user-4', name: '陈强', email: 'chenqiang@health.com', customerId: 'cust-003', customerName: '医疗健康科技' },
-  { id: 'user-5', name: '刘洋', email: 'liuyang@edu.com', customerId: 'cust-004', customerName: '教育科技集团' },
-  { id: 'user-6', name: '赵敏', email: 'zhaomin@manufacture.com', customerId: 'cust-005', customerName: '智能制造有限公司' },
-];
-
 type TimeRangePreset = '15min' | '4hours' | '24hours' | '7days' | 'custom';
 
 export function AdminAnalytics() {
-  const [activeTab, setActiveTab] = useState<'global' | 'user'>('global');
-  const [timeRangePreset, setTimeRangePreset] = useState<TimeRangePreset>('7days');
-  const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
+  const [activeTab, setActiveTab] = useState<'global' | 'customer'>('global');
+  
+  // Global tab state
+  const [globalTimeRangePreset, setGlobalTimeRangePreset] = useState<TimeRangePreset>('7days');
+  const [globalDateRange, setGlobalDateRange] = useState<{ from: Date; to: Date }>({
     from: subDays(new Date(), 7),
     to: new Date(),
   });
   
-  // User data tab state
-  const [selectedUserId, setSelectedUserId] = useState<string>('');
-  const [userSearchQuery, setUserSearchQuery] = useState('');
+  // Customer data tab state
+  const [customerTimeRangePreset, setCustomerTimeRangePreset] = useState<TimeRangePreset>('7days');
+  const [customerDateRange, setCustomerDateRange] = useState<{ from: Date; to: Date }>({
+    from: subDays(new Date(), 7),
+    to: new Date(),
+  });
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string>('');
+  const [customerSearchQuery, setCustomerSearchQuery] = useState('');
 
-  const handlePresetChange = (preset: TimeRangePreset) => {
-    setTimeRangePreset(preset);
+  const handleGlobalPresetChange = (preset: TimeRangePreset) => {
+    setGlobalTimeRangePreset(preset);
     const now = new Date();
     switch (preset) {
       case '15min':
-        setDateRange({ from: subMinutes(now, 15), to: now });
+        setGlobalDateRange({ from: subMinutes(now, 15), to: now });
         break;
       case '4hours':
-        setDateRange({ from: subHours(now, 4), to: now });
+        setGlobalDateRange({ from: subHours(now, 4), to: now });
         break;
       case '24hours':
-        setDateRange({ from: subHours(now, 24), to: now });
+        setGlobalDateRange({ from: subHours(now, 24), to: now });
         break;
       case '7days':
-        setDateRange({ from: subDays(now, 7), to: now });
+        setGlobalDateRange({ from: subDays(now, 7), to: now });
         break;
     }
   };
 
-  // 筛选用户列表
-  const filteredUsers = useMemo(() => {
-    if (!userSearchQuery) return mockUsers;
-    const query = userSearchQuery.toLowerCase();
-    return mockUsers.filter(
-      u => u.name.toLowerCase().includes(query) || 
-           u.email.toLowerCase().includes(query) ||
-           u.customerName.toLowerCase().includes(query)
-    );
-  }, [userSearchQuery]);
+  const handleCustomerPresetChange = (preset: TimeRangePreset) => {
+    setCustomerTimeRangePreset(preset);
+    const now = new Date();
+    switch (preset) {
+      case '15min':
+        setCustomerDateRange({ from: subMinutes(now, 15), to: now });
+        break;
+      case '4hours':
+        setCustomerDateRange({ from: subHours(now, 4), to: now });
+        break;
+      case '24hours':
+        setCustomerDateRange({ from: subHours(now, 24), to: now });
+        break;
+      case '7days':
+        setCustomerDateRange({ from: subDays(now, 7), to: now });
+        break;
+    }
+  };
 
-  const selectedUser = mockUsers.find(u => u.id === selectedUserId);
+  // 筛选客户列表
+  const filteredCustomers = useMemo(() => {
+    if (!customerSearchQuery) return mockCustomers;
+    const query = customerSearchQuery.toLowerCase();
+    return mockCustomers.filter(
+      c => c.companyName.toLowerCase().includes(query) || 
+           c.customerCode.toLowerCase().includes(query)
+    );
+  }, [customerSearchQuery]);
+
+  const selectedCustomer = mockCustomers.find(c => c.id === selectedCustomerId);
 
   // 统计数据
   const stats = {
@@ -182,9 +197,9 @@ export function AdminAnalytics() {
   const avgInputLatency = (latencyPerKTokenMinute.reduce((sum, l) => sum + l.inputLatency, 0) / latencyPerKTokenMinute.length).toFixed(2);
   const avgOutputLatency = (latencyPerKTokenMinute.reduce((sum, l) => sum + l.outputLatency, 0) / latencyPerKTokenMinute.length).toFixed(2);
 
-  // 根据时间范围生成用户趋势数据
-  const generateUserTrendData = () => {
-    const hours = differenceInHours(dateRange.to, dateRange.from);
+  // 根据时间范围生成客户趋势数据
+  const generateCustomerTrendData = () => {
+    const hours = differenceInHours(customerDateRange.to, customerDateRange.from);
     
     if (hours <= 4) {
       // 分钟级
@@ -192,6 +207,7 @@ export function AdminAnalytics() {
         time: `${Math.floor(i / 60)}:${String(i % 60).padStart(2, '0')}`,
         tokens: Math.floor(Math.random() * 50000) + 10000,
         requests: Math.floor(Math.random() * 100) + 20,
+        activeUsers: Math.floor(Math.random() * 10) + 1,
       }));
     } else if (hours <= 96) {
       // 小时级
@@ -199,65 +215,73 @@ export function AdminAnalytics() {
         time: `${i}时`,
         tokens: Math.floor(Math.random() * 500000) + 100000,
         requests: Math.floor(Math.random() * 500) + 100,
+        activeUsers: Math.floor(Math.random() * 30) + 5,
       }));
     } else {
       // 天级
       const days = Math.ceil(hours / 24);
       return Array.from({ length: Math.min(days, 30) }, (_, i) => {
-        const date = new Date(dateRange.from);
+        const date = new Date(customerDateRange.from);
         date.setDate(date.getDate() + i);
         return {
           time: date.toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit' }),
           tokens: Math.floor(Math.random() * 2000000) + 500000,
           requests: Math.floor(Math.random() * 2000) + 500,
+          activeUsers: Math.floor(Math.random() * 50) + 10,
         };
       });
     }
   };
 
-  const userTrendData = generateUserTrendData();
+  const customerTrendData = generateCustomerTrendData();
 
-  const renderTimeRangePicker = () => (
-    <div className="flex flex-wrap items-center gap-2">
+  const renderTimeRangePicker = (
+    preset: TimeRangePreset,
+    dateRange: { from: Date; to: Date },
+    onPresetChange: (preset: TimeRangePreset) => void,
+    onDateRangeChange: (range: { from: Date; to: Date }) => void,
+    onPresetSet: (preset: TimeRangePreset) => void
+  ) => (
+    <div className="flex flex-wrap items-center gap-2 mb-6">
       <span className="text-sm text-muted-foreground">查询时间：</span>
       <div className="flex flex-wrap gap-2">
         <Button
-          variant={timeRangePreset === '15min' ? 'default' : 'outline'}
+          variant={preset === '15min' ? 'default' : 'outline'}
           size="sm"
-          onClick={() => handlePresetChange('15min')}
+          onClick={() => onPresetChange('15min')}
         >
           最近15分钟
         </Button>
         <Button
-          variant={timeRangePreset === '4hours' ? 'default' : 'outline'}
+          variant={preset === '4hours' ? 'default' : 'outline'}
           size="sm"
-          onClick={() => handlePresetChange('4hours')}
+          onClick={() => onPresetChange('4hours')}
         >
           最近4小时
         </Button>
         <Button
-          variant={timeRangePreset === '24hours' ? 'default' : 'outline'}
+          variant={preset === '24hours' ? 'default' : 'outline'}
           size="sm"
-          onClick={() => handlePresetChange('24hours')}
+          onClick={() => onPresetChange('24hours')}
         >
           最近24小时
         </Button>
         <Button
-          variant={timeRangePreset === '7days' ? 'default' : 'outline'}
+          variant={preset === '7days' ? 'default' : 'outline'}
           size="sm"
-          onClick={() => handlePresetChange('7days')}
+          onClick={() => onPresetChange('7days')}
         >
           最近7天
         </Button>
         <Popover>
           <PopoverTrigger asChild>
             <Button
-              variant={timeRangePreset === 'custom' ? 'default' : 'outline'}
+              variant={preset === 'custom' ? 'default' : 'outline'}
               size="sm"
               className="min-w-[200px] justify-start"
             >
               <CalendarIcon className="mr-2 h-4 w-4" />
-              {timeRangePreset === 'custom' ? (
+              {preset === 'custom' ? (
                 <>
                   {format(dateRange.from, 'yyyy/MM/dd', { locale: zhCN })} - {format(dateRange.to, 'yyyy/MM/dd', { locale: zhCN })}
                 </>
@@ -272,11 +296,11 @@ export function AdminAnalytics() {
               selected={{ from: dateRange.from, to: dateRange.to }}
               onSelect={(range) => {
                 if (range?.from && range?.to) {
-                  setDateRange({ from: range.from, to: range.to });
-                  setTimeRangePreset('custom');
+                  onDateRangeChange({ from: range.from, to: range.to });
+                  onPresetSet('custom');
                 } else if (range?.from) {
-                  setDateRange({ from: range.from, to: range.from });
-                  setTimeRangePreset('custom');
+                  onDateRangeChange({ from: range.from, to: range.from });
+                  onPresetSet('custom');
                 }
               }}
               numberOfMonths={2}
@@ -290,6 +314,15 @@ export function AdminAnalytics() {
 
   const renderGlobalTab = () => (
     <div className="space-y-6">
+      {/* 时间范围选择 */}
+      {renderTimeRangePicker(
+        globalTimeRangePreset,
+        globalDateRange,
+        handleGlobalPresetChange,
+        setGlobalDateRange,
+        setGlobalTimeRangePreset
+      )}
+      
       {/* 统计卡片 */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card className="enterprise-card">
@@ -565,20 +598,29 @@ export function AdminAnalytics() {
     </div>
   );
 
-  const renderUserTab = () => (
+  const renderCustomerTab = () => (
     <div className="space-y-6">
-      {/* 用户筛选 */}
+      {/* 时间范围选择 */}
+      {renderTimeRangePicker(
+        customerTimeRangePreset,
+        customerDateRange,
+        handleCustomerPresetChange,
+        setCustomerDateRange,
+        setCustomerTimeRangePreset
+      )}
+      
+      {/* 客户筛选 */}
       <div className="flex flex-wrap items-center gap-4">
         <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">选择用户：</span>
-          <Select value={selectedUserId} onValueChange={setSelectedUserId}>
-            <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder="请选择用户" />
+          <span className="text-sm text-muted-foreground">选择客户：</span>
+          <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
+            <SelectTrigger className="w-[280px]">
+              <SelectValue placeholder="请选择客户" />
             </SelectTrigger>
             <SelectContent>
-              {filteredUsers.map(user => (
-                <SelectItem key={user.id} value={user.id}>
-                  {user.name} ({user.customerName})
+              {filteredCustomers.map(customer => (
+                <SelectItem key={customer.id} value={customer.id}>
+                  {customer.companyName} ({customer.customerCode})
                 </SelectItem>
               ))}
             </SelectContent>
@@ -587,33 +629,36 @@ export function AdminAnalytics() {
         <div className="relative flex-1 max-w-xs">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
-            placeholder="搜索用户名、邮箱或客户名..."
-            value={userSearchQuery}
-            onChange={(e) => setUserSearchQuery(e.target.value)}
+            placeholder="搜索客户名称或识别码..."
+            value={customerSearchQuery}
+            onChange={(e) => setCustomerSearchQuery(e.target.value)}
             className="pl-9"
           />
         </div>
       </div>
 
-      {selectedUser ? (
+      {selectedCustomer ? (
         <>
-          {/* 用户信息卡片 */}
+          {/* 客户信息卡片 */}
           <Card className="enterprise-card">
             <CardContent className="p-4">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Users className="w-6 h-6 text-primary" />
+                  <Building2 className="w-6 h-6 text-primary" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold">{selectedUser.name}</h3>
-                  <p className="text-sm text-muted-foreground">{selectedUser.email}</p>
-                  <p className="text-xs text-muted-foreground">所属客户：{selectedUser.customerName}</p>
+                  <h3 className="text-lg font-semibold">{selectedCustomer.companyName}</h3>
+                  <p className="text-sm text-muted-foreground">客户识别码：{selectedCustomer.customerCode}</p>
+                  <p className="text-xs text-muted-foreground">
+                    版本：{selectedCustomer.subscription.plan === 'professional' ? '专业版' : '基础版'} | 
+                    活跃用户：{selectedCustomer.usage.activeUsers}
+                  </p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* 用户统计卡片 */}
+          {/* 客户统计卡片 */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <Card className="enterprise-card">
               <CardContent className="p-4">
@@ -622,7 +667,7 @@ export function AdminAnalytics() {
                     <Zap className="w-5 h-5 text-warning" />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-foreground">{formatTokens(Math.floor(Math.random() * 5000000) + 1000000)}</p>
+                    <p className="text-2xl font-bold text-foreground">{formatTokens(selectedCustomer.usage.monthlyTokens)}</p>
                     <p className="text-xs text-muted-foreground">Token 消耗</p>
                   </div>
                 </div>
@@ -635,7 +680,7 @@ export function AdminAnalytics() {
                     <Activity className="w-5 h-5 text-info" />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-foreground">{(Math.floor(Math.random() * 3000) + 500).toLocaleString()}</p>
+                    <p className="text-2xl font-bold text-foreground">{selectedCustomer.usage.monthlyRequests.toLocaleString()}</p>
                     <p className="text-xs text-muted-foreground">请求次数</p>
                   </div>
                 </div>
@@ -644,12 +689,12 @@ export function AdminAnalytics() {
             <Card className="enterprise-card">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-destructive/10">
-                    <AlertTriangle className="w-5 h-5 text-destructive" />
+                  <div className="p-2 rounded-lg bg-success/10">
+                    <Users className="w-5 h-5 text-success" />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-foreground">{Math.floor(Math.random() * 20)}</p>
-                    <p className="text-xs text-muted-foreground">错误次数</p>
+                    <p className="text-2xl font-bold text-foreground">{selectedCustomer.usage.activeUsers}</p>
+                    <p className="text-xs text-muted-foreground">活跃用户</p>
                   </div>
                 </div>
               </CardContent>
@@ -669,7 +714,7 @@ export function AdminAnalytics() {
             </Card>
           </div>
 
-          {/* 用户使用趋势 */}
+          {/* 客户使用趋势 */}
           <Card className="enterprise-card">
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2">
@@ -680,7 +725,7 @@ export function AdminAnalytics() {
             <CardContent>
               <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
-                  <ComposedChart data={userTrendData}>
+                  <ComposedChart data={customerTrendData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis dataKey="time" tick={{ fontSize: 12 }} />
                     <YAxis 
@@ -700,10 +745,10 @@ export function AdminAnalytics() {
                     />
                     <Bar 
                       yAxisId="right"
-                      dataKey="requests" 
-                      fill="hsl(142, 76%, 36%)"
+                      dataKey="activeUsers" 
+                      fill="hsl(38, 92%, 50%)"
                       opacity={0.6}
-                      name="请求次数"
+                      name="活跃用户"
                     />
                     <Line 
                       yAxisId="left"
@@ -762,8 +807,8 @@ export function AdminAnalytics() {
       ) : (
         <Card className="enterprise-card">
           <CardContent className="p-8 text-center">
-            <Users className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-            <p className="text-muted-foreground">请选择一个用户查看详细数据</p>
+            <Building2 className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+            <p className="text-muted-foreground">请选择一个客户查看详细数据</p>
           </CardContent>
         </Card>
       )}
@@ -772,22 +817,19 @@ export function AdminAnalytics() {
 
   return (
     <div className="space-y-6">
-      {/* 时间范围选择 */}
-      {renderTimeRangePicker()}
-
       {/* Tab 切换 */}
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'global' | 'user')}>
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'global' | 'customer')}>
         <TabsList>
           <TabsTrigger value="global">全局数据</TabsTrigger>
-          <TabsTrigger value="user">用户数据</TabsTrigger>
+          <TabsTrigger value="customer">客户数据</TabsTrigger>
         </TabsList>
         
         <TabsContent value="global" className="mt-6">
           {renderGlobalTab()}
         </TabsContent>
         
-        <TabsContent value="user" className="mt-6">
-          {renderUserTab()}
+        <TabsContent value="customer" className="mt-6">
+          {renderCustomerTab()}
         </TabsContent>
       </Tabs>
     </div>
