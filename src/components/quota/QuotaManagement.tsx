@@ -12,18 +12,119 @@ import { Progress } from '@/components/ui/progress';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { toast } from 'sonner';
-import { Save, Settings2, Building2, User, Edit, AlertCircle, Plus, Trash2, Check, ChevronsUpDown } from 'lucide-react';
+import { Save, Settings2, Building2, User, Edit, AlertCircle, Plus, Trash2, Check, ChevronsUpDown, ChevronRight, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-// Mock data - all departments/members available
-const allDepartments = [
-  { id: '1', name: '技术研发部', memberCount: 25 },
-  { id: '2', name: '产品设计部', memberCount: 12 },
-  { id: '3', name: '市场运营部', memberCount: 8 },
-  { id: '4', name: '人力资源部', memberCount: 5 },
-  { id: '5', name: '财务部', memberCount: 6 },
-  { id: '6', name: '行政部', memberCount: 4 },
+// Hierarchical organization structure (3 levels)
+interface DepartmentNode {
+  id: string;
+  name: string;
+  memberCount: number;
+  level: 1 | 2 | 3;
+  parentId?: string;
+  children?: DepartmentNode[];
+}
+
+const organizationTree: DepartmentNode[] = [
+  {
+    id: '1',
+    name: '技术中心',
+    memberCount: 45,
+    level: 1,
+    children: [
+      {
+        id: '1-1',
+        name: '研发一部',
+        memberCount: 20,
+        level: 2,
+        parentId: '1',
+        children: [
+          { id: '1-1-1', name: '前端组', memberCount: 8, level: 3, parentId: '1-1' },
+          { id: '1-1-2', name: '后端组', memberCount: 7, level: 3, parentId: '1-1' },
+          { id: '1-1-3', name: '测试组', memberCount: 5, level: 3, parentId: '1-1' },
+        ]
+      },
+      {
+        id: '1-2',
+        name: '研发二部',
+        memberCount: 15,
+        level: 2,
+        parentId: '1',
+        children: [
+          { id: '1-2-1', name: 'AI算法组', memberCount: 8, level: 3, parentId: '1-2' },
+          { id: '1-2-2', name: '数据组', memberCount: 7, level: 3, parentId: '1-2' },
+        ]
+      },
+      {
+        id: '1-3',
+        name: '架构部',
+        memberCount: 10,
+        level: 2,
+        parentId: '1',
+      }
+    ]
+  },
+  {
+    id: '2',
+    name: '产品中心',
+    memberCount: 20,
+    level: 1,
+    children: [
+      {
+        id: '2-1',
+        name: '产品设计部',
+        memberCount: 12,
+        level: 2,
+        parentId: '2',
+        children: [
+          { id: '2-1-1', name: 'UI设计组', memberCount: 6, level: 3, parentId: '2-1' },
+          { id: '2-1-2', name: 'UX研究组', memberCount: 6, level: 3, parentId: '2-1' },
+        ]
+      },
+      {
+        id: '2-2',
+        name: '产品运营部',
+        memberCount: 8,
+        level: 2,
+        parentId: '2',
+      }
+    ]
+  },
+  {
+    id: '3',
+    name: '市场中心',
+    memberCount: 15,
+    level: 1,
+    children: [
+      { id: '3-1', name: '市场推广部', memberCount: 8, level: 2, parentId: '3' },
+      { id: '3-2', name: '品牌部', memberCount: 7, level: 2, parentId: '3' },
+    ]
+  },
+  {
+    id: '4',
+    name: '职能中心',
+    memberCount: 18,
+    level: 1,
+    children: [
+      { id: '4-1', name: '人力资源部', memberCount: 6, level: 2, parentId: '4' },
+      { id: '4-2', name: '财务部', memberCount: 8, level: 2, parentId: '4' },
+      { id: '4-3', name: '行政部', memberCount: 4, level: 2, parentId: '4' },
+    ]
+  },
 ];
+
+// Flatten the tree for easier lookup
+const flattenDepartments = (nodes: DepartmentNode[], result: DepartmentNode[] = []): DepartmentNode[] => {
+  nodes.forEach(node => {
+    result.push(node);
+    if (node.children) {
+      flattenDepartments(node.children, result);
+    }
+  });
+  return result;
+};
+
+const allDepartmentsFlat = flattenDepartments(organizationTree);
 
 const allMembers = [
   { id: '1', name: '张三', email: 'zhangsan@company.com', department: '技术研发部' },
@@ -51,6 +152,111 @@ interface MemberQuota {
   used: number;
 }
 
+// Department Tree Selector Component for hierarchical selection
+interface DepartmentTreeSelectorProps {
+  nodes: DepartmentNode[];
+  selectedId: string;
+  onSelect: (id: string) => void;
+  expandedNodes: Record<string, boolean>;
+  onToggleExpand: (id: string) => void;
+  configuredIds: string[];
+  level?: number;
+}
+
+function DepartmentTreeSelector({ 
+  nodes, 
+  selectedId, 
+  onSelect, 
+  expandedNodes, 
+  onToggleExpand,
+  configuredIds,
+  level = 0 
+}: DepartmentTreeSelectorProps) {
+  const getLevelBadge = (nodeLevel: 1 | 2 | 3) => {
+    const badges: Record<number, { label: string; className: string }> = {
+      1: { label: '一级', className: 'bg-primary/10 text-primary' },
+      2: { label: '二级', className: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
+      3: { label: '三级', className: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' },
+    };
+    return badges[nodeLevel];
+  };
+
+  return (
+    <div className="space-y-0.5">
+      {nodes.map((node) => {
+        const hasChildren = node.children && node.children.length > 0;
+        const isExpanded = expandedNodes[node.id];
+        const isConfigured = configuredIds.includes(node.id);
+        const isSelected = selectedId === node.id;
+        const badge = getLevelBadge(node.level);
+
+        return (
+          <div key={node.id}>
+            <div 
+              className={cn(
+                "flex items-center gap-2 py-1.5 px-2 rounded-md cursor-pointer hover:bg-muted transition-colors",
+                isSelected && "bg-primary/10 ring-1 ring-primary",
+                isConfigured && "opacity-50 cursor-not-allowed"
+              )}
+              style={{ paddingLeft: `${level * 16 + 8}px` }}
+            >
+              {hasChildren ? (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onToggleExpand(node.id);
+                  }}
+                  className="p-0.5 hover:bg-muted-foreground/20 rounded"
+                >
+                  {isExpanded ? (
+                    <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                  ) : (
+                    <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                  )}
+                </button>
+              ) : (
+                <div className="w-5" />
+              )}
+              
+              <div 
+                className="flex-1 flex items-center gap-2"
+                onClick={() => !isConfigured && onSelect(node.id)}
+              >
+                <Building2 className="w-4 h-4 text-muted-foreground" />
+                <span className={cn("text-sm", isSelected && "font-medium")}>
+                  {node.name}
+                </span>
+                <Badge variant="outline" className={cn("text-xs px-1.5 py-0", badge.className)}>
+                  {badge.label}
+                </Badge>
+                <span className="text-xs text-muted-foreground ml-auto">
+                  {node.memberCount}人
+                </span>
+                {isConfigured && (
+                  <Badge variant="secondary" className="text-xs">已配置</Badge>
+                )}
+              </div>
+            </div>
+            
+            {hasChildren && isExpanded && (
+              <DepartmentTreeSelector
+                nodes={node.children!}
+                selectedId={selectedId}
+                onSelect={onSelect}
+                expandedNodes={expandedNodes}
+                onToggleExpand={onToggleExpand}
+                configuredIds={configuredIds}
+                level={level + 1}
+              />
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export function QuotaManagement() {
   // Global quota state
   const [globalQuota, setGlobalQuota] = useState({
@@ -63,7 +269,7 @@ export function QuotaManagement() {
   const [departmentQuotaEnabled, setDepartmentQuotaEnabled] = useState(true);
   const [defaultDepartmentQuota, setDefaultDepartmentQuota] = useState(5000);
   const [customDepartments, setCustomDepartments] = useState<DepartmentQuota[]>([
-    { id: '1', name: '技术研发部', memberCount: 25, quota: 8000, used: 5200 },
+    { id: '1-1-1', name: '前端组', memberCount: 8, quota: 8000, used: 5200 },
   ]);
   const [editingDepartment, setEditingDepartment] = useState<DepartmentQuota | null>(null);
   const [departmentDialogOpen, setDepartmentDialogOpen] = useState(false);
@@ -71,6 +277,7 @@ export function QuotaManagement() {
   const [selectedDepartmentId, setSelectedDepartmentId] = useState('');
   const [newDepartmentQuota, setNewDepartmentQuota] = useState(5000);
   const [departmentPopoverOpen, setDepartmentPopoverOpen] = useState(false);
+  const [expandedNodes, setExpandedNodes] = useState<Record<string, boolean>>({});
   
   // Member quota state
   const [memberQuotaEnabled, setMemberQuotaEnabled] = useState(true);
@@ -111,7 +318,7 @@ export function QuotaManagement() {
   };
 
   const handleAddDepartmentQuota = () => {
-    const dept = allDepartments.find(d => d.id === selectedDepartmentId);
+    const dept = allDepartmentsFlat.find(d => d.id === selectedDepartmentId);
     if (dept) {
       setCustomDepartments(prev => [...prev, {
         id: dept.id,
@@ -123,6 +330,7 @@ export function QuotaManagement() {
       setAddDepartmentDialogOpen(false);
       setSelectedDepartmentId('');
       setNewDepartmentQuota(5000);
+      setExpandedNodes({});
       toast.success('已添加部门自定义配额');
     }
   };
@@ -173,9 +381,24 @@ export function QuotaManagement() {
   );
 
   // Get available departments/members (not already configured)
-  const availableDepartments = allDepartments.filter(
+  const availableDepartmentsFlat = allDepartmentsFlat.filter(
     d => !customDepartments.some(cd => cd.id === d.id)
   );
+
+  // Filter organization tree to only show departments not yet configured
+  const filterAvailableTree = (nodes: DepartmentNode[]): DepartmentNode[] => {
+    return nodes.map(node => {
+      const isConfigured = customDepartments.some(cd => cd.id === node.id);
+      const filteredChildren = node.children ? filterAvailableTree(node.children) : undefined;
+      return { ...node, children: filteredChildren };
+    }).filter(node => {
+      const isConfigured = customDepartments.some(cd => cd.id === node.id);
+      const hasAvailableChildren = node.children && node.children.length > 0;
+      return !isConfigured || hasAvailableChildren;
+    });
+  };
+
+  const availableOrganizationTree = filterAvailableTree(organizationTree);
 
   const availableMembers = allMembers.filter(
     m => !customMembers.some(cm => cm.id === m.id)
@@ -304,7 +527,7 @@ export function QuotaManagement() {
                   variant="outline"
                   size="sm"
                   onClick={() => setAddDepartmentDialogOpen(true)}
-                  disabled={availableDepartments.length === 0}
+                  disabled={availableDepartmentsFlat.length === 0}
                   className="gap-2"
                 >
                   <Plus className="w-4 h-4" />
@@ -512,61 +735,45 @@ export function QuotaManagement() {
       </Card>
 
       {/* Add Department Dialog */}
-      <Dialog open={addDepartmentDialogOpen} onOpenChange={setAddDepartmentDialogOpen}>
-        <DialogContent>
+      <Dialog open={addDepartmentDialogOpen} onOpenChange={(open) => {
+        setAddDepartmentDialogOpen(open);
+        if (!open) {
+          setSelectedDepartmentId('');
+          setExpandedNodes({});
+        }
+      }}>
+        <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>添加部门自定义配额</DialogTitle>
             <DialogDescription>
-              选择部门并设置自定义月度配额
+              选择部门并设置自定义月度配额（支持1级、2级、3级组织）
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label>选择部门</Label>
-              <Popover open={departmentPopoverOpen} onOpenChange={setDepartmentPopoverOpen}>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    role="combobox"
-                    aria-expanded={departmentPopoverOpen}
-                    className="w-full justify-between"
-                  >
-                    {selectedDepartmentId
-                      ? availableDepartments.find(d => d.id === selectedDepartmentId)?.name
-                      : "选择部门..."}
-                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-full p-0">
-                  <Command>
-                    <CommandInput placeholder="搜索部门..." />
-                    <CommandList>
-                      <CommandEmpty>未找到部门</CommandEmpty>
-                      <CommandGroup>
-                        {availableDepartments.map((dept) => (
-                          <CommandItem
-                            key={dept.id}
-                            value={dept.name}
-                            onSelect={() => {
-                              setSelectedDepartmentId(dept.id);
-                              setDepartmentPopoverOpen(false);
-                            }}
-                          >
-                            <Check
-                              className={cn(
-                                "mr-2 h-4 w-4",
-                                selectedDepartmentId === dept.id ? "opacity-100" : "opacity-0"
-                              )}
-                            />
-                            {dept.name}
-                            <span className="ml-auto text-muted-foreground">{dept.memberCount}人</span>
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
+              <div className="border rounded-md max-h-64 overflow-y-auto p-2">
+                {availableOrganizationTree.length === 0 ? (
+                  <div className="text-center py-4 text-muted-foreground text-sm">
+                    所有部门已配置
+                  </div>
+                ) : (
+                  <DepartmentTreeSelector
+                    nodes={availableOrganizationTree}
+                    selectedId={selectedDepartmentId}
+                    onSelect={setSelectedDepartmentId}
+                    expandedNodes={expandedNodes}
+                    onToggleExpand={(id) => setExpandedNodes(prev => ({ ...prev, [id]: !prev[id] }))}
+                    configuredIds={customDepartments.map(d => d.id)}
+                  />
+                )}
+              </div>
+              {selectedDepartmentId && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Check className="w-4 h-4 text-primary" />
+                  已选择: {allDepartmentsFlat.find(d => d.id === selectedDepartmentId)?.name}
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">
