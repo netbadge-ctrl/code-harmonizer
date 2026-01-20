@@ -254,31 +254,6 @@ export default function MyCli() {
   const todayTotalCost = todayCallDetails.reduce((sum, call) => sum + call.cost, 0);
   const costUsagePercent = (tokenUsage.monthlyCost / tokenUsage.totalQuota) * 100;
 
-  const getTierBadge = (model: string) => {
-    const tier = modelPriceRatio[model]?.tier || 'standard';
-    const price = modelPriceRatio[model]?.ratio || 0.05;
-    switch (tier) {
-      case 'premium':
-        return (
-          <Badge variant="outline" className="text-xs bg-amber-500/10 text-amber-600 border-amber-500/20">
-            <Star className="w-3 h-3 mr-1" />
-            ¥{price}/K
-          </Badge>
-        );
-      case 'basic':
-        return (
-          <Badge variant="outline" className="text-xs bg-green-500/10 text-green-600 border-green-500/20">
-            ¥{price}/K
-          </Badge>
-        );
-      default:
-        return (
-          <Badge variant="outline" className="text-xs">
-            ¥{price}/K
-          </Badge>
-        );
-    }
-  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -430,7 +405,6 @@ export default function MyCli() {
                     <TableRow>
                       <TableHead className="w-[100px]">时间</TableHead>
                       <TableHead>模型</TableHead>
-                      <TableHead className="text-center">单价</TableHead>
                       <TableHead className="text-right">输入</TableHead>
                       <TableHead className="text-right">输出</TableHead>
                       <TableHead className="text-right">Token</TableHead>
@@ -445,9 +419,6 @@ export default function MyCli() {
                           <Badge variant="outline" className="text-xs">
                             {call.model}
                           </Badge>
-                        </TableCell>
-                        <TableCell className="text-center">
-                          {getTierBadge(call.model)}
                         </TableCell>
                         <TableCell className="text-right text-muted-foreground">{call.inputTokens.toLocaleString()}</TableCell>
                         <TableCell className="text-right text-muted-foreground">{call.outputTokens.toLocaleString()}</TableCell>
