@@ -210,7 +210,7 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
       <Tabs defaultValue="usage" className="space-y-4">
         <TabsList>
           <TabsTrigger value="usage">使用统计</TabsTrigger>
-          <TabsTrigger value="overview">基本信息</TabsTrigger>
+          <TabsTrigger value="overview">配置信息</TabsTrigger>
           <TabsTrigger value="users">活跃用户</TabsTrigger>
           <TabsTrigger value="logs">操作日志</TabsTrigger>
           <TabsTrigger value="cloud">云服务信息</TabsTrigger>
@@ -256,12 +256,12 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
               </CardContent>
             </Card>
 
-            {/* 配置信息 - 合并认证配置和模型配置 */}
+            {/* 认证配置 */}
             <Card className="enterprise-card">
               <CardHeader>
                 <CardTitle className="text-base flex items-center gap-2">
-                  <Settings className="w-4 h-4" />
-                  配置信息
+                  <Shield className="w-4 h-4" />
+                  认证配置
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
@@ -335,6 +335,42 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                       </DialogContent>
                     </Dialog>
                   </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* 账户配置 */}
+            <Card className="enterprise-card">
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Settings className="w-4 h-4" />
+                  账户配置
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">客户识别码</span>
+                  <span className="text-sm font-mono">{customer.customerCode}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">联系人</span>
+                  <span className="text-sm">{customer.contactName}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">联系邮箱</span>
+                  <span className="text-sm">{customer.contactEmail}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">客户端版本</span>
+                  <span className="text-sm font-mono">{customer.clientVersion}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">服务端版本</span>
+                  <span className="text-sm font-mono">{customer.serverVersion}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">创建时间</span>
+                  <span className="text-sm">{formatDate(customer.createdAt)}</span>
                 </div>
               </CardContent>
             </Card>
