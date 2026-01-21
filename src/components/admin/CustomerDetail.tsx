@@ -349,28 +349,13 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">客户识别码</span>
-                  <span className="text-sm font-mono">{customer.customerCode}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">联系人</span>
-                  <span className="text-sm">{customer.contactName}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">联系邮箱</span>
-                  <span className="text-sm">{customer.contactEmail}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">客户端版本</span>
-                  <span className="text-sm font-mono">{customer.clientVersion}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">服务端版本</span>
-                  <span className="text-sm font-mono">{customer.serverVersion}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">创建时间</span>
-                  <span className="text-sm">{formatDate(customer.createdAt)}</span>
+                  <div className="space-y-0.5">
+                    <span className="text-sm font-medium">模型切换</span>
+                    <p className="text-xs text-muted-foreground">允许用户在模型异常时手动切换至备用模型</p>
+                  </div>
+                  <Badge variant={customer.authConfig.enterpriseAuthMethod !== 'none' ? 'default' : 'secondary'}>
+                    已启用
+                  </Badge>
                 </div>
               </CardContent>
             </Card>
