@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
+import { format, startOfMonth, endOfMonth, isToday } from 'date-fns';
+import { zhCN } from 'date-fns/locale';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -8,6 +10,9 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
 import { 
   Zap, 
   Brain, 
@@ -27,7 +32,8 @@ import {
   Power,
   Globe,
   Coins,
-  Star
+  Star,
+  CalendarIcon
 } from 'lucide-react';
 import {
   Table,
@@ -83,18 +89,25 @@ const calculateCost = (tokens: number, model: string): number => {
   return Number(((tokens / 1000) * ratio).toFixed(4));
 };
 
-// Mock today's call details with cost
-const todayCallDetails = [
-  { id: '1', time: '10:32:15', model: 'Claude 3.5 Sonnet', inputTokens: 1250, outputTokens: 3420, totalTokens: 4670, task: '代码审查 - UserService.java' },
-  { id: '2', time: '10:28:03', model: 'GPT-4o', inputTokens: 890, outputTokens: 2150, totalTokens: 3040, task: '单元测试生成 - AuthController' },
-  { id: '3', time: '10:15:42', model: 'Claude 3.5 Sonnet', inputTokens: 2100, outputTokens: 4800, totalTokens: 6900, task: 'API文档生成' },
-  { id: '4', time: '09:58:21', model: 'DeepSeek V3', inputTokens: 650, outputTokens: 1890, totalTokens: 2540, task: '代码补全 - utils.ts' },
-  { id: '5', time: '09:45:33', model: 'Claude 3.5 Sonnet', inputTokens: 1800, outputTokens: 5200, totalTokens: 7000, task: '重构建议 - PaymentModule' },
-  { id: '6', time: '09:32:18', model: 'GPT-4o', inputTokens: 720, outputTokens: 1650, totalTokens: 2370, task: 'Bug分析 - 订单状态异常' },
-  { id: '7', time: '09:18:55', model: 'Claude 3.5 Sonnet', inputTokens: 1450, outputTokens: 3800, totalTokens: 5250, task: '代码解释 - 算法实现' },
-  { id: '8', time: '09:05:12', model: 'DeepSeek V3', inputTokens: 980, outputTokens: 2250, totalTokens: 3230, task: 'SQL优化建议' },
-  { id: '9', time: '08:52:47', model: 'GPT-4o', inputTokens: 560, outputTokens: 1440, totalTokens: 2000, task: '错误日志分析' },
-  { id: '10', time: '08:38:29', model: 'Claude 3.5 Sonnet', inputTokens: 1100, outputTokens: 2900, totalTokens: 4000, task: '接口设计评审' },
+// Mock call details with date for filtering
+const allCallDetails = [
+  { id: '1', date: new Date(), time: '10:32:15', model: 'Claude 3.5 Sonnet', inputTokens: 1250, outputTokens: 3420, totalTokens: 4670, task: '代码审查 - UserService.java' },
+  { id: '2', date: new Date(), time: '10:28:03', model: 'GPT-4o', inputTokens: 890, outputTokens: 2150, totalTokens: 3040, task: '单元测试生成 - AuthController' },
+  { id: '3', date: new Date(), time: '10:15:42', model: 'Claude 3.5 Sonnet', inputTokens: 2100, outputTokens: 4800, totalTokens: 6900, task: 'API文档生成' },
+  { id: '4', date: new Date(), time: '09:58:21', model: 'DeepSeek V3', inputTokens: 650, outputTokens: 1890, totalTokens: 2540, task: '代码补全 - utils.ts' },
+  { id: '5', date: new Date(), time: '09:45:33', model: 'Claude 3.5 Sonnet', inputTokens: 1800, outputTokens: 5200, totalTokens: 7000, task: '重构建议 - PaymentModule' },
+  { id: '6', date: new Date(), time: '09:32:18', model: 'GPT-4o', inputTokens: 720, outputTokens: 1650, totalTokens: 2370, task: 'Bug分析 - 订单状态异常' },
+  { id: '7', date: new Date(), time: '09:18:55', model: 'Claude 3.5 Sonnet', inputTokens: 1450, outputTokens: 3800, totalTokens: 5250, task: '代码解释 - 算法实现' },
+  { id: '8', date: new Date(), time: '09:05:12', model: 'DeepSeek V3', inputTokens: 980, outputTokens: 2250, totalTokens: 3230, task: 'SQL优化建议' },
+  { id: '9', date: new Date(), time: '08:52:47', model: 'GPT-4o', inputTokens: 560, outputTokens: 1440, totalTokens: 2000, task: '错误日志分析' },
+  { id: '10', date: new Date(), time: '08:38:29', model: 'Claude 3.5 Sonnet', inputTokens: 1100, outputTokens: 2900, totalTokens: 4000, task: '接口设计评审' },
+  // Yesterday's data
+  { id: '11', date: new Date(Date.now() - 86400000), time: '16:42:15', model: 'GPT-4o', inputTokens: 1800, outputTokens: 4200, totalTokens: 6000, task: '代码重构建议' },
+  { id: '12', date: new Date(Date.now() - 86400000), time: '14:28:03', model: 'Claude 3.5 Sonnet', inputTokens: 950, outputTokens: 2850, totalTokens: 3800, task: '性能优化分析' },
+  { id: '13', date: new Date(Date.now() - 86400000), time: '11:15:42', model: 'DeepSeek V3', inputTokens: 680, outputTokens: 1520, totalTokens: 2200, task: '数据库查询优化' },
+  // 2 days ago
+  { id: '14', date: new Date(Date.now() - 172800000), time: '15:32:18', model: 'Claude 3.5 Sonnet', inputTokens: 2200, outputTokens: 5800, totalTokens: 8000, task: 'API设计文档' },
+  { id: '15', date: new Date(Date.now() - 172800000), time: '10:18:55', model: 'GPT-4o', inputTokens: 1100, outputTokens: 2900, totalTokens: 4000, task: '代码审查报告' },
 ].map(call => ({
   ...call,
   cost: calculateCost(call.totalTokens, call.model),
@@ -163,6 +176,19 @@ export default function MyCli() {
   const [isAddMcpOpen, setIsAddMcpOpen] = useState(false);
   const [newSkill, setNewSkill] = useState({ name: '', description: '' });
   const [newMcp, setNewMcp] = useState({ name: '', endpoint: '', description: '' });
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+
+  // Filter call details by selected date
+  const filteredCallDetails = useMemo(() => {
+    return allCallDetails.filter(call => 
+      format(call.date, 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd')
+    );
+  }, [selectedDate]);
+
+  // Calculate today's data for cards
+  const todayCallDetails = useMemo(() => {
+    return allCallDetails.filter(call => isToday(call.date));
+  }, []);
 
   const toggleSkill = (skillId: string) => {
     setSkills(prev => prev.map(s => 
@@ -249,10 +275,13 @@ export default function MyCli() {
     }
   };
 
-  // Calculate totals from today's calls
+  // Calculate totals
   const todayTotalTokens = todayCallDetails.reduce((sum, call) => sum + call.totalTokens, 0);
   const todayTotalCost = todayCallDetails.reduce((sum, call) => sum + call.cost, 0);
-  const costUsagePercent = (tokenUsage.monthlyCost / tokenUsage.totalQuota) * 100;
+  const filteredTotalTokens = filteredCallDetails.reduce((sum, call) => sum + call.totalTokens, 0);
+  const filteredTotalCost = filteredCallDetails.reduce((sum, call) => sum + call.cost, 0);
+  const costUsagePercent = tokenUsage.totalQuota > 0 ? (tokenUsage.monthlyCost / tokenUsage.totalQuota) * 100 : 0;
+  const hasQuota = tokenUsage.totalQuota > 0;
 
 
   return (
@@ -296,130 +325,145 @@ export default function MyCli() {
           <TabsContent value="usage" className="space-y-6">
             {/* Usage Overview - 2 Cards */}
             <div className="grid gap-4 md:grid-cols-2">
-              {/* Quota & Today Token Card */}
-              <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <Coins className="w-5 h-5 text-primary" />
-                    消费额度（元）
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-end justify-between">
-                    <div>
-                      <div className="text-3xl font-bold text-primary">
-                        ¥{(tokenUsage.totalQuota - tokenUsage.monthlyCost).toFixed(2)}
-                      </div>
-                      <p className="text-sm text-muted-foreground">剩余额度</p>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-lg font-semibold">¥{tokenUsage.totalQuota.toFixed(2)}</div>
-                      <p className="text-xs text-muted-foreground">总配额</p>
-                    </div>
-                  </div>
-                  <Progress value={costUsagePercent} className="h-2" />
-                  <p className="text-xs text-muted-foreground">
-                    本月已使用 {costUsagePercent.toFixed(1)}%
-                  </p>
-                  
-                  <Separator />
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Clock className="w-4 h-4" />
-                      <span className="text-sm">今日 Token 消耗</span>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-xl font-bold">{(tokenUsage.todayTokens / 1000).toFixed(1)}K</span>
-                      <span className={`text-xs ml-2 ${tokenUsage.todayChange < 0 ? 'text-green-600' : 'text-destructive'}`}>
-                        较昨日 {tokenUsage.todayChange > 0 ? '+' : ''}{tokenUsage.todayChange}%
-                      </span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Monthly & Today Cost Card */}
+              {/* Monthly Consumption Card */}
               <Card>
                 <CardHeader className="pb-3">
                   <CardTitle className="text-base flex items-center gap-2">
-                    <Activity className="w-5 h-5" />
-                    月累计消费
+                    <Activity className="w-5 h-5 text-primary" />
+                    月累计消耗
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="flex items-end justify-between">
+                  <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <div className="text-3xl font-bold">¥{tokenUsage.monthlyCost.toFixed(2)}</div>
-                      <p className="text-sm text-muted-foreground">本月消费</p>
+                      <div className="text-2xl font-bold">¥{tokenUsage.monthlyCost.toFixed(2)}</div>
+                      <p className="text-sm text-muted-foreground">消费金额</p>
                     </div>
-                    <div className="text-right">
-                      <div className="text-lg font-semibold">{(tokenUsage.monthlyTokens / 1000).toFixed(1)}K</div>
-                      <p className="text-xs text-muted-foreground">Token 消耗</p>
+                    <div>
+                      <div className="text-2xl font-bold">{(tokenUsage.monthlyTokens / 1000).toFixed(1)}K</div>
+                      <p className="text-sm text-muted-foreground">Token 消耗</p>
                     </div>
                   </div>
                   <p className={`text-xs ${tokenUsage.monthlyChange < 0 ? 'text-green-600' : 'text-muted-foreground'}`}>
                     较上月 {tokenUsage.monthlyChange > 0 ? '+' : ''}{tokenUsage.monthlyChange}%
                   </p>
                   
-                  <Separator />
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <Coins className="w-4 h-4" />
-                      <span className="text-sm">今日消费（元）</span>
+                  {hasQuota && (
+                    <>
+                      <Separator />
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground">消费配额</span>
+                          <span className="font-medium">¥{tokenUsage.monthlyCost.toFixed(2)} / ¥{tokenUsage.totalQuota.toFixed(2)}</span>
+                        </div>
+                        <Progress value={costUsagePercent} className="h-2" />
+                        <p className="text-xs text-muted-foreground">
+                          已使用 {costUsagePercent.toFixed(1)}%，剩余 ¥{(tokenUsage.totalQuota - tokenUsage.monthlyCost).toFixed(2)}
+                        </p>
+                      </div>
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Today Consumption Card */}
+              <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Clock className="w-5 h-5 text-primary" />
+                    当日消耗
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <div className="text-2xl font-bold text-primary">¥{tokenUsage.todayCost.toFixed(2)}</div>
+                      <p className="text-sm text-muted-foreground">消费金额</p>
                     </div>
-                    <div className="text-right">
-                      <span className="text-xl font-bold text-amber-600">¥{tokenUsage.todayCost.toFixed(2)}</span>
-                      <span className={`text-xs ml-2 ${tokenUsage.todayChange < 0 ? 'text-green-600' : 'text-destructive'}`}>
-                        较昨日 {tokenUsage.todayChange > 0 ? '+' : ''}{tokenUsage.todayChange}%
-                      </span>
+                    <div>
+                      <div className="text-2xl font-bold">{(tokenUsage.todayTokens / 1000).toFixed(1)}K</div>
+                      <p className="text-sm text-muted-foreground">Token 消耗</p>
                     </div>
                   </div>
+                  <p className={`text-xs ${tokenUsage.todayChange < 0 ? 'text-green-600' : 'text-destructive'}`}>
+                    较昨日 {tokenUsage.todayChange > 0 ? '+' : ''}{tokenUsage.todayChange}%
+                  </p>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Today's Call Details */}
+            {/* Call Details */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <BarChart3 className="w-4 h-4" />
-                  今日调用明细
-                </CardTitle>
-                <CardDescription>
-                  共 {todayCallDetails.length} 次调用，消耗 {(todayTotalTokens / 1000).toFixed(1)}K tokens / ¥{todayTotalCost.toFixed(2)}
-                </CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <BarChart3 className="w-4 h-4" />
+                      调用明细
+                    </CardTitle>
+                    <CardDescription>
+                      {isToday(selectedDate) ? '今日' : format(selectedDate, 'M月d日', { locale: zhCN })}共 {filteredCallDetails.length} 次调用，消耗 {(filteredTotalTokens / 1000).toFixed(1)}K tokens / ¥{filteredTotalCost.toFixed(2)}
+                    </CardDescription>
+                  </div>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" size="sm" className="gap-2">
+                        <CalendarIcon className="w-4 h-4" />
+                        {isToday(selectedDate) ? '今日' : format(selectedDate, 'M月d日', { locale: zhCN })}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="end">
+                      <Calendar
+                        mode="single"
+                        selected={selectedDate}
+                        onSelect={(date) => date && setSelectedDate(date)}
+                        disabled={(date) => 
+                          date > new Date() || 
+                          date < startOfMonth(new Date())
+                        }
+                        initialFocus
+                        className={cn("p-3 pointer-events-auto")}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
               </CardHeader>
               <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[100px]">时间</TableHead>
-                      <TableHead>模型</TableHead>
-                      <TableHead className="text-right">输入</TableHead>
-                      <TableHead className="text-right">输出</TableHead>
-                      <TableHead className="text-right">Token</TableHead>
-                      <TableHead className="text-right">费用（元）</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {todayCallDetails.map((call) => (
-                      <TableRow key={call.id}>
-                        <TableCell className="font-mono text-xs text-muted-foreground">{call.time}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className="text-xs">
-                            {call.model}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-right text-muted-foreground">{call.inputTokens.toLocaleString()}</TableCell>
-                        <TableCell className="text-right text-muted-foreground">{call.outputTokens.toLocaleString()}</TableCell>
-                        <TableCell className="text-right">{call.totalTokens.toLocaleString()}</TableCell>
-                        <TableCell className="text-right font-medium text-amber-600">¥{call.cost.toFixed(4)}</TableCell>
+                {filteredCallDetails.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Clock className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                    <p>{format(selectedDate, 'M月d日', { locale: zhCN })}暂无调用记录</p>
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[100px]">时间</TableHead>
+                        <TableHead>模型</TableHead>
+                        <TableHead className="text-right">输入</TableHead>
+                        <TableHead className="text-right">输出</TableHead>
+                        <TableHead className="text-right">Token</TableHead>
+                        <TableHead className="text-right">费用（元）</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredCallDetails.map((call) => (
+                        <TableRow key={call.id}>
+                          <TableCell className="font-mono text-xs text-muted-foreground">{call.time}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="text-xs">
+                              {call.model}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right text-muted-foreground">{call.inputTokens.toLocaleString()}</TableCell>
+                          <TableCell className="text-right text-muted-foreground">{call.outputTokens.toLocaleString()}</TableCell>
+                          <TableCell className="text-right">{call.totalTokens.toLocaleString()}</TableCell>
+                          <TableCell className="text-right font-medium text-amber-600">¥{call.cost.toFixed(4)}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
