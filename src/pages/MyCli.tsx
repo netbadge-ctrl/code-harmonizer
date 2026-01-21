@@ -333,10 +333,15 @@ export default function MyCli() {
                     月累计消耗
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-3">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <div className="text-2xl font-bold">¥{tokenUsage.monthlyCost.toFixed(2)}</div>
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-2xl font-bold">¥{tokenUsage.monthlyCost.toFixed(2)}</span>
+                        {hasQuota && (
+                          <span className="text-sm text-muted-foreground">/ ¥{tokenUsage.totalQuota.toFixed(2)}</span>
+                        )}
+                      </div>
                       <p className="text-sm text-muted-foreground">消费金额</p>
                     </div>
                     <div>
@@ -347,37 +352,21 @@ export default function MyCli() {
                   <p className={`text-xs ${tokenUsage.monthlyChange < 0 ? 'text-green-600' : 'text-muted-foreground'}`}>
                     较上月 {tokenUsage.monthlyChange > 0 ? '+' : ''}{tokenUsage.monthlyChange}%
                   </p>
-                  
-                  {hasQuota && (
-                    <>
-                      <Separator />
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-muted-foreground">消费配额</span>
-                          <span className="font-medium">¥{tokenUsage.monthlyCost.toFixed(2)} / ¥{tokenUsage.totalQuota.toFixed(2)}</span>
-                        </div>
-                        <Progress value={costUsagePercent} className="h-2" />
-                        <p className="text-xs text-muted-foreground">
-                          已使用 {costUsagePercent.toFixed(1)}%，剩余 ¥{(tokenUsage.totalQuota - tokenUsage.monthlyCost).toFixed(2)}
-                        </p>
-                      </div>
-                    </>
-                  )}
                 </CardContent>
               </Card>
 
               {/* Today Consumption Card */}
-              <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
+              <Card>
                 <CardHeader className="pb-3">
                   <CardTitle className="text-base flex items-center gap-2">
                     <Clock className="w-5 h-5 text-primary" />
                     当日消耗
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-3">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <div className="text-2xl font-bold text-primary">¥{tokenUsage.todayCost.toFixed(2)}</div>
+                      <div className="text-2xl font-bold">¥{tokenUsage.todayCost.toFixed(2)}</div>
                       <p className="text-sm text-muted-foreground">消费金额</p>
                     </div>
                     <div>
