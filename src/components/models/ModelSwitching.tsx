@@ -11,7 +11,10 @@ import {
   Zap,
   Phone,
   Mail,
-  Bell
+  Bell,
+  Plus,
+  Trash2,
+  UserPlus
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -40,6 +43,14 @@ import {
 } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+
+interface AlertContact {
+  id: string;
+  phone: string;
+  email: string;
+  phoneError?: string;
+  emailError?: string;
+}
 
 interface EnabledModel {
   id: string;
@@ -130,12 +141,11 @@ export function ModelSwitching() {
   const [selectedTargetModelId, setSelectedTargetModelId] = useState<string>("");
   const [isRefreshing, setIsRefreshing] = useState(false);
   
-  // 告警联系方式
-  const [alertPhone, setAlertPhone] = useState("");
-  const [alertEmail, setAlertEmail] = useState("");
+  // 告警联系方式 - 支持多组
+  const [alertContacts, setAlertContacts] = useState<AlertContact[]>([
+    { id: '1', phone: '', email: '', phoneError: '', emailError: '' }
+  ]);
   const [alertContactSaved, setAlertContactSaved] = useState(false);
-  const [phoneError, setPhoneError] = useState("");
-  const [emailError, setEmailError] = useState("");
 
   const getModelName = (modelId: string) => {
     return models.find(m => m.id === modelId)?.name || modelId;
@@ -298,35 +308,67 @@ export function ModelSwitching() {
     return emailRegex.test(email);
   };
 
-  const handleSaveAlertContact = () => {
+  const handleAddContact = () => {
+    setAlertContacts(prev => [
+      ...prev,
+      { id: Date.now().toString(), phone: '', email: '', phoneError: '', emailError: '' }
+    ]);
+  };
+
+  const handleRemoveContact = (id: string) => {
+    if (alertContacts.length <= 1) {
+      toast({
+        title: "无法删除",
+        description: "至少需要保留一组联系方式",
+        variant: "destructive"
+      });
+      return;
+    }
+    setAlertContacts(prev => prev.filter(c => c.id !== id));
+  };
+
+  const handleContactChange = (id: string, field: 'phone' | 'email', value: string) => {
+    setAlertContacts(prev => prev.map(c => 
+      c.id === id 
+        ? { ...c, [field]: value, [`${field}Error`]: '' }
+        : c
+    ));
+  };
+
+  const handleSaveAlertContacts = () => {
     let hasError = false;
     
-    if (!alertPhone.trim()) {
-      setPhoneError("请输入手机号");
-      hasError = true;
-    } else if (!validatePhone(alertPhone)) {
-      setPhoneError("请输入有效的手机号");
-      hasError = true;
-    } else {
-      setPhoneError("");
-    }
+    const updatedContacts = alertContacts.map(contact => {
+      let phoneError = '';
+      let emailError = '';
+      
+      if (!contact.phone.trim()) {
+        phoneError = "请输入手机号";
+        hasError = true;
+      } else if (!validatePhone(contact.phone)) {
+        phoneError = "请输入有效的手机号";
+        hasError = true;
+      }
+      
+      if (!contact.email.trim()) {
+        emailError = "请输入邮箱";
+        hasError = true;
+      } else if (!validateEmail(contact.email)) {
+        emailError = "请输入有效的邮箱地址";
+        hasError = true;
+      }
+      
+      return { ...contact, phoneError, emailError };
+    });
     
-    if (!alertEmail.trim()) {
-      setEmailError("请输入邮箱");
-      hasError = true;
-    } else if (!validateEmail(alertEmail)) {
-      setEmailError("请输入有效的邮箱地址");
-      hasError = true;
-    } else {
-      setEmailError("");
-    }
+    setAlertContacts(updatedContacts);
     
     if (hasError) return;
     
     setAlertContactSaved(true);
     toast({
       title: "告警联系方式已保存",
-      description: "模型异常告警将发送至您配置的手机号和邮箱",
+      description: `已配置 ${alertContacts.length} 组联系方式，模型异常告警将发送通知`,
     });
   };
 
@@ -335,60 +377,83 @@ export function ModelSwitching() {
       {/* Alert Contact Configuration */}
       <Card>
         <CardHeader className="pb-3">
-          <div className="flex items-center gap-2">
-            <Bell className="w-5 h-5 text-primary" />
-            <CardTitle className="text-base">告警通知配置</CardTitle>
-            {alertContactSaved && (
-              <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/20 ml-2">
-                <Check className="w-3 h-3 mr-1" />
-                已配置
-              </Badge>
-            )}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Bell className="w-5 h-5 text-primary" />
+              <CardTitle className="text-base">告警通知配置</CardTitle>
+              {alertContactSaved && (
+                <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/20 ml-2">
+                  <Check className="w-3 h-3 mr-1" />
+                  已配置 {alertContacts.length} 组
+                </Badge>
+              )}
+            </div>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={handleAddContact}
+              className="flex items-center gap-1"
+            >
+              <UserPlus className="w-4 h-4" />
+              添加联系人
+            </Button>
           </div>
           <CardDescription>
-            配置接收模型告警通知的联系方式，确保及时收到模型异常提醒
+            配置接收模型告警通知的联系方式，确保及时收到模型异常提醒。支持添加多组联系人
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="alertPhone" className="flex items-center gap-1">
-                <Phone className="w-3.5 h-3.5" />
-                手机号 <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                id="alertPhone"
-                placeholder="请输入接收告警的手机号"
-                value={alertPhone}
-                onChange={(e) => {
-                  setAlertPhone(e.target.value);
-                  if (phoneError) setPhoneError("");
-                }}
-                className={cn(phoneError && "border-destructive")}
-              />
-              {phoneError && <p className="text-xs text-destructive">{phoneError}</p>}
+        <CardContent className="space-y-3">
+          {alertContacts.map((contact, index) => (
+            <div 
+              key={contact.id} 
+              className="flex items-start gap-3 p-3 bg-muted/30 rounded-lg border"
+            >
+              <div className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-medium flex-shrink-0 mt-1">
+                {index + 1}
+              </div>
+              <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <Label htmlFor={`phone-${contact.id}`} className="flex items-center gap-1 text-xs">
+                    <Phone className="w-3 h-3" />
+                    手机号 <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id={`phone-${contact.id}`}
+                    placeholder="请输入手机号"
+                    value={contact.phone}
+                    onChange={(e) => handleContactChange(contact.id, 'phone', e.target.value)}
+                    className={cn("h-9", contact.phoneError && "border-destructive")}
+                  />
+                  {contact.phoneError && <p className="text-xs text-destructive">{contact.phoneError}</p>}
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor={`email-${contact.id}`} className="flex items-center gap-1 text-xs">
+                    <Mail className="w-3 h-3" />
+                    邮箱 <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id={`email-${contact.id}`}
+                    type="email"
+                    placeholder="请输入邮箱"
+                    value={contact.email}
+                    onChange={(e) => handleContactChange(contact.id, 'email', e.target.value)}
+                    className={cn("h-9", contact.emailError && "border-destructive")}
+                  />
+                  {contact.emailError && <p className="text-xs text-destructive">{contact.emailError}</p>}
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-muted-foreground hover:text-destructive flex-shrink-0 mt-1"
+                onClick={() => handleRemoveContact(contact.id)}
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="alertEmail" className="flex items-center gap-1">
-                <Mail className="w-3.5 h-3.5" />
-                邮箱 <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                id="alertEmail"
-                type="email"
-                placeholder="请输入接收告警的邮箱"
-                value={alertEmail}
-                onChange={(e) => {
-                  setAlertEmail(e.target.value);
-                  if (emailError) setEmailError("");
-                }}
-                className={cn(emailError && "border-destructive")}
-              />
-              {emailError && <p className="text-xs text-destructive">{emailError}</p>}
-            </div>
-          </div>
-          <div className="mt-4 flex justify-end">
-            <Button onClick={handleSaveAlertContact}>
+          ))}
+          <div className="flex justify-end pt-2">
+            <Button onClick={handleSaveAlertContacts}>
               保存告警联系方式
             </Button>
           </div>
