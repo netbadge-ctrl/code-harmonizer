@@ -135,17 +135,21 @@ const modelUsageData = [
   { model: 'Kimi K2', tokens: 18000000, requests: 9800, avgLatency: 1.25, errors: 18 },
 ];
 
-// 模拟按模型的趋势数据
+// 模拟按模型的趋势数据（包含Token和请求数）
 const generateModelTrendData = () => {
   return Array.from({ length: 7 }, (_, i) => {
     const date = new Date();
     date.setDate(date.getDate() - (6 - i));
     return {
       date: date.toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit' }),
-      'GPT-4 Turbo': Math.floor(Math.random() * 8000000) + 4000000,
-      'GPT-4o': Math.floor(Math.random() * 6000000) + 3000000,
-      'Claude 3.5 Sonnet': Math.floor(Math.random() * 9000000) + 5000000,
-      'DeepSeek V3': Math.floor(Math.random() * 5000000) + 2500000,
+      'GPT-4 Turbo_tokens': Math.floor(Math.random() * 8000000) + 4000000,
+      'GPT-4 Turbo_requests': Math.floor(Math.random() * 2000) + 1500,
+      'GPT-4o_tokens': Math.floor(Math.random() * 6000000) + 3000000,
+      'GPT-4o_requests': Math.floor(Math.random() * 2500) + 1800,
+      'Claude 3.5 Sonnet_tokens': Math.floor(Math.random() * 9000000) + 5000000,
+      'Claude 3.5 Sonnet_requests': Math.floor(Math.random() * 3000) + 2200,
+      'DeepSeek V3_tokens': Math.floor(Math.random() * 5000000) + 2500000,
+      'DeepSeek V3_requests': Math.floor(Math.random() * 4000) + 3500,
     };
   });
 };
@@ -396,15 +400,76 @@ export function AdminAnalytics() {
 
   const renderGlobalTab = () => (
     <div className="space-y-6">
-      {/* 时间范围和模型筛选 */}
-      <div className="space-y-4">
-        {renderTimeRangePicker(
-          globalTimeRangePreset,
-          globalDateRange,
-          handleGlobalPresetChange,
-          setGlobalDateRange,
-          setGlobalTimeRangePreset
-        )}
+      {/* 时间范围和模型筛选 - 同一行 */}
+      <div className="flex flex-wrap items-center gap-4 mb-6">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-sm text-muted-foreground">查询时间：</span>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant={globalTimeRangePreset === '15min' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => handleGlobalPresetChange('15min')}
+            >
+              最近15分钟
+            </Button>
+            <Button
+              variant={globalTimeRangePreset === '4hours' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => handleGlobalPresetChange('4hours')}
+            >
+              最近4小时
+            </Button>
+            <Button
+              variant={globalTimeRangePreset === '24hours' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => handleGlobalPresetChange('24hours')}
+            >
+              最近24小时
+            </Button>
+            <Button
+              variant={globalTimeRangePreset === '7days' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => handleGlobalPresetChange('7days')}
+            >
+              最近7天
+            </Button>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant={globalTimeRangePreset === 'custom' ? 'default' : 'outline'}
+                  size="sm"
+                  className="min-w-[200px] justify-start"
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {globalTimeRangePreset === 'custom' ? (
+                    <>
+                      {format(globalDateRange.from, 'yyyy/MM/dd', { locale: zhCN })} - {format(globalDateRange.to, 'yyyy/MM/dd', { locale: zhCN })}
+                    </>
+                  ) : (
+                    '自定义日期'
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="range"
+                  selected={{ from: globalDateRange.from, to: globalDateRange.to }}
+                  onSelect={(range) => {
+                    if (range?.from && range?.to) {
+                      setGlobalDateRange({ from: range.from, to: range.to });
+                      setGlobalTimeRangePreset('custom');
+                    } else if (range?.from) {
+                      setGlobalDateRange({ from: range.from, to: range.from });
+                      setGlobalTimeRangePreset('custom');
+                    }
+                  }}
+                  numberOfMonths={2}
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+        </div>
         
         {/* 模型筛选 */}
         <div className="flex items-center gap-2">
@@ -775,55 +840,121 @@ export function AdminAnalytics() {
         </CardContent>
       </Card>
 
-      {/* 模型 Token 消耗趋势 */}
+      {/* 模型调用趋势 */}
       {globalModelFilter === 'all' && (
         <Card className="enterprise-card">
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
               <TrendingUp className="w-4 h-4" />
-              各模型 Token 消耗趋势
+              模型调用趋势
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-64">
+            <div className="h-80">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={modelTrendData}>
+                <ComposedChart data={modelTrendData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis dataKey="date" tick={{ fontSize: 12 }} />
                   <YAxis 
+                    yAxisId="tokens"
+                    orientation="left"
                     tick={{ fontSize: 12 }}
                     tickFormatter={(value) => formatTokens(value)}
+                    label={{ value: 'Token', angle: -90, position: 'insideLeft', style: { fontSize: 11 } }}
                   />
-                  <Tooltip formatter={(value: number) => formatTokens(value)} />
+                  <YAxis 
+                    yAxisId="requests"
+                    orientation="right"
+                    tick={{ fontSize: 12 }}
+                    label={{ value: '请求数', angle: 90, position: 'insideRight', style: { fontSize: 11 } }}
+                  />
+                  <Tooltip 
+                    formatter={(value: number, name: string) => {
+                      if (name.includes('_tokens')) {
+                        return [formatTokens(value), name.replace('_tokens', ' (Token)')];
+                      }
+                      return [value.toLocaleString(), name.replace('_requests', ' (请求数)')];
+                    }}
+                  />
+                  {/* Token 消耗线 - 实线 */}
                   <Line 
+                    yAxisId="tokens"
                     type="monotone" 
-                    dataKey="GPT-4 Turbo" 
+                    dataKey="GPT-4 Turbo_tokens" 
                     stroke="hsl(213, 94%, 50%)" 
                     strokeWidth={2}
                     dot={false}
+                    name="GPT-4 Turbo_tokens"
                   />
                   <Line 
+                    yAxisId="tokens"
                     type="monotone" 
-                    dataKey="GPT-4o" 
+                    dataKey="GPT-4o_tokens" 
                     stroke="hsl(142, 76%, 36%)" 
                     strokeWidth={2}
                     dot={false}
+                    name="GPT-4o_tokens"
                   />
                   <Line 
+                    yAxisId="tokens"
                     type="monotone" 
-                    dataKey="Claude 3.5 Sonnet" 
+                    dataKey="Claude 3.5 Sonnet_tokens" 
                     stroke="hsl(38, 92%, 50%)" 
                     strokeWidth={2}
                     dot={false}
+                    name="Claude 3.5 Sonnet_tokens"
                   />
                   <Line 
+                    yAxisId="tokens"
                     type="monotone" 
-                    dataKey="DeepSeek V3" 
+                    dataKey="DeepSeek V3_tokens" 
                     stroke="hsl(280, 65%, 60%)" 
                     strokeWidth={2}
                     dot={false}
+                    name="DeepSeek V3_tokens"
                   />
-                </LineChart>
+                  {/* 请求数线 - 虚线 */}
+                  <Line 
+                    yAxisId="requests"
+                    type="monotone" 
+                    dataKey="GPT-4 Turbo_requests" 
+                    stroke="hsl(213, 94%, 50%)" 
+                    strokeWidth={2}
+                    strokeDasharray="5 5"
+                    dot={false}
+                    name="GPT-4 Turbo_requests"
+                  />
+                  <Line 
+                    yAxisId="requests"
+                    type="monotone" 
+                    dataKey="GPT-4o_requests" 
+                    stroke="hsl(142, 76%, 36%)" 
+                    strokeWidth={2}
+                    strokeDasharray="5 5"
+                    dot={false}
+                    name="GPT-4o_requests"
+                  />
+                  <Line 
+                    yAxisId="requests"
+                    type="monotone" 
+                    dataKey="Claude 3.5 Sonnet_requests" 
+                    stroke="hsl(38, 92%, 50%)" 
+                    strokeWidth={2}
+                    strokeDasharray="5 5"
+                    dot={false}
+                    name="Claude 3.5 Sonnet_requests"
+                  />
+                  <Line 
+                    yAxisId="requests"
+                    type="monotone" 
+                    dataKey="DeepSeek V3_requests" 
+                    stroke="hsl(280, 65%, 60%)" 
+                    strokeWidth={2}
+                    strokeDasharray="5 5"
+                    dot={false}
+                    name="DeepSeek V3_requests"
+                  />
+                </ComposedChart>
               </ResponsiveContainer>
             </div>
             <div className="flex flex-wrap gap-4 mt-3 justify-center">
@@ -843,47 +974,21 @@ export function AdminAnalytics() {
                 <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(280, 65%, 60%)' }} />
                 <span>DeepSeek V3</span>
               </div>
+              <div className="flex items-center gap-2 text-xs ml-4 border-l pl-4">
+                <div className="w-6 h-0.5 bg-foreground" />
+                <span>Token (实线)</span>
+              </div>
+              <div className="flex items-center gap-2 text-xs">
+                <div className="w-6 h-0.5 border-t-2 border-dashed border-foreground" />
+                <span>请求数 (虚线)</span>
+              </div>
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* 错误类型分布 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card className="enterprise-card">
-          <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4" />
-              错误类型分布
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={errorByType}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={50}
-                    outerRadius={80}
-                    paddingAngle={2}
-                    dataKey="count"
-                    nameKey="name"
-                    label={({ code, count }) => `${code}: ${count}`}
-                    labelLine={false}
-                  >
-                    {errorByType.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(value: number, name: string) => [`${value} 次`, name]} />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-
+      {/* 错误代码统计 */}
+      <div className="grid grid-cols-1 gap-4">
         <Card className="enterprise-card">
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
