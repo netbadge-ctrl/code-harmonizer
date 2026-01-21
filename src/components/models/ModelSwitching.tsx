@@ -8,12 +8,16 @@ import {
   ArrowRightLeft,
   Info,
   CheckCircle2,
-  Zap
+  Zap,
+  Phone,
+  Mail,
+  Bell
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -125,6 +129,13 @@ export function ModelSwitching() {
   const [selectedSourceModel, setSelectedSourceModel] = useState<EnabledModel | null>(null);
   const [selectedTargetModelId, setSelectedTargetModelId] = useState<string>("");
   const [isRefreshing, setIsRefreshing] = useState(false);
+  
+  // 告警联系方式
+  const [alertPhone, setAlertPhone] = useState("");
+  const [alertEmail, setAlertEmail] = useState("");
+  const [alertContactSaved, setAlertContactSaved] = useState(false);
+  const [phoneError, setPhoneError] = useState("");
+  const [emailError, setEmailError] = useState("");
 
   const getModelName = (modelId: string) => {
     return models.find(m => m.id === modelId)?.name || modelId;
@@ -277,8 +288,113 @@ export function ModelSwitching() {
     return `${hours}小时前`;
   };
 
+  const validatePhone = (phone: string) => {
+    const phoneRegex = /^1[3-9]\d{9}$/;
+    return phoneRegex.test(phone);
+  };
+
+  const validateEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const handleSaveAlertContact = () => {
+    let hasError = false;
+    
+    if (!alertPhone.trim()) {
+      setPhoneError("请输入手机号");
+      hasError = true;
+    } else if (!validatePhone(alertPhone)) {
+      setPhoneError("请输入有效的手机号");
+      hasError = true;
+    } else {
+      setPhoneError("");
+    }
+    
+    if (!alertEmail.trim()) {
+      setEmailError("请输入邮箱");
+      hasError = true;
+    } else if (!validateEmail(alertEmail)) {
+      setEmailError("请输入有效的邮箱地址");
+      hasError = true;
+    } else {
+      setEmailError("");
+    }
+    
+    if (hasError) return;
+    
+    setAlertContactSaved(true);
+    toast({
+      title: "告警联系方式已保存",
+      description: "模型异常告警将发送至您配置的手机号和邮箱",
+    });
+  };
+
   return (
     <div className="space-y-4 animate-fade-in">
+      {/* Alert Contact Configuration */}
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center gap-2">
+            <Bell className="w-5 h-5 text-primary" />
+            <CardTitle className="text-base">告警通知配置</CardTitle>
+            {alertContactSaved && (
+              <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/20 ml-2">
+                <Check className="w-3 h-3 mr-1" />
+                已配置
+              </Badge>
+            )}
+          </div>
+          <CardDescription>
+            配置接收模型告警通知的联系方式，确保及时收到模型异常提醒
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="alertPhone" className="flex items-center gap-1">
+                <Phone className="w-3.5 h-3.5" />
+                手机号 <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="alertPhone"
+                placeholder="请输入接收告警的手机号"
+                value={alertPhone}
+                onChange={(e) => {
+                  setAlertPhone(e.target.value);
+                  if (phoneError) setPhoneError("");
+                }}
+                className={cn(phoneError && "border-destructive")}
+              />
+              {phoneError && <p className="text-xs text-destructive">{phoneError}</p>}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="alertEmail" className="flex items-center gap-1">
+                <Mail className="w-3.5 h-3.5" />
+                邮箱 <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="alertEmail"
+                type="email"
+                placeholder="请输入接收告警的邮箱"
+                value={alertEmail}
+                onChange={(e) => {
+                  setAlertEmail(e.target.value);
+                  if (emailError) setEmailError("");
+                }}
+                className={cn(emailError && "border-destructive")}
+              />
+              {emailError && <p className="text-xs text-destructive">{emailError}</p>}
+            </div>
+          </div>
+          <div className="mt-4 flex justify-end">
+            <Button onClick={handleSaveAlertContact}>
+              保存告警联系方式
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Info Bar */}
       <div className="flex items-center gap-2 bg-accent border border-primary/20 rounded px-4 py-2.5">
         <Info className="w-4 h-4 text-primary flex-shrink-0" />
@@ -526,7 +642,7 @@ export function ModelSwitching() {
                 <AlertTitle>切换说明</AlertTitle>
                 <AlertDescription className="text-xs">
                   <ul className="list-disc list-inside space-y-1 mt-1">
-                    <li>切换后，所有对 <strong>{selectedSourceModel.name}</strong> 的调用将自动转发到替代模型</li>
+                    <li>切换后，所有对 <strong>{selectedSourceModel.name}</strong> 的调用将自动转发到替代模型 <strong>{getModelName(selectedTargetModelId)}</strong>，并按替代模型计费</li>
                     <li>当原模型恢复正常后，系统将自动切换回来</li>
                     <li>您也可以随时手动恢复原模型</li>
                   </ul>
