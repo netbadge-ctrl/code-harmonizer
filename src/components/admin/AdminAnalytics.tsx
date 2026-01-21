@@ -57,17 +57,46 @@ function formatTokens(tokens: number): string {
   return tokens.toString();
 }
 
-// 模拟按客户+模型的错误数据
+// 错误类型定义
+const errorTypes = [
+  { code: '429', name: '请求频率限制', description: 'Rate limit exceeded' },
+  { code: '500', name: '服务器内部错误', description: 'Internal server error' },
+  { code: '503', name: '服务不可用', description: 'Service unavailable' },
+  { code: '504', name: '网关超时', description: 'Gateway timeout' },
+  { code: '400', name: '请求参数错误', description: 'Bad request' },
+  { code: '401', name: '认证失败', description: 'Unauthorized' },
+];
+
+// 模拟按错误类型的统计数据
+const errorByType = [
+  { code: '429', name: '请求频率限制', count: 45, percentage: 36.9 },
+  { code: '500', name: '服务器内部错误', count: 28, percentage: 23.0 },
+  { code: '503', name: '服务不可用', count: 22, percentage: 18.0 },
+  { code: '504', name: '网关超时', count: 15, percentage: 12.3 },
+  { code: '400', name: '请求参数错误', count: 8, percentage: 6.6 },
+  { code: '401', name: '认证失败', count: 4, percentage: 3.3 },
+];
+
+// 模拟按客户+模型的错误数据（增加错误类型）
 const errorByCustomerModel = [
-  { customer: '科技创新有限公司', model: 'GPT-4 Turbo', errorCount: 23 },
-  { customer: '科技创新有限公司', model: 'Claude 3.5 Sonnet', errorCount: 8 },
-  { customer: '金融数据服务公司', model: 'GPT-4o', errorCount: 15 },
-  { customer: '金融数据服务公司', model: 'GPT-4 Turbo', errorCount: 5 },
-  { customer: '医疗健康科技', model: 'GPT-4 Turbo', errorCount: 42 },
-  { customer: '医疗健康科技', model: 'Claude 3.5 Sonnet', errorCount: 18 },
-  { customer: '医疗健康科技', model: 'GPT-4o Mini', errorCount: 7 },
-  { customer: '教育科技集团', model: 'GPT-4o Mini', errorCount: 3 },
-  { customer: '智能制造有限公司', model: 'GPT-4o', errorCount: 1 },
+  { customer: '科技创新有限公司', model: 'GPT-4 Turbo', errorCode: '429', errorCount: 12 },
+  { customer: '科技创新有限公司', model: 'GPT-4 Turbo', errorCode: '500', errorCount: 8 },
+  { customer: '科技创新有限公司', model: 'GPT-4 Turbo', errorCode: '503', errorCount: 3 },
+  { customer: '科技创新有限公司', model: 'Claude 3.5 Sonnet', errorCode: '429', errorCount: 5 },
+  { customer: '科技创新有限公司', model: 'Claude 3.5 Sonnet', errorCode: '504', errorCount: 3 },
+  { customer: '金融数据服务公司', model: 'GPT-4o', errorCode: '500', errorCount: 10 },
+  { customer: '金融数据服务公司', model: 'GPT-4o', errorCode: '503', errorCount: 5 },
+  { customer: '金融数据服务公司', model: 'GPT-4 Turbo', errorCode: '429', errorCount: 5 },
+  { customer: '医疗健康科技', model: 'GPT-4 Turbo', errorCode: '429', errorCount: 18 },
+  { customer: '医疗健康科技', model: 'GPT-4 Turbo', errorCode: '500', errorCount: 15 },
+  { customer: '医疗健康科技', model: 'GPT-4 Turbo', errorCode: '504', errorCount: 9 },
+  { customer: '医疗健康科技', model: 'Claude 3.5 Sonnet', errorCode: '503', errorCount: 12 },
+  { customer: '医疗健康科技', model: 'Claude 3.5 Sonnet', errorCode: '400', errorCount: 6 },
+  { customer: '医疗健康科技', model: 'GPT-4o Mini', errorCode: '401', errorCount: 4 },
+  { customer: '医疗健康科技', model: 'GPT-4o Mini', errorCode: '429', errorCount: 3 },
+  { customer: '教育科技集团', model: 'GPT-4o Mini', errorCode: '400', errorCount: 2 },
+  { customer: '教育科技集团', model: 'GPT-4o Mini', errorCode: '500', errorCount: 1 },
+  { customer: '智能制造有限公司', model: 'GPT-4o', errorCode: '504', errorCount: 1 },
 ];
 
 // 模拟分钟级千Token时长数据
@@ -819,12 +848,92 @@ export function AdminAnalytics() {
         </Card>
       )}
 
-      {/* 按客户+模型的输出错误数表格 */}
+      {/* 错误类型分布 */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card className="enterprise-card">
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4" />
+              错误类型分布
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={errorByType}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={50}
+                    outerRadius={80}
+                    paddingAngle={2}
+                    dataKey="count"
+                    nameKey="name"
+                    label={({ code, count }) => `${code}: ${count}`}
+                    labelLine={false}
+                  >
+                    {errorByType.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(value: number, name: string) => [`${value} 次`, name]} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="enterprise-card">
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4" />
+              按错误代码统计
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>错误代码</TableHead>
+                  <TableHead>错误类型</TableHead>
+                  <TableHead className="text-right">次数</TableHead>
+                  <TableHead className="text-right">占比</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {errorByType.map((item) => (
+                  <TableRow key={item.code}>
+                    <TableCell>
+                      <span className={cn(
+                        "px-2 py-0.5 rounded text-xs font-mono font-medium",
+                        item.code === '429' && "bg-yellow-500/10 text-yellow-600",
+                        item.code === '500' && "bg-destructive/10 text-destructive",
+                        item.code === '503' && "bg-orange-500/10 text-orange-600",
+                        item.code === '504' && "bg-purple-500/10 text-purple-600",
+                        item.code === '400' && "bg-blue-500/10 text-blue-600",
+                        item.code === '401' && "bg-red-500/10 text-red-600",
+                      )}>
+                        {item.code}
+                      </span>
+                    </TableCell>
+                    <TableCell>{item.name}</TableCell>
+                    <TableCell className="text-right font-medium">{item.count}</TableCell>
+                    <TableCell className="text-right text-muted-foreground">{item.percentage}%</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* 按客户+模型+错误类型的输出错误数表格 */}
       <Card className="enterprise-card">
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
             <AlertTriangle className="w-4 h-4" />
-            按客户+模型的输出错误数
+            按客户+模型的错误明细
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -833,6 +942,7 @@ export function AdminAnalytics() {
               <TableRow>
                 <TableHead>客户</TableHead>
                 <TableHead>模型</TableHead>
+                <TableHead>错误代码</TableHead>
                 <TableHead className="text-right">错误数</TableHead>
               </TableRow>
             </TableHeader>
@@ -843,6 +953,19 @@ export function AdminAnalytics() {
                 <TableRow key={index}>
                   <TableCell className="font-medium">{item.customer}</TableCell>
                   <TableCell>{item.model}</TableCell>
+                  <TableCell>
+                    <span className={cn(
+                      "px-2 py-0.5 rounded text-xs font-mono font-medium",
+                      item.errorCode === '429' && "bg-yellow-500/10 text-yellow-600",
+                      item.errorCode === '500' && "bg-destructive/10 text-destructive",
+                      item.errorCode === '503' && "bg-orange-500/10 text-orange-600",
+                      item.errorCode === '504' && "bg-purple-500/10 text-purple-600",
+                      item.errorCode === '400' && "bg-blue-500/10 text-blue-600",
+                      item.errorCode === '401' && "bg-red-500/10 text-red-600",
+                    )}>
+                      {item.errorCode}
+                    </span>
+                  </TableCell>
                   <TableCell className="text-right text-destructive font-medium">{item.errorCount}</TableCell>
                 </TableRow>
               ))}
