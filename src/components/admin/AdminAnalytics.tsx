@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Building2, Users, Zap, TrendingUp, Activity, AlertTriangle, Clock, CalendarIcon, Check, ChevronsUpDown } from 'lucide-react';
+import { Building2, Users, Zap, TrendingUp, Activity, AlertTriangle, Clock, CalendarIcon, Check, ChevronsUpDown, Cpu } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -84,6 +84,45 @@ const latencyPerKTokenMinute = [
   { time: '10:09', inputLatency: 0.42, outputLatency: 1.87 },
 ];
 
+// 模拟模型列表
+const availableModels = [
+  'GPT-4 Turbo',
+  'GPT-4o',
+  'GPT-4o Mini',
+  'Claude 3.5 Sonnet',
+  'Claude 3 Opus',
+  'DeepSeek V3',
+  'Kimi K2',
+];
+
+// 模拟按模型的使用数据
+const modelUsageData = [
+  { model: 'GPT-4 Turbo', tokens: 45000000, requests: 12500, avgLatency: 1.85, errors: 42 },
+  { model: 'GPT-4o', tokens: 38000000, requests: 15200, avgLatency: 1.52, errors: 28 },
+  { model: 'GPT-4o Mini', tokens: 28000000, requests: 22000, avgLatency: 0.95, errors: 15 },
+  { model: 'Claude 3.5 Sonnet', tokens: 52000000, requests: 18000, avgLatency: 1.68, errors: 35 },
+  { model: 'Claude 3 Opus', tokens: 15000000, requests: 4500, avgLatency: 2.45, errors: 12 },
+  { model: 'DeepSeek V3', tokens: 32000000, requests: 28000, avgLatency: 0.78, errors: 8 },
+  { model: 'Kimi K2', tokens: 18000000, requests: 9800, avgLatency: 1.25, errors: 18 },
+];
+
+// 模拟按模型的趋势数据
+const generateModelTrendData = () => {
+  return Array.from({ length: 7 }, (_, i) => {
+    const date = new Date();
+    date.setDate(date.getDate() - (6 - i));
+    return {
+      date: date.toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit' }),
+      'GPT-4 Turbo': Math.floor(Math.random() * 8000000) + 4000000,
+      'GPT-4o': Math.floor(Math.random() * 6000000) + 3000000,
+      'Claude 3.5 Sonnet': Math.floor(Math.random() * 9000000) + 5000000,
+      'DeepSeek V3': Math.floor(Math.random() * 5000000) + 2500000,
+    };
+  });
+};
+
+const modelTrendData = generateModelTrendData();
+
 type TimeRangePreset = '15min' | '4hours' | '24hours' | '7days' | 'custom';
 
 export function AdminAnalytics() {
@@ -95,6 +134,8 @@ export function AdminAnalytics() {
     from: subDays(new Date(), 7),
     to: new Date(),
   });
+  const [globalModelFilter, setGlobalModelFilter] = useState<string>('all');
+  const [globalModelPopoverOpen, setGlobalModelPopoverOpen] = useState(false);
   
   // Customer data tab state
   const [customerTimeRangePreset, setCustomerTimeRangePreset] = useState<TimeRangePreset>('7days');
@@ -187,6 +228,27 @@ export function AdminAnalytics() {
   // 计算平均时延
   const avgInputLatency = (latencyPerKTokenMinute.reduce((sum, l) => sum + l.inputLatency, 0) / latencyPerKTokenMinute.length).toFixed(2);
   const avgOutputLatency = (latencyPerKTokenMinute.reduce((sum, l) => sum + l.outputLatency, 0) / latencyPerKTokenMinute.length).toFixed(2);
+
+  // 过滤后的模型数据
+  const filteredModelUsageData = useMemo(() => {
+    if (globalModelFilter === 'all') {
+      return modelUsageData;
+    }
+    return modelUsageData.filter(m => m.model === globalModelFilter);
+  }, [globalModelFilter]);
+
+  // 模型视角统计
+  const modelStats = useMemo(() => {
+    const data = filteredModelUsageData;
+    return {
+      totalTokens: data.reduce((sum, m) => sum + m.tokens, 0),
+      totalRequests: data.reduce((sum, m) => sum + m.requests, 0),
+      avgLatency: data.length > 0 
+        ? (data.reduce((sum, m) => sum + m.avgLatency, 0) / data.length).toFixed(2)
+        : '0',
+      totalErrors: data.reduce((sum, m) => sum + m.errors, 0),
+    };
+  }, [filteredModelUsageData]);
 
   // 根据时间范围生成客户趋势数据
   const generateCustomerTrendData = () => {
@@ -305,14 +367,78 @@ export function AdminAnalytics() {
 
   const renderGlobalTab = () => (
     <div className="space-y-6">
-      {/* 时间范围选择 */}
-      {renderTimeRangePicker(
-        globalTimeRangePreset,
-        globalDateRange,
-        handleGlobalPresetChange,
-        setGlobalDateRange,
-        setGlobalTimeRangePreset
-      )}
+      {/* 时间范围和模型筛选 */}
+      <div className="space-y-4">
+        {renderTimeRangePicker(
+          globalTimeRangePreset,
+          globalDateRange,
+          handleGlobalPresetChange,
+          setGlobalDateRange,
+          setGlobalTimeRangePreset
+        )}
+        
+        {/* 模型筛选 */}
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground">模型筛选：</span>
+          <Popover open={globalModelPopoverOpen} onOpenChange={setGlobalModelPopoverOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                aria-expanded={globalModelPopoverOpen}
+                className="w-[200px] justify-between"
+              >
+                <Cpu className="mr-2 h-4 w-4" />
+                {globalModelFilter === 'all' ? '全部模型' : globalModelFilter}
+                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[200px] p-0">
+              <Command>
+                <CommandInput placeholder="搜索模型..." />
+                <CommandList>
+                  <CommandEmpty>未找到模型</CommandEmpty>
+                  <CommandGroup>
+                    <CommandItem
+                      value="all"
+                      onSelect={() => {
+                        setGlobalModelFilter('all');
+                        setGlobalModelPopoverOpen(false);
+                      }}
+                    >
+                      <Check
+                        className={cn(
+                          "mr-2 h-4 w-4",
+                          globalModelFilter === 'all' ? "opacity-100" : "opacity-0"
+                        )}
+                      />
+                      全部模型
+                    </CommandItem>
+                    {availableModels.map((model) => (
+                      <CommandItem
+                        key={model}
+                        value={model}
+                        onSelect={() => {
+                          setGlobalModelFilter(model);
+                          setGlobalModelPopoverOpen(false);
+                        }}
+                      >
+                        <Check
+                          className={cn(
+                            "mr-2 h-4 w-4",
+                            globalModelFilter === model ? "opacity-100" : "opacity-0"
+                          )}
+                        />
+                        {model}
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
+        </div>
+      </div>
       
       {/* 统计卡片 */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -557,6 +683,142 @@ export function AdminAnalytics() {
         </Card>
       </div>
 
+      {/* 模型视角数据 */}
+      <Card className="enterprise-card">
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Cpu className="w-4 h-4" />
+            模型使用数据 {globalModelFilter !== 'all' && `- ${globalModelFilter}`}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* 模型统计概览 */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="p-3 bg-muted/30 rounded-lg">
+              <p className="text-xs text-muted-foreground">Token 消耗</p>
+              <p className="text-xl font-bold">{formatTokens(modelStats.totalTokens)}</p>
+            </div>
+            <div className="p-3 bg-muted/30 rounded-lg">
+              <p className="text-xs text-muted-foreground">请求次数</p>
+              <p className="text-xl font-bold">{modelStats.totalRequests.toLocaleString()}</p>
+            </div>
+            <div className="p-3 bg-muted/30 rounded-lg">
+              <p className="text-xs text-muted-foreground">平均时延</p>
+              <p className="text-xl font-bold">{modelStats.avgLatency}s</p>
+            </div>
+            <div className="p-3 bg-muted/30 rounded-lg">
+              <p className="text-xs text-muted-foreground">错误数</p>
+              <p className="text-xl font-bold text-destructive">{modelStats.totalErrors}</p>
+            </div>
+          </div>
+          
+          {/* 模型数据表格 */}
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>模型</TableHead>
+                <TableHead className="text-right">Token 消耗</TableHead>
+                <TableHead className="text-right">请求次数</TableHead>
+                <TableHead className="text-right">平均时延</TableHead>
+                <TableHead className="text-right">错误数</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredModelUsageData.map((item) => (
+                <TableRow key={item.model}>
+                  <TableCell className="font-medium">{item.model}</TableCell>
+                  <TableCell className="text-right">{formatTokens(item.tokens)}</TableCell>
+                  <TableCell className="text-right">{item.requests.toLocaleString()}</TableCell>
+                  <TableCell className="text-right">{item.avgLatency}s</TableCell>
+                  <TableCell className="text-right text-destructive font-medium">{item.errors}</TableCell>
+                </TableRow>
+              ))}
+              {/* 总计行 */}
+              <TableRow className="bg-muted/30 font-medium">
+                <TableCell>总计</TableCell>
+                <TableCell className="text-right">{formatTokens(modelStats.totalTokens)}</TableCell>
+                <TableCell className="text-right">{modelStats.totalRequests.toLocaleString()}</TableCell>
+                <TableCell className="text-right">{modelStats.avgLatency}s</TableCell>
+                <TableCell className="text-right text-destructive">{modelStats.totalErrors}</TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
+      {/* 模型 Token 消耗趋势 */}
+      {globalModelFilter === 'all' && (
+        <Card className="enterprise-card">
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <TrendingUp className="w-4 h-4" />
+              各模型 Token 消耗趋势
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={modelTrendData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis dataKey="date" tick={{ fontSize: 12 }} />
+                  <YAxis 
+                    tick={{ fontSize: 12 }}
+                    tickFormatter={(value) => formatTokens(value)}
+                  />
+                  <Tooltip formatter={(value: number) => formatTokens(value)} />
+                  <Line 
+                    type="monotone" 
+                    dataKey="GPT-4 Turbo" 
+                    stroke="hsl(213, 94%, 50%)" 
+                    strokeWidth={2}
+                    dot={false}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="GPT-4o" 
+                    stroke="hsl(142, 76%, 36%)" 
+                    strokeWidth={2}
+                    dot={false}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="Claude 3.5 Sonnet" 
+                    stroke="hsl(38, 92%, 50%)" 
+                    strokeWidth={2}
+                    dot={false}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="DeepSeek V3" 
+                    stroke="hsl(280, 65%, 60%)" 
+                    strokeWidth={2}
+                    dot={false}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="flex flex-wrap gap-4 mt-3 justify-center">
+              <div className="flex items-center gap-2 text-xs">
+                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(213, 94%, 50%)' }} />
+                <span>GPT-4 Turbo</span>
+              </div>
+              <div className="flex items-center gap-2 text-xs">
+                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(142, 76%, 36%)' }} />
+                <span>GPT-4o</span>
+              </div>
+              <div className="flex items-center gap-2 text-xs">
+                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(38, 92%, 50%)' }} />
+                <span>Claude 3.5 Sonnet</span>
+              </div>
+              <div className="flex items-center gap-2 text-xs">
+                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(280, 65%, 60%)' }} />
+                <span>DeepSeek V3</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* 按客户+模型的输出错误数表格 */}
       <Card className="enterprise-card">
         <CardHeader>
@@ -575,7 +837,9 @@ export function AdminAnalytics() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {errorByCustomerModel.map((item, index) => (
+              {errorByCustomerModel
+                .filter(item => globalModelFilter === 'all' || item.model === globalModelFilter)
+                .map((item, index) => (
                 <TableRow key={index}>
                   <TableCell className="font-medium">{item.customer}</TableCell>
                   <TableCell>{item.model}</TableCell>
