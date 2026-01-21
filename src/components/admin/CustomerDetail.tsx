@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { format } from 'date-fns';
 import { ArrowLeft, Building2, Users, Zap, Shield, Clock, Activity, Settings, Globe, Eye, CalendarIcon, Cloud, Server, Database, Network, HardDrive, Cpu, MemoryStick, AlertTriangle, CheckCircle2, XCircle, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
 import {
   Pagination,
   PaginationContent,
@@ -353,9 +354,7 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                     <span className="text-sm font-medium">模型切换</span>
                     <p className="text-xs text-muted-foreground">允许用户在模型异常时手动切换至备用模型</p>
                   </div>
-                  <Badge variant={customer.authConfig.enterpriseAuthMethod !== 'none' ? 'default' : 'secondary'}>
-                    已启用
-                  </Badge>
+                  <Switch defaultChecked />
                 </div>
               </CardContent>
             </Card>
