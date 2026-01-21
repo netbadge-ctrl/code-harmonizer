@@ -294,17 +294,17 @@ export default function MyCli() {
 
           {/* Token Usage Tab */}
           <TabsContent value="usage" className="space-y-6">
-            {/* Usage Overview - 2x2 Grid */}
+            {/* Usage Overview - 2 Cards */}
             <div className="grid gap-4 md:grid-cols-2">
-              {/* Quota Card */}
-              <Card className="bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">
-                <CardHeader className="pb-2">
+              {/* Quota & Today Token Card */}
+              <Card className="bg-gradient-to-br from-primary/5 to-primary/10 border-primary/20">
+                <CardHeader className="pb-3">
                   <CardTitle className="text-base flex items-center gap-2">
                     <Coins className="w-5 h-5 text-primary" />
                     消费额度（元）
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-3">
+                <CardContent className="space-y-4">
                   <div className="flex items-end justify-between">
                     <div>
                       <div className="text-3xl font-bold text-primary">
@@ -321,18 +321,33 @@ export default function MyCli() {
                   <p className="text-xs text-muted-foreground">
                     本月已使用 {costUsagePercent.toFixed(1)}%
                   </p>
+                  
+                  <Separator />
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Clock className="w-4 h-4" />
+                      <span className="text-sm">今日 Token 消耗</span>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-xl font-bold">{(tokenUsage.todayTokens / 1000).toFixed(1)}K</span>
+                      <span className={`text-xs ml-2 ${tokenUsage.todayChange < 0 ? 'text-green-600' : 'text-destructive'}`}>
+                        较昨日 {tokenUsage.todayChange > 0 ? '+' : ''}{tokenUsage.todayChange}%
+                      </span>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
 
-              {/* Monthly Cost Card */}
+              {/* Monthly & Today Cost Card */}
               <Card>
-                <CardHeader className="pb-2">
+                <CardHeader className="pb-3">
                   <CardTitle className="text-base flex items-center gap-2">
                     <Activity className="w-5 h-5" />
                     月累计消费
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-3">
+                <CardContent className="space-y-4">
                   <div className="flex items-end justify-between">
                     <div>
                       <div className="text-3xl font-bold">¥{tokenUsage.monthlyCost.toFixed(2)}</div>
@@ -346,38 +361,21 @@ export default function MyCli() {
                   <p className={`text-xs ${tokenUsage.monthlyChange < 0 ? 'text-green-600' : 'text-muted-foreground'}`}>
                     较上月 {tokenUsage.monthlyChange > 0 ? '+' : ''}{tokenUsage.monthlyChange}%
                   </p>
-                </CardContent>
-              </Card>
-
-              {/* Today Token Card */}
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardDescription className="flex items-center gap-2">
-                    <Clock className="w-4 h-4" />
-                    今日 Token 消耗
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{(tokenUsage.todayTokens / 1000).toFixed(1)}K</div>
-                  <p className={`text-xs ${tokenUsage.todayChange < 0 ? 'text-green-600' : 'text-destructive'}`}>
-                    较昨日 {tokenUsage.todayChange > 0 ? '+' : ''}{tokenUsage.todayChange}%
-                  </p>
-                </CardContent>
-              </Card>
-              
-              {/* Today Cost Card */}
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardDescription className="flex items-center gap-2">
-                    <Coins className="w-4 h-4" />
-                    今日消费（元）
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-amber-600">¥{tokenUsage.todayCost.toFixed(2)}</div>
-                  <p className={`text-xs ${tokenUsage.todayChange < 0 ? 'text-green-600' : 'text-destructive'}`}>
-                    较昨日 {tokenUsage.todayChange > 0 ? '+' : ''}{tokenUsage.todayChange}%
-                  </p>
+                  
+                  <Separator />
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Coins className="w-4 h-4" />
+                      <span className="text-sm">今日消费（元）</span>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-xl font-bold text-amber-600">¥{tokenUsage.todayCost.toFixed(2)}</span>
+                      <span className={`text-xs ml-2 ${tokenUsage.todayChange < 0 ? 'text-green-600' : 'text-destructive'}`}>
+                        较昨日 {tokenUsage.todayChange > 0 ? '+' : ''}{tokenUsage.todayChange}%
+                      </span>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             </div>
