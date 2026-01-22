@@ -526,6 +526,8 @@ export function AdminAnalytics() {
   });
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>('');
   const [customerPopoverOpen, setCustomerPopoverOpen] = useState(false);
+  const [customerModelFilter, setCustomerModelFilter] = useState<string>('all');
+  const [customerModelPopoverOpen, setCustomerModelPopoverOpen] = useState(false);
   
   // Model data tab state
   const [modelTimeRangePreset, setModelTimeRangePreset] = useState<TimeRangePreset>('7days');
@@ -1620,45 +1622,76 @@ export function AdminAnalytics() {
     </div>
   );
 
-  // 客户数据 - 生成该客户的模型使用数据
-  const customerModelUsageData = useMemo(() => {
+  // 客户数据 - 生成该客户的模型使用数据（包含输入输出token和千token时长）
+  const customerModelUsageDataRaw = useMemo(() => {
     if (!selectedCustomer) return [];
-    return availableModels.slice(0, 4).map((model, i) => ({
-      model,
-      tokens: Math.floor(selectedCustomer.usage.monthlyTokens * (0.35 - i * 0.08) + Math.random() * 100000),
-      requests: Math.floor(selectedCustomer.usage.monthlyRequests * (0.35 - i * 0.08) + Math.random() * 100),
-      successfulRequests: Math.floor(selectedCustomer.usage.monthlyRequests * (0.35 - i * 0.08) * 0.99 + Math.random() * 50),
-      ttftAvg: +(Math.random() * 0.4 + 0.2).toFixed(2),
-      ttftP98: +(Math.random() * 0.8 + 0.5).toFixed(2),
-      tpotAvg: +(Math.random() * 20 + 25).toFixed(1),
-      errorCount: Math.floor(Math.random() * 30 + 5),
-      errorRate: +(Math.random() * 1.2 + 0.2).toFixed(2),
-      successRate: +(99 - Math.random() * 1.5).toFixed(1),
-    }));
+    return availableModels.slice(0, 4).map((model, i) => {
+      const totalTokens = Math.floor(selectedCustomer.usage.monthlyTokens * (0.35 - i * 0.08) + Math.random() * 100000);
+      const inputTokens = Math.floor(totalTokens * (0.3 + Math.random() * 0.15)); // 30-45% input
+      const outputTokens = totalTokens - inputTokens;
+      const totalRequests = Math.floor(selectedCustomer.usage.monthlyRequests * (0.35 - i * 0.08) + Math.random() * 100);
+      const successfulRequests = Math.floor(totalRequests * 0.99 + Math.random() * 50);
+      
+      return {
+        model,
+        tokens: totalTokens,
+        inputTokens,
+        outputTokens,
+        requests: totalRequests,
+        successfulRequests: Math.min(successfulRequests, totalRequests),
+        ttftAvg: +(Math.random() * 0.4 + 0.2).toFixed(2),
+        ttftP98: +(Math.random() * 0.8 + 0.5).toFixed(2),
+        tpotAvg: +(Math.random() * 20 + 25).toFixed(1),
+        errorCount: Math.floor(Math.random() * 30 + 5),
+        errorRate: +(Math.random() * 1.2 + 0.2).toFixed(2),
+        successRate: +(99 - Math.random() * 1.5).toFixed(1),
+        // 千Token输入/输出平均时长 (秒)
+        inputLatencyPerKToken: +(Math.random() * 0.3 + 0.2).toFixed(3),
+        outputLatencyPerKToken: +(Math.random() * 1.5 + 0.8).toFixed(3),
+      };
+    });
   }, [selectedCustomer]);
+
+  // 客户数据 - 按模型筛选后的数据
+  const customerModelUsageData = useMemo(() => {
+    if (customerModelFilter === 'all') {
+      return customerModelUsageDataRaw;
+    }
+    return customerModelUsageDataRaw.filter(m => m.model === customerModelFilter);
+  }, [customerModelUsageDataRaw, customerModelFilter]);
 
   // 客户数据 - 汇总统计
   const customerStats = useMemo(() => {
     if (!selectedCustomer || customerModelUsageData.length === 0) {
       return {
         totalTokens: 0,
+        totalInputTokens: 0,
+        totalOutputTokens: 0,
         totalRequests: 0,
+        totalSuccessfulRequests: 0,
         avgTTFT: '0',
         avgTPOT: '0',
         totalErrors: 0,
         avgErrorRate: '0',
         avgSuccessRate: '0',
+        avgInputLatencyPerKToken: '0',
+        avgOutputLatencyPerKToken: '0',
       };
     }
     const data = customerModelUsageData;
     return {
       totalTokens: data.reduce((sum, m) => sum + m.tokens, 0),
+      totalInputTokens: data.reduce((sum, m) => sum + m.inputTokens, 0),
+      totalOutputTokens: data.reduce((sum, m) => sum + m.outputTokens, 0),
       totalRequests: data.reduce((sum, m) => sum + m.requests, 0),
+      totalSuccessfulRequests: data.reduce((sum, m) => sum + m.successfulRequests, 0),
       avgTTFT: (data.reduce((sum, m) => sum + m.ttftAvg, 0) / data.length).toFixed(2),
       avgTPOT: (data.reduce((sum, m) => sum + m.tpotAvg, 0) / data.length).toFixed(1),
       totalErrors: data.reduce((sum, m) => sum + m.errorCount, 0),
       avgErrorRate: (data.reduce((sum, m) => sum + m.errorRate, 0) / data.length).toFixed(2),
       avgSuccessRate: (data.reduce((sum, m) => sum + m.successRate, 0) / data.length).toFixed(1),
+      avgInputLatencyPerKToken: (data.reduce((sum, m) => sum + m.inputLatencyPerKToken, 0) / data.length).toFixed(3),
+      avgOutputLatencyPerKToken: (data.reduce((sum, m) => sum + m.outputLatencyPerKToken, 0) / data.length).toFixed(3),
     };
   }, [selectedCustomer, customerModelUsageData]);
 
@@ -1835,6 +1868,68 @@ export function AdminAnalytics() {
             </PopoverContent>
           </Popover>
         </div>
+
+        {/* 模型筛选 */}
+        <div className="flex items-center gap-2 flex-nowrap">
+          <span className="text-sm text-muted-foreground whitespace-nowrap">模型筛选：</span>
+          <Popover open={customerModelPopoverOpen} onOpenChange={setCustomerModelPopoverOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                aria-expanded={customerModelPopoverOpen}
+                className="w-[200px] justify-between"
+              >
+                <Cpu className="mr-2 h-4 w-4" />
+                {customerModelFilter === 'all' ? '全部模型' : customerModelFilter}
+                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[200px] p-0">
+              <Command>
+                <CommandInput placeholder="搜索模型..." />
+                <CommandList>
+                  <CommandEmpty>未找到模型</CommandEmpty>
+                  <CommandGroup>
+                    <CommandItem
+                      value="all"
+                      onSelect={() => {
+                        setCustomerModelFilter('all');
+                        setCustomerModelPopoverOpen(false);
+                      }}
+                    >
+                      <Check
+                        className={cn(
+                          "mr-2 h-4 w-4",
+                          customerModelFilter === 'all' ? "opacity-100" : "opacity-0"
+                        )}
+                      />
+                      全部模型
+                    </CommandItem>
+                    {availableModels.map((model) => (
+                      <CommandItem
+                        key={model}
+                        value={model}
+                        onSelect={() => {
+                          setCustomerModelFilter(model);
+                          setCustomerModelPopoverOpen(false);
+                        }}
+                      >
+                        <Check
+                          className={cn(
+                            "mr-2 h-4 w-4",
+                            customerModelFilter === model ? "opacity-100" : "opacity-0"
+                          )}
+                        />
+                        {model}
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
+        </div>
       </div>
 
       {selectedCustomer ? (
@@ -1964,7 +2059,7 @@ export function AdminAnalytics() {
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2">
                 <Cpu className="w-4 h-4" />
-                模型使用明细
+                模型使用明细 {customerModelFilter !== 'all' && `- ${customerModelFilter}`}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -1973,39 +2068,70 @@ export function AdminAnalytics() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>模型</TableHead>
-                      <TableHead className="text-right">Token消耗</TableHead>
-                      <TableHead className="text-right">请求数 (次)</TableHead>
-                      <TableHead className="text-right">成功请求 (次)</TableHead>
+                      <TableHead className="text-right">Token消耗 (输入/输出)</TableHead>
+                      <TableHead className="text-right">Token占比</TableHead>
+                      <TableHead className="text-right">请求数 (成功/总)</TableHead>
                       <TableHead className="text-right">首Token平均时延 (秒)</TableHead>
                       <TableHead className="text-right">首Token P98时延 (秒)</TableHead>
                       <TableHead className="text-right">Token生成速度 (tokens/秒)</TableHead>
+                      <TableHead className="text-right">千Token输入时长 (秒)</TableHead>
+                      <TableHead className="text-right">千Token输出时长 (秒)</TableHead>
                       <TableHead className="text-right">成功率</TableHead>
                       <TableHead className="text-right">错误数 (次)</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {customerModelUsageData.map((item) => (
-                      <TableRow key={item.model}>
-                        <TableCell className="font-medium">{item.model}</TableCell>
-                        <TableCell className="text-right">{formatTokens(item.tokens)}</TableCell>
-                        <TableCell className="text-right">{item.requests.toLocaleString()} 次</TableCell>
-                        <TableCell className="text-right">{item.successfulRequests.toLocaleString()} 次</TableCell>
-                        <TableCell className="text-right">{item.ttftAvg} 秒</TableCell>
-                        <TableCell className="text-right">{item.ttftP98} 秒</TableCell>
-                        <TableCell className="text-right">{item.tpotAvg} t/s</TableCell>
-                        <TableCell className="text-right text-success font-medium">{item.successRate}%</TableCell>
-                        <TableCell className="text-right text-destructive font-medium">{item.errorCount} 次</TableCell>
-                      </TableRow>
-                    ))}
+                    {customerModelUsageData.map((item) => {
+                      const tokenPercentage = customerStats.totalTokens > 0 
+                        ? ((item.tokens / customerStats.totalTokens) * 100).toFixed(1)
+                        : '0';
+                      return (
+                        <TableRow key={item.model}>
+                          <TableCell className="font-medium">{item.model}</TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex flex-col items-end">
+                              <span>{formatTokens(item.tokens)}</span>
+                              <span className="text-xs text-muted-foreground">
+                                (入: {formatTokens(item.inputTokens)}, 出: {formatTokens(item.outputTokens)})
+                              </span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right">{tokenPercentage}%</TableCell>
+                          <TableCell className="text-right">
+                            <span className="text-success">{item.successfulRequests.toLocaleString()}</span>
+                            <span className="text-muted-foreground">/{item.requests.toLocaleString()}</span>
+                          </TableCell>
+                          <TableCell className="text-right">{item.ttftAvg} 秒</TableCell>
+                          <TableCell className="text-right">{item.ttftP98} 秒</TableCell>
+                          <TableCell className="text-right">{item.tpotAvg} t/s</TableCell>
+                          <TableCell className="text-right">{item.inputLatencyPerKToken} 秒</TableCell>
+                          <TableCell className="text-right">{item.outputLatencyPerKToken} 秒</TableCell>
+                          <TableCell className="text-right text-success font-medium">{item.successRate}%</TableCell>
+                          <TableCell className="text-right text-destructive font-medium">{item.errorCount} 次</TableCell>
+                        </TableRow>
+                      );
+                    })}
                     {/* 总计行 */}
                     <TableRow className="bg-muted/30 font-medium">
                       <TableCell>总计/平均</TableCell>
-                      <TableCell className="text-right">{formatTokens(customerStats.totalTokens)}</TableCell>
-                      <TableCell className="text-right">{customerStats.totalRequests.toLocaleString()} 次</TableCell>
-                      <TableCell className="text-right">{customerModelUsageData.reduce((sum, m) => sum + m.successfulRequests, 0).toLocaleString()} 次</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex flex-col items-end">
+                          <span>{formatTokens(customerStats.totalTokens)}</span>
+                          <span className="text-xs text-muted-foreground">
+                            (入: {formatTokens(customerStats.totalInputTokens)}, 出: {formatTokens(customerStats.totalOutputTokens)})
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">100%</TableCell>
+                      <TableCell className="text-right">
+                        <span className="text-success">{customerStats.totalSuccessfulRequests.toLocaleString()}</span>
+                        <span className="text-muted-foreground">/{customerStats.totalRequests.toLocaleString()}</span>
+                      </TableCell>
                       <TableCell className="text-right">{customerStats.avgTTFT} 秒</TableCell>
                       <TableCell className="text-right">-</TableCell>
                       <TableCell className="text-right">{customerStats.avgTPOT} t/s</TableCell>
+                      <TableCell className="text-right">{customerStats.avgInputLatencyPerKToken} 秒</TableCell>
+                      <TableCell className="text-right">{customerStats.avgOutputLatencyPerKToken} 秒</TableCell>
                       <TableCell className="text-right text-success">{customerStats.avgSuccessRate}%</TableCell>
                       <TableCell className="text-right text-destructive">{customerStats.totalErrors} 次</TableCell>
                     </TableRow>
