@@ -639,14 +639,6 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                 </div>
               </CardContent>
             </Card>
-            <Card className="enterprise-card">
-              <CardContent className="p-4">
-                <div className="text-center">
-                  <p className="text-2xl font-bold text-foreground">{stats.avgErrorRate}%</p>
-                  <p className="text-xs text-muted-foreground">平均错误率</p>
-                </div>
-              </CardContent>
-            </Card>
           </div>
 
           {/* 使用趋势图 */}
