@@ -158,7 +158,7 @@ const modelTrendData = generateModelTrendData();
 
 type TimeRangePreset = '15min' | '4hours' | '24hours' | '7days' | 'custom';
 
-// 模型性能指标数据
+// 模型性能指标数据（包含错误统计）
 const modelPerformanceData = [
   { 
     model: 'GPT-4 Turbo', 
@@ -170,7 +170,9 @@ const modelPerformanceData = [
     tpotAvg: 28.5,
     tokens: 45000000,
     requests: 12500,
-    successRate: 99.2
+    successRate: 99.2,
+    errorCount: 100,
+    errorRate: 0.8
   },
   { 
     model: 'GPT-4o', 
@@ -182,7 +184,9 @@ const modelPerformanceData = [
     tpotAvg: 35.2,
     tokens: 38000000,
     requests: 15200,
-    successRate: 99.5
+    successRate: 99.5,
+    errorCount: 76,
+    errorRate: 0.5
   },
   { 
     model: 'GPT-4o Mini', 
@@ -194,7 +198,9 @@ const modelPerformanceData = [
     tpotAvg: 48.6,
     tokens: 28000000,
     requests: 22000,
-    successRate: 99.8
+    successRate: 99.8,
+    errorCount: 44,
+    errorRate: 0.2
   },
   { 
     model: 'Claude 3.5 Sonnet', 
@@ -206,7 +212,9 @@ const modelPerformanceData = [
     tpotAvg: 32.1,
     tokens: 52000000,
     requests: 18000,
-    successRate: 99.3
+    successRate: 99.3,
+    errorCount: 126,
+    errorRate: 0.7
   },
   { 
     model: 'Claude 3 Opus', 
@@ -218,7 +226,9 @@ const modelPerformanceData = [
     tpotAvg: 18.5,
     tokens: 15000000,
     requests: 4500,
-    successRate: 98.9
+    successRate: 98.9,
+    errorCount: 50,
+    errorRate: 1.1
   },
   { 
     model: 'DeepSeek V3', 
@@ -230,7 +240,9 @@ const modelPerformanceData = [
     tpotAvg: 65.8,
     tokens: 32000000,
     requests: 28000,
-    successRate: 99.6
+    successRate: 99.6,
+    errorCount: 112,
+    errorRate: 0.4
   },
   { 
     model: 'Kimi K2', 
@@ -242,8 +254,94 @@ const modelPerformanceData = [
     tpotAvg: 42.3,
     tokens: 18000000,
     requests: 9800,
-    successRate: 99.4
+    successRate: 99.4,
+    errorCount: 59,
+    errorRate: 0.6
   },
+];
+
+// 按模型的错误类型分布数据
+const modelErrorByType: Record<string, { code: string; name: string; count: number; percentage: number }[]> = {
+  'GPT-4 Turbo': [
+    { code: '429', name: '请求频率限制', count: 35, percentage: 35.0 },
+    { code: '500', name: '服务器内部错误', count: 23, percentage: 23.0 },
+    { code: '503', name: '服务不可用', count: 18, percentage: 18.0 },
+    { code: '504', name: '网关超时', count: 12, percentage: 12.0 },
+    { code: '400', name: '请求参数错误', count: 8, percentage: 8.0 },
+    { code: '401', name: '认证失败', count: 4, percentage: 4.0 },
+  ],
+  'GPT-4o': [
+    { code: '429', name: '请求频率限制', count: 28, percentage: 36.8 },
+    { code: '500', name: '服务器内部错误', count: 18, percentage: 23.7 },
+    { code: '503', name: '服务不可用', count: 12, percentage: 15.8 },
+    { code: '504', name: '网关超时', count: 10, percentage: 13.2 },
+    { code: '400', name: '请求参数错误', count: 5, percentage: 6.6 },
+    { code: '401', name: '认证失败', count: 3, percentage: 3.9 },
+  ],
+  'GPT-4o Mini': [
+    { code: '429', name: '请求频率限制', count: 15, percentage: 34.1 },
+    { code: '500', name: '服务器内部错误', count: 10, percentage: 22.7 },
+    { code: '503', name: '服务不可用', count: 8, percentage: 18.2 },
+    { code: '504', name: '网关超时', count: 5, percentage: 11.4 },
+    { code: '400', name: '请求参数错误', count: 4, percentage: 9.1 },
+    { code: '401', name: '认证失败', count: 2, percentage: 4.5 },
+  ],
+  'Claude 3.5 Sonnet': [
+    { code: '429', name: '请求频率限制', count: 42, percentage: 33.3 },
+    { code: '500', name: '服务器内部错误', count: 32, percentage: 25.4 },
+    { code: '503', name: '服务不可用', count: 25, percentage: 19.8 },
+    { code: '504', name: '网关超时', count: 15, percentage: 11.9 },
+    { code: '400', name: '请求参数错误', count: 8, percentage: 6.3 },
+    { code: '401', name: '认证失败', count: 4, percentage: 3.2 },
+  ],
+  'Claude 3 Opus': [
+    { code: '429', name: '请求频率限制', count: 18, percentage: 36.0 },
+    { code: '500', name: '服务器内部错误', count: 12, percentage: 24.0 },
+    { code: '503', name: '服务不可用', count: 8, percentage: 16.0 },
+    { code: '504', name: '网关超时', count: 6, percentage: 12.0 },
+    { code: '400', name: '请求参数错误', count: 4, percentage: 8.0 },
+    { code: '401', name: '认证失败', count: 2, percentage: 4.0 },
+  ],
+  'DeepSeek V3': [
+    { code: '429', name: '请求频率限制', count: 45, percentage: 40.2 },
+    { code: '500', name: '服务器内部错误', count: 25, percentage: 22.3 },
+    { code: '503', name: '服务不可用', count: 20, percentage: 17.9 },
+    { code: '504', name: '网关超时', count: 12, percentage: 10.7 },
+    { code: '400', name: '请求参数错误', count: 6, percentage: 5.4 },
+    { code: '401', name: '认证失败', count: 4, percentage: 3.6 },
+  ],
+  'Kimi K2': [
+    { code: '429', name: '请求频率限制', count: 22, percentage: 37.3 },
+    { code: '500', name: '服务器内部错误', count: 14, percentage: 23.7 },
+    { code: '503', name: '服务不可用', count: 10, percentage: 16.9 },
+    { code: '504', name: '网关超时', count: 7, percentage: 11.9 },
+    { code: '400', name: '请求参数错误', count: 4, percentage: 6.8 },
+    { code: '401', name: '认证失败', count: 2, percentage: 3.4 },
+  ],
+};
+
+// 按模型的错误明细数据
+const modelErrorDetails = [
+  { model: 'GPT-4 Turbo', customer: '科技创新有限公司', errorCode: '429', errorCount: 12, timestamp: '2025-01-22 10:32:15' },
+  { model: 'GPT-4 Turbo', customer: '科技创新有限公司', errorCode: '500', errorCount: 8, timestamp: '2025-01-22 09:45:22' },
+  { model: 'GPT-4 Turbo', customer: '医疗健康科技', errorCode: '429', errorCount: 18, timestamp: '2025-01-22 11:15:08' },
+  { model: 'GPT-4 Turbo', customer: '医疗健康科技', errorCode: '500', errorCount: 15, timestamp: '2025-01-22 14:22:33' },
+  { model: 'GPT-4 Turbo', customer: '金融数据服务公司', errorCode: '429', errorCount: 5, timestamp: '2025-01-22 08:55:41' },
+  { model: 'GPT-4o', customer: '金融数据服务公司', errorCode: '500', errorCount: 10, timestamp: '2025-01-22 13:12:55' },
+  { model: 'GPT-4o', customer: '金融数据服务公司', errorCode: '503', errorCount: 5, timestamp: '2025-01-22 15:33:18' },
+  { model: 'GPT-4o', customer: '智能制造有限公司', errorCode: '504', errorCount: 1, timestamp: '2025-01-22 16:45:02' },
+  { model: 'GPT-4o Mini', customer: '医疗健康科技', errorCode: '401', errorCount: 4, timestamp: '2025-01-22 09:22:11' },
+  { model: 'GPT-4o Mini', customer: '医疗健康科技', errorCode: '429', errorCount: 3, timestamp: '2025-01-22 10:15:44' },
+  { model: 'GPT-4o Mini', customer: '教育科技集团', errorCode: '400', errorCount: 2, timestamp: '2025-01-22 11:55:33' },
+  { model: 'GPT-4o Mini', customer: '教育科技集团', errorCode: '500', errorCount: 1, timestamp: '2025-01-22 14:08:27' },
+  { model: 'Claude 3.5 Sonnet', customer: '科技创新有限公司', errorCode: '429', errorCount: 5, timestamp: '2025-01-22 08:32:18' },
+  { model: 'Claude 3.5 Sonnet', customer: '科技创新有限公司', errorCode: '504', errorCount: 3, timestamp: '2025-01-22 12:45:55' },
+  { model: 'Claude 3.5 Sonnet', customer: '医疗健康科技', errorCode: '503', errorCount: 12, timestamp: '2025-01-22 15:22:08' },
+  { model: 'Claude 3.5 Sonnet', customer: '医疗健康科技', errorCode: '400', errorCount: 6, timestamp: '2025-01-22 16:33:41' },
+  { model: 'DeepSeek V3', customer: '科技创新有限公司', errorCode: '429', errorCount: 25, timestamp: '2025-01-22 09:15:22' },
+  { model: 'DeepSeek V3', customer: '金融数据服务公司', errorCode: '503', errorCount: 15, timestamp: '2025-01-22 11:45:33' },
+  { model: 'Kimi K2', customer: '教育科技集团', errorCode: '429', errorCount: 12, timestamp: '2025-01-22 10:22:55' },
+  { model: 'Kimi K2', customer: '智能制造有限公司', errorCode: '500', errorCount: 8, timestamp: '2025-01-22 13:55:18' },
 ];
 
 // 生成每小时性能趋势数据
@@ -1509,7 +1607,7 @@ export function AdminAnalytics() {
     return modelPerformanceData.filter(m => m.model === modelTabFilter);
   }, [modelTabFilter]);
 
-  // 模型性能汇总统计
+  // 模型性能汇总统计（包含错误数据）
   const modelPerformanceStats = useMemo(() => {
     const data = filteredModelPerformanceData;
     return {
@@ -1525,8 +1623,43 @@ export function AdminAnalytics() {
       avgSuccessRate: data.length > 0 
         ? (data.reduce((sum, m) => sum + m.successRate, 0) / data.length).toFixed(1)
         : '0',
+      totalErrors: data.reduce((sum, m) => sum + m.errorCount, 0),
+      avgErrorRate: data.length > 0 
+        ? (data.reduce((sum, m) => sum + m.errorRate, 0) / data.length).toFixed(2)
+        : '0',
     };
   }, [filteredModelPerformanceData]);
+
+  // 过滤后的模型错误类型统计
+  const filteredModelErrorByType = useMemo(() => {
+    if (modelTabFilter === 'all') {
+      // 合并所有模型的错误统计
+      const allErrors: Record<string, { code: string; name: string; count: number }> = {};
+      Object.values(modelErrorByType).forEach(errors => {
+        errors.forEach(err => {
+          if (allErrors[err.code]) {
+            allErrors[err.code].count += err.count;
+          } else {
+            allErrors[err.code] = { code: err.code, name: err.name, count: err.count };
+          }
+        });
+      });
+      const totalCount = Object.values(allErrors).reduce((sum, e) => sum + e.count, 0);
+      return Object.values(allErrors).map(e => ({
+        ...e,
+        percentage: totalCount > 0 ? parseFloat(((e.count / totalCount) * 100).toFixed(1)) : 0
+      })).sort((a, b) => b.count - a.count);
+    }
+    return modelErrorByType[modelTabFilter] || [];
+  }, [modelTabFilter]);
+
+  // 过滤后的模型错误明细
+  const filteredModelErrorDetails = useMemo(() => {
+    if (modelTabFilter === 'all') {
+      return modelErrorDetails;
+    }
+    return modelErrorDetails.filter(e => e.model === modelTabFilter);
+  }, [modelTabFilter]);
 
   const renderModelTab = () => (
     <div className="space-y-6">
@@ -1669,7 +1802,7 @@ export function AdminAnalytics() {
       </div>
 
       {/* 模型性能概览统计卡片 */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
         <Card className="enterprise-card">
           <CardContent className="p-4">
             <div className="text-center">
@@ -1690,7 +1823,7 @@ export function AdminAnalytics() {
           <CardContent className="p-4">
             <div className="text-center">
               <p className="text-2xl font-bold text-foreground">{modelPerformanceStats.avgTPOT}</p>
-              <p className="text-xs text-muted-foreground">平均 TPOT (tokens/s)</p>
+              <p className="text-xs text-muted-foreground">TPOT (tokens/s)</p>
             </div>
           </CardContent>
         </Card>
@@ -1715,6 +1848,22 @@ export function AdminAnalytics() {
             <div className="text-center">
               <p className="text-2xl font-bold text-success">{modelPerformanceStats.avgSuccessRate}%</p>
               <p className="text-xs text-muted-foreground">成功率</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="enterprise-card">
+          <CardContent className="p-4">
+            <div className="text-center">
+              <p className="text-2xl font-bold text-destructive">{modelPerformanceStats.totalErrors}</p>
+              <p className="text-xs text-muted-foreground">错误总数</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="enterprise-card">
+          <CardContent className="p-4">
+            <div className="text-center">
+              <p className="text-2xl font-bold text-destructive">{modelPerformanceStats.avgErrorRate}%</p>
+              <p className="text-xs text-muted-foreground">平均错误率</p>
             </div>
           </CardContent>
         </Card>
@@ -1883,6 +2032,160 @@ export function AdminAnalytics() {
           <p className="text-xs text-muted-foreground text-center mt-2">
             注：工作时段 (09:30-21:30) TPM 通常显著高于非工作时段
           </p>
+        </CardContent>
+      </Card>
+
+      {/* 模型错误统计区域 */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* 按错误代码统计 */}
+        <Card className="enterprise-card">
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4" />
+              按错误代码统计 {modelTabFilter !== 'all' && `- ${modelTabFilter}`}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>错误代码</TableHead>
+                  <TableHead>错误类型</TableHead>
+                  <TableHead className="text-right">次数</TableHead>
+                  <TableHead className="text-right">占比</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredModelErrorByType.map((item) => (
+                  <TableRow key={item.code}>
+                    <TableCell>
+                      <span className={cn(
+                        "px-2 py-0.5 rounded text-xs font-mono font-medium",
+                        item.code === '429' && "bg-yellow-500/10 text-yellow-600",
+                        item.code === '500' && "bg-destructive/10 text-destructive",
+                        item.code === '503' && "bg-orange-500/10 text-orange-600",
+                        item.code === '504' && "bg-purple-500/10 text-purple-600",
+                        item.code === '400' && "bg-blue-500/10 text-blue-600",
+                        item.code === '401' && "bg-red-500/10 text-red-600",
+                      )}>
+                        {item.code}
+                      </span>
+                    </TableCell>
+                    <TableCell>{item.name}</TableCell>
+                    <TableCell className="text-right font-medium">{item.count}</TableCell>
+                    <TableCell className="text-right text-muted-foreground">{item.percentage}%</TableCell>
+                  </TableRow>
+                ))}
+                {/* 总计行 */}
+                <TableRow className="bg-muted/30 font-medium">
+                  <TableCell colSpan={2}>总计</TableCell>
+                  <TableCell className="text-right">{filteredModelErrorByType.reduce((sum, e) => sum + e.count, 0)}</TableCell>
+                  <TableCell className="text-right">100%</TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+
+        {/* 按模型错误分布（仅全部模型时显示） */}
+        {modelTabFilter === 'all' && (
+          <Card className="enterprise-card">
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Cpu className="w-4 h-4" />
+                按模型错误分布
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>模型</TableHead>
+                    <TableHead className="text-right">错误数</TableHead>
+                    <TableHead className="text-right">错误率</TableHead>
+                    <TableHead className="text-right">主要错误类型</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {modelPerformanceData.map((item) => {
+                    const topError = modelErrorByType[item.model]?.[0];
+                    return (
+                      <TableRow key={item.model}>
+                        <TableCell className="font-medium">{item.model}</TableCell>
+                        <TableCell className="text-right text-destructive font-medium">{item.errorCount}</TableCell>
+                        <TableCell className="text-right">{item.errorRate}%</TableCell>
+                        <TableCell className="text-right">
+                          {topError && (
+                            <span className={cn(
+                              "px-2 py-0.5 rounded text-xs font-mono font-medium",
+                              topError.code === '429' && "bg-yellow-500/10 text-yellow-600",
+                              topError.code === '500' && "bg-destructive/10 text-destructive",
+                            )}>
+                              {topError.code}
+                            </span>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+
+      {/* 模型错误明细表格 */}
+      <Card className="enterprise-card">
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4" />
+            错误明细 {modelTabFilter !== 'all' && `- ${modelTabFilter}`}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                {modelTabFilter === 'all' && <TableHead>模型</TableHead>}
+                <TableHead>客户</TableHead>
+                <TableHead>错误代码</TableHead>
+                <TableHead className="text-right">错误数</TableHead>
+                <TableHead className="text-right">最近发生时间</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredModelErrorDetails.map((item, index) => (
+                <TableRow key={index}>
+                  {modelTabFilter === 'all' && <TableCell className="font-medium">{item.model}</TableCell>}
+                  <TableCell>{item.customer}</TableCell>
+                  <TableCell>
+                    <span className={cn(
+                      "px-2 py-0.5 rounded text-xs font-mono font-medium",
+                      item.errorCode === '429' && "bg-yellow-500/10 text-yellow-600",
+                      item.errorCode === '500' && "bg-destructive/10 text-destructive",
+                      item.errorCode === '503' && "bg-orange-500/10 text-orange-600",
+                      item.errorCode === '504' && "bg-purple-500/10 text-purple-600",
+                      item.errorCode === '400' && "bg-blue-500/10 text-blue-600",
+                      item.errorCode === '401' && "bg-red-500/10 text-red-600",
+                    )}>
+                      {item.errorCode}
+                    </span>
+                  </TableCell>
+                  <TableCell className="text-right text-destructive font-medium">{item.errorCount}</TableCell>
+                  <TableCell className="text-right text-muted-foreground">{item.timestamp}</TableCell>
+                </TableRow>
+              ))}
+              {/* 总计行 */}
+              <TableRow className="bg-muted/30 font-medium">
+                {modelTabFilter === 'all' && <TableCell>-</TableCell>}
+                <TableCell>总计</TableCell>
+                <TableCell>-</TableCell>
+                <TableCell className="text-right text-destructive">{filteredModelErrorDetails.reduce((sum, e) => sum + e.errorCount, 0)}</TableCell>
+                <TableCell>-</TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
     </div>
