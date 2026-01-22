@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Building2, Users, Zap, TrendingUp, Activity, AlertTriangle, Clock, CalendarIcon, Check, ChevronsUpDown, Cpu, Eye, Copy, X } from 'lucide-react';
+import { Building2, CalendarIcon, Check, ChevronsUpDown, Eye, Copy, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -546,6 +546,16 @@ export function AdminAnalytics() {
   const [selectedGlobalError, setSelectedGlobalError] = useState<typeof errorByCustomerModel[0] | null>(null);
   const [globalErrorDetailDialogOpen, setGlobalErrorDetailDialogOpen] = useState(false);
 
+  // Error code filter for error trend charts
+  const [customerErrorCodeFilter, setCustomerErrorCodeFilter] = useState<string>('429');
+  const [modelErrorCodeFilter, setModelErrorCodeFilter] = useState<string>('429');
+
+  // Pagination for error details
+  const [customerErrorPage, setCustomerErrorPage] = useState(1);
+  const [modelErrorPage, setModelErrorPage] = useState(1);
+  const [globalErrorPage, setGlobalErrorPage] = useState(1);
+  const errorPageSize = 10;
+
   const handleViewErrorDetail = (error: typeof modelErrorDetailsExtended[0]) => {
     setSelectedError(error);
     setErrorDetailDialogOpen(true);
@@ -894,7 +904,6 @@ export function AdminAnalytics() {
                 aria-expanded={globalModelPopoverOpen}
                 className="w-[200px] justify-between"
               >
-                <Cpu className="mr-2 h-4 w-4" />
                 {globalModelFilter === 'all' ? '全部模型' : globalModelFilter}
                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
               </Button>
@@ -950,61 +959,41 @@ export function AdminAnalytics() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card className="enterprise-card">
           <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10">
-                <Building2 className="w-5 h-5 text-primary" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-foreground">{stats.totalCustomers}</p>
-                <p className="text-xs text-muted-foreground">
-                  总客户数 ({stats.activeCustomers} 活跃)
-                </p>
-              </div>
+            <div>
+              <p className="text-2xl font-bold text-foreground">{stats.totalCustomers}</p>
+              <p className="text-xs text-muted-foreground">
+                总客户数 ({stats.activeCustomers} 活跃)
+              </p>
             </div>
           </CardContent>
         </Card>
         <Card className="enterprise-card">
           <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-success/10">
-                <Users className="w-5 h-5 text-success" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-foreground">{stats.activeUsers}</p>
-                <p className="text-xs text-muted-foreground">
-                  活跃用户 / {stats.totalUsers} 总用户
-                </p>
-              </div>
+            <div>
+              <p className="text-2xl font-bold text-foreground">{stats.activeUsers}</p>
+              <p className="text-xs text-muted-foreground">
+                活跃用户 / {stats.totalUsers} 总用户
+              </p>
             </div>
           </CardContent>
         </Card>
         <Card className="enterprise-card">
           <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-warning/10">
-                <Zap className="w-5 h-5 text-warning" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-foreground">{formatTokens(stats.monthlyTokens)}</p>
-                <p className="text-xs text-muted-foreground">
-                  所选日期累计 Token
-                </p>
-              </div>
+            <div>
+              <p className="text-2xl font-bold text-foreground">{formatTokens(stats.monthlyTokens)}</p>
+              <p className="text-xs text-muted-foreground">
+                所选日期累计 Token
+              </p>
             </div>
           </CardContent>
         </Card>
         <Card className="enterprise-card">
           <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-info/10">
-                <Activity className="w-5 h-5 text-info" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-foreground">{stats.monthlyRequests.toLocaleString()}</p>
-                <p className="text-xs text-muted-foreground">
-                  所选日期累计请求数
-                </p>
-              </div>
+            <div>
+              <p className="text-2xl font-bold text-foreground">{stats.monthlyRequests.toLocaleString()}</p>
+              <p className="text-xs text-muted-foreground">
+                所选日期累计请求数
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -1014,29 +1003,19 @@ export function AdminAnalytics() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card className="enterprise-card">
           <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-destructive/10">
-                <AlertTriangle className="w-5 h-5 text-destructive" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-foreground">{stats.totalErrors}</p>
-                <p className="text-xs text-muted-foreground">输出错误总数</p>
-              </div>
+            <div>
+              <p className="text-2xl font-bold text-foreground">{stats.totalErrors}</p>
+              <p className="text-xs text-muted-foreground">输出错误总数</p>
             </div>
           </CardContent>
         </Card>
         <Card className="enterprise-card">
           <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-secondary/50">
-                <Clock className="w-5 h-5 text-secondary-foreground" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-foreground">
-                  {avgInputLatency}s / {avgOutputLatency}s
-                </p>
-                <p className="text-xs text-muted-foreground">千Token平均时长 (输入/输出)</p>
-              </div>
+            <div>
+              <p className="text-2xl font-bold text-foreground">
+                {avgInputLatency}s / {avgOutputLatency}s
+              </p>
+              <p className="text-xs text-muted-foreground">千Token平均时长 (输入/输出)</p>
             </div>
           </CardContent>
         </Card>
@@ -1047,8 +1026,7 @@ export function AdminAnalytics() {
         {/* 每日 Token 趋势 */}
         <Card className="enterprise-card">
           <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <TrendingUp className="w-4 h-4" />
+            <CardTitle className="text-base">
               每日 Token 消耗趋势
             </CardTitle>
           </CardHeader>
@@ -1081,8 +1059,7 @@ export function AdminAnalytics() {
         {/* 客户版本分布 */}
         <Card className="enterprise-card">
           <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <Building2 className="w-4 h-4" />
+            <CardTitle className="text-base">
               客户版本分布
             </CardTitle>
           </CardHeader>
@@ -1116,8 +1093,7 @@ export function AdminAnalytics() {
         {/* Token 消耗排名 */}
         <Card className="enterprise-card">
           <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <Zap className="w-4 h-4" />
+            <CardTitle className="text-base">
               客户 Token 消耗排名 (本月)
             </CardTitle>
           </CardHeader>
@@ -1155,8 +1131,7 @@ export function AdminAnalytics() {
         {/* 千Token时延趋势 (分钟级) */}
         <Card className="enterprise-card">
           <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <Clock className="w-4 h-4" />
+            <CardTitle className="text-base">
               千Token平均时长趋势 (分钟级)
             </CardTitle>
           </CardHeader>
@@ -1192,8 +1167,7 @@ export function AdminAnalytics() {
       {/* 模型视角数据 */}
       <Card className="enterprise-card">
         <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <Cpu className="w-4 h-4" />
+          <CardTitle className="text-base">
             模型使用数据 {globalModelFilter !== 'all' && `- ${globalModelFilter}`}
           </CardTitle>
         </CardHeader>
@@ -1239,14 +1213,6 @@ export function AdminAnalytics() {
                   <TableCell className="text-right text-destructive font-medium">{item.errors}</TableCell>
                 </TableRow>
               ))}
-              {/* 总计行 */}
-              <TableRow className="bg-muted/30 font-medium">
-                <TableCell>总计</TableCell>
-                <TableCell className="text-right">{formatTokens(modelStats.totalTokens)}</TableCell>
-                <TableCell className="text-right">{modelStats.totalRequests.toLocaleString()}</TableCell>
-                <TableCell className="text-right">{modelStats.avgLatency}s</TableCell>
-                <TableCell className="text-right text-destructive">{modelStats.totalErrors}</TableCell>
-              </TableRow>
             </TableBody>
           </Table>
         </CardContent>
@@ -1256,8 +1222,7 @@ export function AdminAnalytics() {
       {globalModelFilter === 'all' && (
         <Card className="enterprise-card">
           <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <TrendingUp className="w-4 h-4" />
+            <CardTitle className="text-base">
               模型调用趋势
             </CardTitle>
           </CardHeader>
@@ -1403,8 +1368,7 @@ export function AdminAnalytics() {
       <div className="grid grid-cols-1 gap-4">
         <Card className="enterprise-card">
           <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4" />
+            <CardTitle className="text-base">
               按错误代码统计
             </CardTitle>
           </CardHeader>
@@ -1448,8 +1412,7 @@ export function AdminAnalytics() {
       {/* 按客户+模型+错误类型的输出错误数表格 */}
       <Card className="enterprise-card">
         <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4" />
+          <CardTitle className="text-base">
             按客户+模型的错误明细
           </CardTitle>
         </CardHeader>
@@ -1466,51 +1429,75 @@ export function AdminAnalytics() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {errorByCustomerModel
-                .filter(item => globalModelFilter === 'all' || item.model === globalModelFilter)
-                .map((item) => (
-                <TableRow key={item.id}>
-                  <TableCell className="font-medium">{item.customer}</TableCell>
-                  <TableCell>{item.model}</TableCell>
-                  <TableCell>
-                    <span className={cn(
-                      "px-2 py-0.5 rounded text-xs font-mono font-medium",
-                      item.errorCode === '429' && "bg-yellow-500/10 text-yellow-600",
-                      item.errorCode === '500' && "bg-destructive/10 text-destructive",
-                      item.errorCode === '503' && "bg-orange-500/10 text-orange-600",
-                      item.errorCode === '504' && "bg-purple-500/10 text-purple-600",
-                      item.errorCode === '400' && "bg-blue-500/10 text-blue-600",
-                      item.errorCode === '401' && "bg-red-500/10 text-red-600",
-                    )}>
-                      {item.errorCode}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-right text-destructive font-medium">{item.errorCount} 次</TableCell>
-                  <TableCell className="text-right text-muted-foreground">{item.timestamp}</TableCell>
-                  <TableCell className="text-center">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleViewGlobalErrorDetail(item)}
-                      className="h-7 px-2"
-                    >
-                      <Eye className="w-4 h-4 mr-1" />
-                      查看详情
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {/* 总计行 */}
-              <TableRow className="bg-muted/30 font-medium">
-                <TableCell colSpan={3}>总计</TableCell>
-                <TableCell className="text-right text-destructive">
-                  {errorByCustomerModel
-                    .filter(item => globalModelFilter === 'all' || item.model === globalModelFilter)
-                    .reduce((sum, e) => sum + e.errorCount, 0)} 次
-                </TableCell>
-                <TableCell>-</TableCell>
-                <TableCell>-</TableCell>
-              </TableRow>
+              {(() => {
+                const filteredData = errorByCustomerModel
+                  .filter(item => globalModelFilter === 'all' || item.model === globalModelFilter);
+                const totalPages = Math.ceil(filteredData.length / errorPageSize);
+                const paginatedData = filteredData.slice((globalErrorPage - 1) * errorPageSize, globalErrorPage * errorPageSize);
+                return (
+                  <>
+                    {paginatedData.map((item) => (
+                      <TableRow key={item.id}>
+                        <TableCell className="font-medium">{item.customer}</TableCell>
+                        <TableCell>{item.model}</TableCell>
+                        <TableCell>
+                          <span className={cn(
+                            "px-2 py-0.5 rounded text-xs font-mono font-medium",
+                            item.errorCode === '429' && "bg-yellow-500/10 text-yellow-600",
+                            item.errorCode === '500' && "bg-destructive/10 text-destructive",
+                            item.errorCode === '503' && "bg-orange-500/10 text-orange-600",
+                            item.errorCode === '504' && "bg-purple-500/10 text-purple-600",
+                            item.errorCode === '400' && "bg-blue-500/10 text-blue-600",
+                            item.errorCode === '401' && "bg-red-500/10 text-red-600",
+                          )}>
+                            {item.errorCode}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-right text-destructive font-medium">{item.errorCount} 次</TableCell>
+                        <TableCell className="text-right text-muted-foreground">{item.timestamp}</TableCell>
+                        <TableCell className="text-center">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleViewGlobalErrorDetail(item)}
+                            className="h-7 px-2"
+                          >
+                            <Eye className="w-4 h-4 mr-1" />
+                            查看详情
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {totalPages > 1 && (
+                      <TableRow>
+                        <TableCell colSpan={6} className="py-2">
+                          <div className="flex items-center justify-center gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setGlobalErrorPage(p => Math.max(1, p - 1))}
+                              disabled={globalErrorPage === 1}
+                            >
+                              <ChevronLeft className="h-4 w-4" />
+                            </Button>
+                            <span className="text-sm text-muted-foreground">
+                              第 {globalErrorPage} / {totalPages} 页
+                            </span>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setGlobalErrorPage(p => Math.min(totalPages, p + 1))}
+                              disabled={globalErrorPage === totalPages}
+                            >
+                              <ChevronRight className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </>
+                );
+              })()}
             </TableBody>
           </Table>
         </CardContent>
@@ -1520,8 +1507,7 @@ export function AdminAnalytics() {
       <Dialog open={globalErrorDetailDialogOpen} onOpenChange={setGlobalErrorDetailDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5 text-destructive" />
+            <DialogTitle>
               错误详情
             </DialogTitle>
           </DialogHeader>
@@ -1880,7 +1866,6 @@ export function AdminAnalytics() {
                 aria-expanded={customerModelPopoverOpen}
                 className="w-[200px] justify-between"
               >
-                <Cpu className="mr-2 h-4 w-4" />
                 {customerModelFilter === 'all' ? '全部模型' : customerModelFilter}
                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
               </Button>
@@ -2005,8 +1990,7 @@ export function AdminAnalytics() {
           {/* 使用趋势图 */}
           <Card className="enterprise-card">
             <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <TrendingUp className="w-4 h-4" />
+              <CardTitle className="text-base">
                 使用趋势
               </CardTitle>
             </CardHeader>
@@ -2057,8 +2041,7 @@ export function AdminAnalytics() {
           {/* 模型使用明细表 */}
           <Card className="enterprise-card">
             <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <Cpu className="w-4 h-4" />
+              <CardTitle className="text-base">
                 模型使用明细 {customerModelFilter !== 'all' && `- ${customerModelFilter}`}
               </CardTitle>
             </CardHeader>
@@ -2111,30 +2094,6 @@ export function AdminAnalytics() {
                         </TableRow>
                       );
                     })}
-                    {/* 总计行 */}
-                    <TableRow className="bg-muted/30 font-medium">
-                      <TableCell>总计/平均</TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex flex-col items-end">
-                          <span>{formatTokens(customerStats.totalTokens)}</span>
-                          <span className="text-xs text-muted-foreground">
-                            (入: {formatTokens(customerStats.totalInputTokens)}, 出: {formatTokens(customerStats.totalOutputTokens)})
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">100%</TableCell>
-                      <TableCell className="text-right">
-                        <span className="text-success">{customerStats.totalSuccessfulRequests.toLocaleString()}</span>
-                        <span className="text-muted-foreground">/{customerStats.totalRequests.toLocaleString()}</span>
-                      </TableCell>
-                      <TableCell className="text-right">{customerStats.avgTTFT} 秒</TableCell>
-                      <TableCell className="text-right">-</TableCell>
-                      <TableCell className="text-right">{customerStats.avgTPOT} t/s</TableCell>
-                      <TableCell className="text-right">{customerStats.avgInputLatencyPerKToken} 秒</TableCell>
-                      <TableCell className="text-right">{customerStats.avgOutputLatencyPerKToken} 秒</TableCell>
-                      <TableCell className="text-right text-success">{customerStats.avgSuccessRate}%</TableCell>
-                      <TableCell className="text-right text-destructive">{customerStats.totalErrors} 次</TableCell>
-                    </TableRow>
                   </TableBody>
                 </Table>
               </div>
@@ -2146,8 +2105,7 @@ export function AdminAnalytics() {
             {/* 按错误代码统计 */}
             <Card className="enterprise-card">
               <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <AlertTriangle className="w-4 h-4" />
+                <CardTitle className="text-base">
                   按错误代码统计
                 </CardTitle>
               </CardHeader>
@@ -2196,8 +2154,7 @@ export function AdminAnalytics() {
             {/* 按模型错误分布 */}
             <Card className="enterprise-card">
               <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Cpu className="w-4 h-4" />
+                <CardTitle className="text-base">
                   按模型错误分布
                 </CardTitle>
               </CardHeader>
@@ -2226,62 +2183,44 @@ export function AdminAnalytics() {
 
           {/* 错误趋势图 */}
           <Card className="enterprise-card">
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <TrendingUp className="w-4 h-4" />
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-base">
                 错误趋势 (每小时)
               </CardTitle>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">选择错误代码：</span>
+                <div className="flex gap-1">
+                  {errorTypes.map((et) => (
+                    <Button
+                      key={et.code}
+                      variant={customerErrorCodeFilter === et.code ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setCustomerErrorCodeFilter(et.code)}
+                      className="h-7 px-2"
+                    >
+                      {et.code}
+                    </Button>
+                  ))}
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
-                  <ComposedChart data={customerErrorTrendData}>
+                  <LineChart data={customerErrorTrendData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis dataKey="hour" tick={{ fontSize: 10 }} />
                     <YAxis tick={{ fontSize: 12 }} />
                     <Tooltip />
-                    <Bar dataKey="429" stackId="errors" fill={ERROR_COLORS['429']} name="429 请求频率限制" />
-                    <Bar dataKey="500" stackId="errors" fill={ERROR_COLORS['500']} name="500 服务器错误" />
-                    <Bar dataKey="503" stackId="errors" fill={ERROR_COLORS['503']} name="503 服务不可用" />
-                    <Bar dataKey="504" stackId="errors" fill={ERROR_COLORS['504']} name="504 网关超时" />
-                    <Bar dataKey="400" stackId="errors" fill={ERROR_COLORS['400']} name="400 请求参数错误" />
-                    <Bar dataKey="401" stackId="errors" fill={ERROR_COLORS['401']} name="401 认证失败" />
                     <Line 
                       type="monotone" 
-                      dataKey="total" 
-                      stroke="hsl(var(--foreground))" 
+                      dataKey={customerErrorCodeFilter}
+                      stroke={ERROR_COLORS[customerErrorCodeFilter]}
                       strokeWidth={2}
-                      dot={false}
-                      name="总错误数"
+                      name={`${customerErrorCodeFilter} 错误数`}
                     />
-                  </ComposedChart>
+                  </LineChart>
                 </ResponsiveContainer>
-              </div>
-              <div className="flex flex-wrap gap-3 mt-3 justify-center text-xs">
-                <div className="flex items-center gap-1">
-                  <div className="w-3 h-3 rounded" style={{ backgroundColor: ERROR_COLORS['429'] }} />
-                  <span>429</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <div className="w-3 h-3 rounded" style={{ backgroundColor: ERROR_COLORS['500'] }} />
-                  <span>500</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <div className="w-3 h-3 rounded" style={{ backgroundColor: ERROR_COLORS['503'] }} />
-                  <span>503</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <div className="w-3 h-3 rounded" style={{ backgroundColor: ERROR_COLORS['504'] }} />
-                  <span>504</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <div className="w-3 h-3 rounded" style={{ backgroundColor: ERROR_COLORS['400'] }} />
-                  <span>400</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <div className="w-3 h-3 rounded" style={{ backgroundColor: ERROR_COLORS['401'] }} />
-                  <span>401</span>
-                </div>
               </div>
             </CardContent>
           </Card>
@@ -2289,8 +2228,7 @@ export function AdminAnalytics() {
           {/* 错误明细表格 */}
           <Card className="enterprise-card">
             <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4" />
+              <CardTitle className="text-base">
                 错误明细
               </CardTitle>
             </CardHeader>
@@ -2306,45 +2244,72 @@ export function AdminAnalytics() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {customerErrorDetails.map((item) => (
-                    <TableRow key={item.id}>
-                      <TableCell className="font-medium">{item.model}</TableCell>
-                      <TableCell>
-                        <span className={cn(
-                          "px-2 py-0.5 rounded text-xs font-mono font-medium",
-                          item.errorCode === '429' && "bg-yellow-500/10 text-yellow-600",
-                          item.errorCode === '500' && "bg-destructive/10 text-destructive",
-                          item.errorCode === '503' && "bg-orange-500/10 text-orange-600",
-                          item.errorCode === '504' && "bg-purple-500/10 text-purple-600",
-                          item.errorCode === '400' && "bg-blue-500/10 text-blue-600",
-                          item.errorCode === '401' && "bg-red-500/10 text-red-600",
-                        )}>
-                          {item.errorCode}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-right text-destructive font-medium">{item.errorCount} 次</TableCell>
-                      <TableCell className="text-right text-muted-foreground">{item.timestamp}</TableCell>
-                      <TableCell className="text-center">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleViewErrorDetail(item as typeof modelErrorDetailsExtended[0])}
-                          className="h-7 px-2"
-                        >
-                          <Eye className="w-4 h-4 mr-1" />
-                          查看详情
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  {/* 总计行 */}
-                  <TableRow className="bg-muted/30 font-medium">
-                    <TableCell>总计</TableCell>
-                    <TableCell>-</TableCell>
-                    <TableCell className="text-right text-destructive">{customerErrorDetails.reduce((sum, e) => sum + e.errorCount, 0)} 次</TableCell>
-                    <TableCell>-</TableCell>
-                    <TableCell>-</TableCell>
-                  </TableRow>
+                  {(() => {
+                    const totalPages = Math.ceil(customerErrorDetails.length / errorPageSize);
+                    const paginatedData = customerErrorDetails.slice((customerErrorPage - 1) * errorPageSize, customerErrorPage * errorPageSize);
+                    return (
+                      <>
+                        {paginatedData.map((item) => (
+                          <TableRow key={item.id}>
+                            <TableCell className="font-medium">{item.model}</TableCell>
+                            <TableCell>
+                              <span className={cn(
+                                "px-2 py-0.5 rounded text-xs font-mono font-medium",
+                                item.errorCode === '429' && "bg-yellow-500/10 text-yellow-600",
+                                item.errorCode === '500' && "bg-destructive/10 text-destructive",
+                                item.errorCode === '503' && "bg-orange-500/10 text-orange-600",
+                                item.errorCode === '504' && "bg-purple-500/10 text-purple-600",
+                                item.errorCode === '400' && "bg-blue-500/10 text-blue-600",
+                                item.errorCode === '401' && "bg-red-500/10 text-red-600",
+                              )}>
+                                {item.errorCode}
+                              </span>
+                            </TableCell>
+                            <TableCell className="text-right text-destructive font-medium">{item.errorCount} 次</TableCell>
+                            <TableCell className="text-right text-muted-foreground">{item.timestamp}</TableCell>
+                            <TableCell className="text-center">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleViewErrorDetail(item as typeof modelErrorDetailsExtended[0])}
+                                className="h-7 px-2"
+                              >
+                                <Eye className="w-4 h-4 mr-1" />
+                                查看详情
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                        {totalPages > 1 && (
+                          <TableRow>
+                            <TableCell colSpan={5} className="py-2">
+                              <div className="flex items-center justify-center gap-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => setCustomerErrorPage(p => Math.max(1, p - 1))}
+                                  disabled={customerErrorPage === 1}
+                                >
+                                  <ChevronLeft className="h-4 w-4" />
+                                </Button>
+                                <span className="text-sm text-muted-foreground">
+                                  第 {customerErrorPage} / {totalPages} 页
+                                </span>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => setCustomerErrorPage(p => Math.min(totalPages, p + 1))}
+                                  disabled={customerErrorPage === totalPages}
+                                >
+                                  <ChevronRight className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </>
+                    );
+                  })()}
                 </TableBody>
               </Table>
             </CardContent>
@@ -2516,7 +2481,6 @@ export function AdminAnalytics() {
                 aria-expanded={modelTabPopoverOpen}
                 className="w-[200px] justify-between"
               >
-                <Cpu className="mr-2 h-4 w-4" />
                 {modelTabFilter === 'all' ? '全部模型' : modelTabFilter}
                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
               </Button>
@@ -2639,8 +2603,7 @@ export function AdminAnalytics() {
       {/* 模型性能指标表格 */}
       <Card className="enterprise-card">
         <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <Cpu className="w-4 h-4" />
+          <CardTitle className="text-base">
             模型性能指标 {modelTabFilter !== 'all' && `- ${modelTabFilter}`}
           </CardTitle>
         </CardHeader>
@@ -2699,8 +2662,7 @@ export function AdminAnalytics() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card className="enterprise-card">
           <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <Clock className="w-4 h-4" />
+            <CardTitle className="text-base">
               首Token时延趋势 (每小时)
             </CardTitle>
           </CardHeader>
@@ -2744,8 +2706,7 @@ export function AdminAnalytics() {
 
         <Card className="enterprise-card">
           <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <TrendingUp className="w-4 h-4" />
+            <CardTitle className="text-base">
               Token生成速度趋势 (每小时)
             </CardTitle>
           </CardHeader>
@@ -2774,8 +2735,7 @@ export function AdminAnalytics() {
       {/* 每分钟Token数趋势图 */}
       <Card className="enterprise-card">
         <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <Activity className="w-4 h-4" />
+          <CardTitle className="text-base">
             每分钟Token数趋势 (每小时)
           </CardTitle>
         </CardHeader>
@@ -2807,8 +2767,7 @@ export function AdminAnalytics() {
         {/* 按错误代码统计 */}
         <Card className="enterprise-card">
           <CardHeader>
-            <CardTitle className="text-base flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4" />
+            <CardTitle className="text-base">
               按错误代码统计 {modelTabFilter !== 'all' && `- ${modelTabFilter}`}
             </CardTitle>
           </CardHeader>
@@ -2858,8 +2817,7 @@ export function AdminAnalytics() {
         {modelTabFilter === 'all' && (
           <Card className="enterprise-card">
             <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <Cpu className="w-4 h-4" />
+              <CardTitle className="text-base">
                 按模型错误分布
               </CardTitle>
             </CardHeader>
@@ -2904,62 +2862,44 @@ export function AdminAnalytics() {
 
       {/* 错误趋势图 */}
       <Card className="enterprise-card">
-        <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <TrendingUp className="w-4 h-4" />
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-base">
             错误趋势 (每小时) {modelTabFilter !== 'all' && `- ${modelTabFilter}`}
           </CardTitle>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">选择错误代码：</span>
+            <div className="flex gap-1">
+              {errorTypes.map((et) => (
+                <Button
+                  key={et.code}
+                  variant={modelErrorCodeFilter === et.code ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setModelErrorCodeFilter(et.code)}
+                  className="h-7 px-2"
+                >
+                  {et.code}
+                </Button>
+              ))}
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={modelErrorTrendData}>
+              <LineChart data={modelErrorTrendData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                 <XAxis dataKey="hour" tick={{ fontSize: 10 }} />
                 <YAxis tick={{ fontSize: 12 }} />
                 <Tooltip />
-                <Bar dataKey="429" stackId="errors" fill={ERROR_COLORS['429']} name="429 请求频率限制" />
-                <Bar dataKey="500" stackId="errors" fill={ERROR_COLORS['500']} name="500 服务器错误" />
-                <Bar dataKey="503" stackId="errors" fill={ERROR_COLORS['503']} name="503 服务不可用" />
-                <Bar dataKey="504" stackId="errors" fill={ERROR_COLORS['504']} name="504 网关超时" />
-                <Bar dataKey="400" stackId="errors" fill={ERROR_COLORS['400']} name="400 请求参数错误" />
-                <Bar dataKey="401" stackId="errors" fill={ERROR_COLORS['401']} name="401 认证失败" />
                 <Line 
                   type="monotone" 
-                  dataKey="total" 
-                  stroke="hsl(var(--foreground))" 
+                  dataKey={modelErrorCodeFilter}
+                  stroke={ERROR_COLORS[modelErrorCodeFilter]}
                   strokeWidth={2}
-                  dot={false}
-                  name="总错误数"
+                  name={`${modelErrorCodeFilter} 错误数`}
                 />
-              </ComposedChart>
+              </LineChart>
             </ResponsiveContainer>
-          </div>
-          <div className="flex flex-wrap gap-3 mt-3 justify-center text-xs">
-            <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded" style={{ backgroundColor: ERROR_COLORS['429'] }} />
-              <span>429</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded" style={{ backgroundColor: ERROR_COLORS['500'] }} />
-              <span>500</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded" style={{ backgroundColor: ERROR_COLORS['503'] }} />
-              <span>503</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded" style={{ backgroundColor: ERROR_COLORS['504'] }} />
-              <span>504</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded" style={{ backgroundColor: ERROR_COLORS['400'] }} />
-              <span>400</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <div className="w-3 h-3 rounded" style={{ backgroundColor: ERROR_COLORS['401'] }} />
-              <span>401</span>
-            </div>
           </div>
         </CardContent>
       </Card>
@@ -2967,8 +2907,7 @@ export function AdminAnalytics() {
       {/* 模型错误明细表格 */}
       <Card className="enterprise-card">
         <CardHeader>
-          <CardTitle className="text-base flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4" />
+          <CardTitle className="text-base">
             错误明细 {modelTabFilter !== 'all' && `- ${modelTabFilter}`}
           </CardTitle>
         </CardHeader>
@@ -2985,47 +2924,74 @@ export function AdminAnalytics() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredModelErrorDetailsExtended.map((item) => (
-                <TableRow key={item.id}>
-                  {modelTabFilter === 'all' && <TableCell className="font-medium">{item.model}</TableCell>}
-                  <TableCell>{item.customer}</TableCell>
-                  <TableCell>
-                    <span className={cn(
-                      "px-2 py-0.5 rounded text-xs font-mono font-medium",
-                      item.errorCode === '429' && "bg-yellow-500/10 text-yellow-600",
-                      item.errorCode === '500' && "bg-destructive/10 text-destructive",
-                      item.errorCode === '503' && "bg-orange-500/10 text-orange-600",
-                      item.errorCode === '504' && "bg-purple-500/10 text-purple-600",
-                      item.errorCode === '400' && "bg-blue-500/10 text-blue-600",
-                      item.errorCode === '401' && "bg-red-500/10 text-red-600",
-                    )}>
-                      {item.errorCode}
-                    </span>
-                  </TableCell>
-                  <TableCell className="text-right text-destructive font-medium">{item.errorCount} 次</TableCell>
-                  <TableCell className="text-right text-muted-foreground">{item.timestamp}</TableCell>
-                  <TableCell className="text-center">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleViewErrorDetail(item)}
-                      className="h-7 px-2"
-                    >
-                      <Eye className="w-4 h-4 mr-1" />
-                      查看详情
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {/* 总计行 */}
-              <TableRow className="bg-muted/30 font-medium">
-                {modelTabFilter === 'all' && <TableCell>-</TableCell>}
-                <TableCell>总计</TableCell>
-                <TableCell>-</TableCell>
-                <TableCell className="text-right text-destructive">{filteredModelErrorDetailsExtended.reduce((sum, e) => sum + e.errorCount, 0)} 次</TableCell>
-                <TableCell>-</TableCell>
-                <TableCell>-</TableCell>
-              </TableRow>
+              {(() => {
+                const totalPages = Math.ceil(filteredModelErrorDetailsExtended.length / errorPageSize);
+                const paginatedData = filteredModelErrorDetailsExtended.slice((modelErrorPage - 1) * errorPageSize, modelErrorPage * errorPageSize);
+                const colSpan = modelTabFilter === 'all' ? 6 : 5;
+                return (
+                  <>
+                    {paginatedData.map((item) => (
+                      <TableRow key={item.id}>
+                        {modelTabFilter === 'all' && <TableCell className="font-medium">{item.model}</TableCell>}
+                        <TableCell>{item.customer}</TableCell>
+                        <TableCell>
+                          <span className={cn(
+                            "px-2 py-0.5 rounded text-xs font-mono font-medium",
+                            item.errorCode === '429' && "bg-yellow-500/10 text-yellow-600",
+                            item.errorCode === '500' && "bg-destructive/10 text-destructive",
+                            item.errorCode === '503' && "bg-orange-500/10 text-orange-600",
+                            item.errorCode === '504' && "bg-purple-500/10 text-purple-600",
+                            item.errorCode === '400' && "bg-blue-500/10 text-blue-600",
+                            item.errorCode === '401' && "bg-red-500/10 text-red-600",
+                          )}>
+                            {item.errorCode}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-right text-destructive font-medium">{item.errorCount} 次</TableCell>
+                        <TableCell className="text-right text-muted-foreground">{item.timestamp}</TableCell>
+                        <TableCell className="text-center">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleViewErrorDetail(item)}
+                            className="h-7 px-2"
+                          >
+                            <Eye className="w-4 h-4 mr-1" />
+                            查看详情
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    {totalPages > 1 && (
+                      <TableRow>
+                        <TableCell colSpan={colSpan} className="py-2">
+                          <div className="flex items-center justify-center gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setModelErrorPage(p => Math.max(1, p - 1))}
+                              disabled={modelErrorPage === 1}
+                            >
+                              <ChevronLeft className="h-4 w-4" />
+                            </Button>
+                            <span className="text-sm text-muted-foreground">
+                              第 {modelErrorPage} / {totalPages} 页
+                            </span>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setModelErrorPage(p => Math.min(totalPages, p + 1))}
+                              disabled={modelErrorPage === totalPages}
+                            >
+                              <ChevronRight className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </>
+                );
+              })()}
             </TableBody>
           </Table>
         </CardContent>
@@ -3035,8 +3001,7 @@ export function AdminAnalytics() {
       <Dialog open={errorDetailDialogOpen} onOpenChange={setErrorDetailDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="w-5 h-5 text-destructive" />
+            <DialogTitle>
               错误详情
             </DialogTitle>
           </DialogHeader>
