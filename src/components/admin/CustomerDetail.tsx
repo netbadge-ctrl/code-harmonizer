@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
-import { format } from 'date-fns';
+import { format, subDays, subHours, subMinutes } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
-import { ArrowLeft, Building2, Users, Zap, Shield, Clock, Activity, Settings, Globe, Eye, CalendarIcon, Cloud, Server, Database, Network, HardDrive, Cpu, MemoryStick, AlertTriangle, CheckCircle2, XCircle, ChevronLeft, ChevronRight, Copy } from 'lucide-react';
+import { ArrowLeft, Building2, Users, Zap, Shield, Clock, Activity, Settings, Globe, Eye, CalendarIcon, Cloud, Server, Database, Network, HardDrive, Cpu, MemoryStick, AlertTriangle, CheckCircle2, XCircle, ChevronLeft, ChevronRight, Copy, Check, ChevronsUpDown, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import {
   Pagination,
@@ -22,7 +22,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { CustomerDetail as CustomerDetailType } from '@/types/admin';
 import { getCustomerDetail } from '@/data/adminMockData';
 import { cn } from '@/lib/utils';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
 import {
   Table,
   TableBody,
@@ -146,43 +153,84 @@ function formatDateTime(dateString: string): string {
   });
 }
 
+type TimeRangePreset = '15min' | '4hours' | '24hours' | '7days' | 'custom';
+
+// 千Token时延数据
+const latencyPerKTokenMinute = [
+  { time: '10:00', inputLatency: 0.42, outputLatency: 1.85 },
+  { time: '10:01', inputLatency: 0.38, outputLatency: 1.92 },
+  { time: '10:02', inputLatency: 0.45, outputLatency: 1.78 },
+  { time: '10:03', inputLatency: 0.41, outputLatency: 2.05 },
+  { time: '10:04', inputLatency: 0.39, outputLatency: 1.88 },
+  { time: '10:05', inputLatency: 0.44, outputLatency: 1.95 },
+  { time: '10:06', inputLatency: 0.37, outputLatency: 1.82 },
+  { time: '10:07', inputLatency: 0.43, outputLatency: 2.12 },
+  { time: '10:08', inputLatency: 0.40, outputLatency: 1.90 },
+  { time: '10:09', inputLatency: 0.42, outputLatency: 1.87 },
+];
+
 export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
   const customer = getCustomerDetail(customerId);
   const { toast } = useToast();
   
-  const [timeRangePreset, setTimeRangePreset] = useState<string>('7days');
-  const [usageDateRange, setUsageDateRange] = useState<{ from: Date | undefined; to: Date | undefined }>({
-    from: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+  // 时间范围筛选
+  const [timeRangePreset, setTimeRangePreset] = useState<TimeRangePreset>('7days');
+  const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
+    from: subDays(new Date(), 7),
     to: new Date(),
   });
+  
+  // 模型筛选
   const [modelFilter, setModelFilter] = useState<string>('all');
-  const [userCurrentPage, setUserCurrentPage] = useState(1);
+  const [modelPopoverOpen, setModelPopoverOpen] = useState(false);
+  
+  // 模型性能指标排序状态
+  const [sortColumn, setSortColumn] = useState<string>('tokens');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  
+  // 错误相关状态
   const [selectedErrorCode, setSelectedErrorCode] = useState<string | null>(null);
   const [errorPage, setErrorPage] = useState(1);
-  const [selectedErrorDetail, setSelectedErrorDetail] = useState<any | null>(null);
-  const usersPerPage = 10;
   const errorPageSize = 10;
+  
+  // 错误详情弹窗
+  const [selectedError, setSelectedError] = useState<any | null>(null);
+  const [errorDetailDialogOpen, setErrorDetailDialogOpen] = useState(false);
+  
+  const [userCurrentPage, setUserCurrentPage] = useState(1);
+  const usersPerPage = 10;
 
-  // 时间范围预设选项
-  const timeRangePresets = [
-    { value: '15min', label: '最近15分钟', duration: 15 * 60 * 1000 },
-    { value: '4hours', label: '最近4小时', duration: 4 * 60 * 60 * 1000 },
-    { value: '24hours', label: '最近24小时', duration: 24 * 60 * 60 * 1000 },
-    { value: '7days', label: '最近7天', duration: 7 * 24 * 60 * 60 * 1000 },
-    { value: 'custom', label: '自定义' },
-  ];
-
-  const handleTimeRangePresetChange = (preset: string) => {
+  const handlePresetChange = (preset: TimeRangePreset) => {
     setTimeRangePreset(preset);
-    if (preset !== 'custom') {
-      const presetConfig = timeRangePresets.find(p => p.value === preset);
-      if (presetConfig && presetConfig.duration) {
-        setUsageDateRange({
-          from: new Date(Date.now() - presetConfig.duration),
-          to: new Date(),
-        });
-      }
+    const now = new Date();
+    switch (preset) {
+      case '15min':
+        setDateRange({ from: subMinutes(now, 15), to: now });
+        break;
+      case '4hours':
+        setDateRange({ from: subHours(now, 4), to: now });
+        break;
+      case '24hours':
+        setDateRange({ from: subHours(now, 24), to: now });
+        break;
+      case '7days':
+        setDateRange({ from: subDays(now, 7), to: now });
+        break;
     }
+  };
+
+  const handleSort = (column: string) => {
+    if (sortColumn === column) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortColumn(column);
+      setSortDirection('desc');
+    }
+  };
+
+  const handleViewErrorDetail = (error: any) => {
+    setSelectedError(error);
+    setErrorDetailDialogOpen(true);
   };
 
   const handleCopyText = (text: string, label: string) => {
@@ -204,15 +252,19 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
     );
   }
 
-  // 生成模型使用数据 (20个模型)
-  const modelUsageData = useMemo(() => {
+  // 生成模型使用数据（包含完整指标）- 与AdminAnalytics一致
+  const generateModelUsageData = () => {
+    const baseMultiplier = 0.15; // 单客户数据比例
     return availableModels.map((model, i) => {
       const factor = Math.max(0.02, 0.18 - i * 0.008);
-      const totalTokens = Math.floor(customer.usage.monthlyTokens * factor + Math.random() * 100000);
+      const totalTokens = Math.floor((45000000 * factor + Math.random() * 5000000) * baseMultiplier);
       const inputTokens = Math.floor(totalTokens * (0.3 + Math.random() * 0.15));
       const outputTokens = totalTokens - inputTokens;
-      const totalRequests = Math.floor(customer.usage.monthlyRequests * factor + Math.random() * 100);
-      const successfulRequests = Math.floor(totalRequests * 0.99 + Math.random() * 50);
+      const totalRequests = Math.floor((12500 * factor + Math.random() * 1000) * baseMultiplier);
+      const successfulRequests = Math.floor(totalRequests * (0.985 + Math.random() * 0.01));
+      const peakTPM = Math.floor(Math.random() * 150000) + 80000;
+      const avgTPMDaily = Math.floor(peakTPM * (0.5 + Math.random() * 0.2));
+      const avgTPMBusiness = Math.floor(peakTPM * (0.7 + Math.random() * 0.15));
       
       return {
         model,
@@ -221,73 +273,35 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
         outputTokens,
         requests: totalRequests,
         successfulRequests: Math.min(successfulRequests, totalRequests),
+        peakTPM,
+        avgTPMDaily,
+        avgTPMBusiness,
         ttftAvg: +(Math.random() * 0.4 + 0.2).toFixed(2),
         ttftP98: +(Math.random() * 0.8 + 0.5).toFixed(2),
         tpotAvg: +(Math.random() * 20 + 25).toFixed(1),
-        errorCount: Math.floor(Math.random() * 30 + 5),
-        errorRate: +(Math.random() * 1.2 + 0.2).toFixed(2),
+        errorCount: Math.floor(Math.random() * 50 + 10),
         successRate: +(99 - Math.random() * 1.5).toFixed(1),
         inputLatencyPerKToken: +(Math.random() * 0.3 + 0.2).toFixed(3),
         outputLatencyPerKToken: +(Math.random() * 1.5 + 0.8).toFixed(3),
       };
     });
-  }, [customer]);
+  };
 
-  // 按模型筛选后的数据
-  const filteredModelUsageData = useMemo(() => {
-    if (modelFilter === 'all') {
-      return modelUsageData;
-    }
-    return modelUsageData.filter(m => m.model === modelFilter);
-  }, [modelUsageData, modelFilter]);
-
-  // 汇总统计
-  const stats = useMemo(() => {
-    const data = filteredModelUsageData;
-    return {
-      totalTokens: data.reduce((sum, m) => sum + m.tokens, 0),
-      totalInputTokens: data.reduce((sum, m) => sum + m.inputTokens, 0),
-      totalOutputTokens: data.reduce((sum, m) => sum + m.outputTokens, 0),
-      totalRequests: data.reduce((sum, m) => sum + m.requests, 0),
-      totalSuccessfulRequests: data.reduce((sum, m) => sum + m.successfulRequests, 0),
-      avgTTFT: data.length > 0 ? (data.reduce((sum, m) => sum + m.ttftAvg, 0) / data.length).toFixed(2) : '0',
-      avgTPOT: data.length > 0 ? (data.reduce((sum, m) => sum + m.tpotAvg, 0) / data.length).toFixed(1) : '0',
-      totalErrors: data.reduce((sum, m) => sum + m.errorCount, 0),
-      avgErrorRate: data.length > 0 ? (data.reduce((sum, m) => sum + m.errorRate, 0) / data.length).toFixed(2) : '0',
-      avgSuccessRate: data.length > 0 ? (data.reduce((sum, m) => sum + m.successRate, 0) / data.length).toFixed(1) : '0',
-      avgInputLatencyPerKToken: data.length > 0 ? (data.reduce((sum, m) => sum + m.inputLatencyPerKToken, 0) / data.length).toFixed(3) : '0',
-      avgOutputLatencyPerKToken: data.length > 0 ? (data.reduce((sum, m) => sum + m.outputLatencyPerKToken, 0) / data.length).toFixed(3) : '0',
-    };
-  }, [filteredModelUsageData]);
-
-  // 使用趋势数据
-  const usageTrendData = useMemo(() => {
+  // 生成每日趋势数据
+  const generateDailyTrendData = () => {
     return Array.from({ length: 7 }, (_, i) => {
       const date = new Date();
       date.setDate(date.getDate() - (6 - i));
       return {
-        date: format(date, 'MM-dd'),
+        date: date.toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit' }),
         tokens: Math.floor(Math.random() * 5000000) + 2000000,
-        requests: Math.floor(Math.random() * 5000) + 2000,
+        requests: Math.floor(Math.random() * 1500) + 500,
       };
     });
-  }, []);
+  };
 
-  // 错误类型分布
-  const errorByType = useMemo(() => {
-    const totalErrors = stats.totalErrors;
-    return [
-      { code: '429', name: '请求频率限制', count: Math.floor(totalErrors * 0.35), percentage: 35.0 },
-      { code: '500', name: '服务器内部错误', count: Math.floor(totalErrors * 0.25), percentage: 25.0 },
-      { code: '503', name: '服务不可用', count: Math.floor(totalErrors * 0.18), percentage: 18.0 },
-      { code: '504', name: '网关超时', count: Math.floor(totalErrors * 0.12), percentage: 12.0 },
-      { code: '400', name: '请求参数错误', count: Math.floor(totalErrors * 0.07), percentage: 7.0 },
-      { code: '401', name: '认证失败', count: Math.floor(totalErrors * 0.03), percentage: 3.0 },
-    ];
-  }, [stats.totalErrors]);
-
-  // 错误趋势数据
-  const errorTrendData = useMemo(() => {
+  // 生成错误趋势数据
+  const generateErrorTrendData = () => {
     return Array.from({ length: 24 }, (_, i) => {
       const isBusinessHour = i >= 9 && i <= 21;
       return {
@@ -300,37 +314,117 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
         '401': Math.floor(Math.random() * 1),
       };
     });
-  }, []);
+  };
 
-  // 错误明细数据 (20条)
-  const errorDetails = useMemo(() => {
+  // 错误明细数据 (20条) - 去掉客户字段
+  const generateErrorDetails = (modelFilterValue: string) => {
     const errorCodes = ['429', '500', '503', '504', '400', '401'];
-    const errorMessages = [
-      'Rate limit exceeded: Too many requests',
-      'Internal server error: Processing failed',
-      'Service temporarily unavailable',
-      'Gateway timeout: Upstream too slow',
-      'Bad request: Invalid parameters',
-      'Authentication failed: Invalid token'
-    ];
+    const errorMessages: Record<string, string> = {
+      '429': 'Rate limit exceeded: Too many requests per minute',
+      '500': 'Internal server error: Model inference failed',
+      '503': 'Service temporarily unavailable: High load detected',
+      '504': 'Gateway timeout: Response exceeded 30 seconds',
+      '400': 'Bad request: Invalid message format',
+      '401': 'Authentication failed: Invalid API key',
+    };
+    
     return Array.from({ length: 20 }, (_, i) => {
       const modelIndex = i % availableModels.length;
       const errorIndex = i % 6;
+      const errorCode = errorCodes[errorIndex];
+      
+      const model = modelFilterValue !== 'all' ? modelFilterValue : availableModels[modelIndex];
+      
       return {
         id: `err-${i}`,
-        model: availableModels[modelIndex],
-        errorCode: errorCodes[errorIndex],
-        errorCount: Math.floor(Math.random() * 15) + 2,
+        model,
+        errorCode,
         timestamp: `2025-01-22 ${String(8 + Math.floor(i / 2)).padStart(2, '0')}:${String(Math.floor(Math.random() * 60)).padStart(2, '0')}:${String(Math.floor(Math.random() * 60)).padStart(2, '0')}`,
         requestId: `req-${Math.random().toString(36).substring(2, 14)}`,
         endpoint: '/v1/chat/completions',
         inputTokens: Math.floor(Math.random() * 5000) + 500,
-        errorMessage: errorMessages[errorIndex],
-        retryAfter: errorIndex === 0 ? '60s' : (errorIndex === 2 ? '30s' : '-'),
-        userAgent: `KSGC-CLI/2.3.1`,
+        errorMessage: errorMessages[errorCode],
+        retryAfter: errorCode === '429' ? '60s' : (errorCode === '503' ? '30s' : '-'),
+        userAgent: 'KSGC-CLI/2.3.1',
       };
     });
-  }, []);
+  };
+
+  // 计算模型使用数据（带筛选和排序）
+  const modelUsageData = useMemo(() => {
+    let data = generateModelUsageData();
+    if (modelFilter !== 'all') {
+      data = data.filter(m => m.model === modelFilter);
+    }
+    
+    // 排序
+    return [...data].sort((a, b) => {
+      let aVal: number | string, bVal: number | string;
+      switch (sortColumn) {
+        case 'model': aVal = a.model; bVal = b.model; break;
+        case 'tokens': aVal = a.tokens; bVal = b.tokens; break;
+        case 'peakTPM': aVal = a.peakTPM; bVal = b.peakTPM; break;
+        case 'avgTPMDaily': aVal = a.avgTPMDaily; bVal = b.avgTPMDaily; break;
+        case 'avgTPMBusiness': aVal = a.avgTPMBusiness; bVal = b.avgTPMBusiness; break;
+        case 'ttftAvg': aVal = a.ttftAvg; bVal = b.ttftAvg; break;
+        case 'ttftP98': aVal = a.ttftP98; bVal = b.ttftP98; break;
+        case 'tpotAvg': aVal = a.tpotAvg; bVal = b.tpotAvg; break;
+        case 'requests': aVal = a.requests; bVal = b.requests; break;
+        case 'errorCount': aVal = a.errorCount; bVal = b.errorCount; break;
+        default: aVal = a.tokens; bVal = b.tokens;
+      }
+      if (typeof aVal === 'string') {
+        return sortDirection === 'asc' 
+          ? aVal.localeCompare(bVal as string) 
+          : (bVal as string).localeCompare(aVal);
+      }
+      return sortDirection === 'asc' ? aVal - (bVal as number) : (bVal as number) - aVal;
+    });
+  }, [modelFilter, sortColumn, sortDirection]);
+
+  const dailyTrendData = useMemo(() => generateDailyTrendData(), []);
+  const errorTrendData = useMemo(() => generateErrorTrendData(), []);
+  const errorDetails = useMemo(() => generateErrorDetails(modelFilter), [modelFilter]);
+
+  // 汇总统计
+  const stats = useMemo(() => {
+    const data = modelUsageData;
+    const totalTokens = data.reduce((sum, m) => sum + m.tokens, 0);
+    const totalInputTokens = data.reduce((sum, m) => sum + m.inputTokens, 0);
+    const totalOutputTokens = data.reduce((sum, m) => sum + m.outputTokens, 0);
+    const totalRequests = data.reduce((sum, m) => sum + m.requests, 0);
+    const totalErrors = data.reduce((sum, m) => sum + m.errorCount, 0);
+    
+    return {
+      totalTokens,
+      totalInputTokens,
+      totalOutputTokens,
+      totalRequests,
+      totalErrors,
+      activeUsers: customer.usage.activeUsers,
+    };
+  }, [modelUsageData, customer]);
+
+  // 错误类型统计
+  const errorByType = useMemo(() => {
+    const errorCounts: Record<string, number> = {};
+    errorDetails.forEach(e => {
+      errorCounts[e.errorCode] = (errorCounts[e.errorCode] || 0) + 1;
+    });
+    const total = Object.values(errorCounts).reduce((sum, c) => sum + c, 0);
+    return errorTypes.map(et => ({
+      ...et,
+      count: errorCounts[et.code] || 0,
+      percentage: total > 0 ? parseFloat(((errorCounts[et.code] || 0) / total * 100).toFixed(1)) : 0,
+    })).sort((a, b) => b.count - a.count);
+  }, [errorDetails]);
+
+  // 分页错误明细
+  const paginatedErrorDetails = useMemo(() => {
+    const totalPages = Math.ceil(errorDetails.length / errorPageSize);
+    const data = errorDetails.slice((errorPage - 1) * errorPageSize, errorPage * errorPageSize);
+    return { data, totalPages };
+  }, [errorDetails, errorPage]);
 
   return (
     <div className="space-y-6">
@@ -513,24 +607,45 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
           </div>
         </TabsContent>
 
-        <TabsContent value="usage" className="space-y-4">
-          {/* 筛选器 - 同一行 */}
-          <div className="flex items-center gap-4 mb-6 overflow-x-auto pb-2 flex-nowrap">
+        <TabsContent value="usage" className="space-y-6">
+          {/* 统一筛选栏 - 与数据看板保持一致 */}
+          <div className="flex items-center gap-4 overflow-x-auto pb-2">
             {/* 时间范围 */}
             <div className="flex items-center gap-2 flex-nowrap">
               <span className="text-sm text-muted-foreground whitespace-nowrap">查询时间：</span>
               <div className="flex items-center gap-2 flex-nowrap">
-                {timeRangePresets.filter(p => p.value !== 'custom').map(preset => (
-                  <Button
-                    key={preset.value}
-                    variant={timeRangePreset === preset.value ? 'default' : 'outline'}
-                    size="sm"
-                    className="whitespace-nowrap"
-                    onClick={() => handleTimeRangePresetChange(preset.value)}
-                  >
-                    {preset.label}
-                  </Button>
-                ))}
+                <Button
+                  variant={timeRangePreset === '15min' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => handlePresetChange('15min')}
+                  className="whitespace-nowrap"
+                >
+                  最近15分钟
+                </Button>
+                <Button
+                  variant={timeRangePreset === '4hours' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => handlePresetChange('4hours')}
+                  className="whitespace-nowrap"
+                >
+                  最近4小时
+                </Button>
+                <Button
+                  variant={timeRangePreset === '24hours' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => handlePresetChange('24hours')}
+                  className="whitespace-nowrap"
+                >
+                  最近24小时
+                </Button>
+                <Button
+                  variant={timeRangePreset === '7days' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => handlePresetChange('7days')}
+                  className="whitespace-nowrap"
+                >
+                  最近7天
+                </Button>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
@@ -539,9 +654,9 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                       className="min-w-[200px] justify-start whitespace-nowrap"
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {timeRangePreset === 'custom' && usageDateRange.from && usageDateRange.to ? (
+                      {timeRangePreset === 'custom' ? (
                         <>
-                          {format(usageDateRange.from, 'yyyy/MM/dd', { locale: zhCN })} - {format(usageDateRange.to, 'yyyy/MM/dd', { locale: zhCN })}
+                          {format(dateRange.from, 'yyyy/MM/dd', { locale: zhCN })} - {format(dateRange.to, 'yyyy/MM/dd', { locale: zhCN })}
                         </>
                       ) : (
                         '自定义日期'
@@ -551,50 +666,103 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                   <PopoverContent className="w-auto p-0" align="start">
                     <Calendar
                       mode="range"
-                      selected={usageDateRange}
+                      selected={{ from: dateRange.from, to: dateRange.to }}
                       onSelect={(range) => {
-                        setUsageDateRange({ from: range?.from, to: range?.to });
-                        setTimeRangePreset('custom');
+                        if (range?.from && range?.to) {
+                          setDateRange({ from: range.from, to: range.to });
+                          setTimeRangePreset('custom');
+                        } else if (range?.from) {
+                          setDateRange({ from: range.from, to: range.from });
+                          setTimeRangePreset('custom');
+                        }
                       }}
                       numberOfMonths={2}
-                      className="pointer-events-auto"
+                      className={cn("p-3 pointer-events-auto")}
                     />
                   </PopoverContent>
                 </Popover>
               </div>
             </div>
-
+            
             {/* 模型筛选 */}
             <div className="flex items-center gap-2 flex-nowrap">
-              <span className="text-sm text-muted-foreground whitespace-nowrap">模型筛选：</span>
-              <Select value={modelFilter} onValueChange={setModelFilter}>
-                <SelectTrigger className="w-[180px] h-8">
-                  <SelectValue placeholder="选择模型" />
-                </SelectTrigger>
-                <SelectContent className="bg-background border max-h-[300px]">
-                  <SelectItem value="all">全部模型</SelectItem>
-                  {availableModels.map(model => (
-                    <SelectItem key={model} value={model}>{model}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <span className="text-sm text-muted-foreground whitespace-nowrap">模型：</span>
+              <Popover open={modelPopoverOpen} onOpenChange={setModelPopoverOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={modelPopoverOpen}
+                    className="w-[180px] justify-between"
+                  >
+                    {modelFilter === 'all' ? '全部模型' : modelFilter}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[200px] p-0">
+                  <Command>
+                    <CommandInput placeholder="搜索模型..." />
+                    <CommandList>
+                      <CommandEmpty>未找到模型</CommandEmpty>
+                      <CommandGroup>
+                        <CommandItem
+                          value="all"
+                          onSelect={() => {
+                            setModelFilter('all');
+                            setModelPopoverOpen(false);
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              modelFilter === 'all' ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          全部模型
+                        </CommandItem>
+                        {availableModels.map((model) => (
+                          <CommandItem
+                            key={model}
+                            value={model}
+                            onSelect={() => {
+                              setModelFilter(model);
+                              setModelPopoverOpen(false);
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                modelFilter === model ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            {model}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
 
-          {/* 概览统计卡片 - 8个 */}
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
+          {/* 概览统计卡片 - 3个卡片与数据看板一致 */}
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             <Card className="enterprise-card">
               <CardContent className="p-4">
                 <div className="text-center">
-                  <p className="text-2xl font-bold text-foreground">{formatTokens(stats.totalTokens)} <span className="text-sm font-normal text-muted-foreground">tokens</span></p>
+                  <p className="text-2xl font-bold text-foreground">{formatTokens(stats.totalTokens)}</p>
                   <p className="text-xs text-muted-foreground">Token 消耗</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    输入 {formatTokens(stats.totalInputTokens)} / 输出 {formatTokens(stats.totalOutputTokens)}
+                  </p>
                 </div>
               </CardContent>
             </Card>
             <Card className="enterprise-card">
               <CardContent className="p-4">
                 <div className="text-center">
-                  <p className="text-2xl font-bold text-foreground">{stats.totalRequests.toLocaleString()} <span className="text-sm font-normal text-muted-foreground">次</span></p>
+                  <p className="text-2xl font-bold text-foreground">{stats.totalRequests.toLocaleString()}</p>
                   <p className="text-xs text-muted-foreground">请求总数</p>
                 </div>
               </CardContent>
@@ -602,54 +770,22 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
             <Card className="enterprise-card">
               <CardContent className="p-4">
                 <div className="text-center">
-                  <p className="text-2xl font-bold text-foreground">{customer.usage.activeUsers} <span className="text-sm font-normal text-muted-foreground">人</span></p>
+                  <p className="text-2xl font-bold text-foreground">{stats.activeUsers}</p>
                   <p className="text-xs text-muted-foreground">活跃用户</p>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="enterprise-card">
-              <CardContent className="p-4">
-                <div className="text-center">
-                  <p className="text-2xl font-bold text-foreground">{stats.avgTTFT} <span className="text-sm font-normal text-muted-foreground">秒</span></p>
-                  <p className="text-xs text-muted-foreground">平均首Token时延</p>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="enterprise-card">
-              <CardContent className="p-4">
-                <div className="text-center">
-                  <p className="text-2xl font-bold text-foreground">{stats.avgTPOT} <span className="text-sm font-normal text-muted-foreground">t/s</span></p>
-                  <p className="text-xs text-muted-foreground">Token 生成速度</p>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="enterprise-card">
-              <CardContent className="p-4">
-                <div className="text-center">
-                  <p className="text-2xl font-bold text-foreground text-success">{stats.avgSuccessRate}%</p>
-                  <p className="text-xs text-muted-foreground">成功率</p>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="enterprise-card">
-              <CardContent className="p-4">
-                <div className="text-center">
-                  <p className="text-2xl font-bold text-foreground text-destructive">{stats.totalErrors} <span className="text-sm font-normal text-muted-foreground">次</span></p>
-                  <p className="text-xs text-muted-foreground">错误总数</p>
                 </div>
               </CardContent>
             </Card>
           </div>
 
-          {/* 使用趋势图 */}
+          {/* Token 消耗趋势 - 全宽 */}
           <Card className="enterprise-card">
             <CardHeader>
-              <CardTitle className="text-base">使用趋势</CardTitle>
+              <CardTitle className="text-base">Token 消耗趋势</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
-                  <ComposedChart data={usageTrendData}>
+                  <ComposedChart data={dailyTrendData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis dataKey="date" tick={{ fontSize: 12 }} />
                     <YAxis 
@@ -657,113 +793,240 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                       orientation="left"
                       tick={{ fontSize: 12 }}
                       tickFormatter={(value) => formatTokens(value)}
-                      label={{ value: 'Tokens', angle: -90, position: 'insideLeft', style: { fontSize: 11 } }}
                     />
                     <YAxis 
                       yAxisId="requests"
                       orientation="right"
                       tick={{ fontSize: 12 }}
-                      label={{ value: '请求数', angle: 90, position: 'insideRight', style: { fontSize: 11 } }}
                     />
                     <Tooltip 
                       formatter={(value: number, name: string) => {
-                        if (name === 'Token 消耗') return [formatTokens(value), name];
-                        return [value.toLocaleString(), name];
+                        if (name === 'tokens') return [formatTokens(value), 'Token 消耗'];
+                        return [value.toLocaleString(), '请求数'];
                       }}
                     />
                     <Bar 
-                      yAxisId="requests"
-                      dataKey="requests" 
-                      fill="hsl(142, 76%, 36%)" 
-                      name="请求数"
-                      radius={[4, 4, 0, 0]}
+                      yAxisId="tokens"
+                      dataKey="tokens" 
+                      fill="hsl(213, 94%, 50%)"
+                      opacity={0.8}
+                      name="tokens"
                     />
                     <Line 
-                      yAxisId="tokens"
+                      yAxisId="requests"
                       type="monotone" 
-                      dataKey="tokens" 
-                      stroke="hsl(213, 94%, 50%)" 
+                      dataKey="requests" 
+                      stroke="hsl(142, 76%, 36%)" 
                       strokeWidth={2}
-                      name="Token 消耗"
                       dot={false}
+                      name="requests"
                     />
                   </ComposedChart>
                 </ResponsiveContainer>
               </div>
-              <div className="flex items-center justify-center gap-4 mt-2 text-xs text-muted-foreground">
-                <div className="flex items-center gap-1">
-                  <div className="w-3 h-3 rounded" style={{ backgroundColor: 'hsl(142, 76%, 36%)' }} />
-                  <span>请求数</span>
+              <div className="flex items-center justify-center gap-4 mt-2 text-xs">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded" style={{ backgroundColor: 'hsl(213, 94%, 50%)' }} />
+                  <span>Token (柱)</span>
                 </div>
-                <div className="flex items-center gap-1">
-                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(213, 94%, 50%)' }} />
-                  <span>Token 消耗</span>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-0.5" style={{ backgroundColor: 'hsl(142, 76%, 36%)' }} />
+                  <span>请求数 (线)</span>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* 模型使用明细表 - 不分页 */}
+          {/* 千Token平均时长趋势 - 全宽 */}
           <Card className="enterprise-card">
             <CardHeader>
-              <CardTitle className="text-base">模型使用明细</CardTitle>
+              <CardTitle className="text-base">千Token平均时长趋势 (分钟级)</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>模型</TableHead>
-                      <TableHead className="text-right">Token 消耗</TableHead>
-                      <TableHead className="text-right">Token 占比</TableHead>
-                      <TableHead className="text-right">请求数 (成功/总)</TableHead>
-                      <TableHead className="text-right">首Token时延 (秒)</TableHead>
-                      <TableHead className="text-right">P98时延 (秒)</TableHead>
-                      <TableHead className="text-right">Token生成速度 (t/s)</TableHead>
-                      <TableHead className="text-right">千Token输入时长 (秒)</TableHead>
-                      <TableHead className="text-right">千Token输出时长 (秒)</TableHead>
-                      <TableHead className="text-right">成功率</TableHead>
-                      <TableHead className="text-right">错误数 (次)</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredModelUsageData.map((item) => {
-                      const tokenPercentage = stats.totalTokens > 0 
-                        ? ((item.tokens / stats.totalTokens) * 100).toFixed(1)
-                        : '0';
-                      return (
-                        <TableRow key={item.model}>
-                          <TableCell className="font-medium">{item.model}</TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex flex-col items-end">
-                              <span>{formatTokens(item.tokens)}</span>
-                              <span className="text-xs text-muted-foreground">
-                                (入: {formatTokens(item.inputTokens)}, 出: {formatTokens(item.outputTokens)})
-                              </span>
-                            </div>
-                          </TableCell>
-                          <TableCell className="text-right">{tokenPercentage}%</TableCell>
-                          <TableCell className="text-right">
-                            <span className="text-success">{item.successfulRequests.toLocaleString()}</span>
-                            <span className="text-muted-foreground">/{item.requests.toLocaleString()}</span>
-                          </TableCell>
-                          <TableCell className="text-right">{item.ttftAvg} 秒</TableCell>
-                          <TableCell className="text-right">{item.ttftP98} 秒</TableCell>
-                          <TableCell className="text-right">{item.tpotAvg} t/s</TableCell>
-                          <TableCell className="text-right">{item.inputLatencyPerKToken} 秒</TableCell>
-                          <TableCell className="text-right">{item.outputLatencyPerKToken} 秒</TableCell>
-                          <TableCell className="text-right text-success font-medium">{item.successRate}%</TableCell>
-                          <TableCell className="text-right text-destructive font-medium">{item.errorCount} 次</TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={latencyPerKTokenMinute}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis dataKey="time" tick={{ fontSize: 12 }} />
+                    <YAxis tick={{ fontSize: 12 }} unit="s" />
+                    <Tooltip formatter={(value: number) => `${value}s`} />
+                    <Line 
+                      type="monotone" 
+                      dataKey="inputLatency" 
+                      stroke="hsl(213, 94%, 50%)" 
+                      strokeWidth={2}
+                      name="输入时长"
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="outputLatency" 
+                      stroke="hsl(142, 76%, 36%)" 
+                      strokeWidth={2}
+                      name="输出时长"
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="flex items-center justify-center gap-4 mt-2 text-xs">
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-0.5" style={{ backgroundColor: 'hsl(213, 94%, 50%)' }} />
+                  <span>输入时长</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-0.5" style={{ backgroundColor: 'hsl(142, 76%, 36%)' }} />
+                  <span>输出时长</span>
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* 错误统计区域 */}
+          {/* 模型性能指标表格 - 支持排序 */}
+          <Card className="enterprise-card">
+            <CardHeader>
+              <CardTitle className="text-base">模型性能指标</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead 
+                      className="cursor-pointer hover:bg-muted/50 transition-colors"
+                      onClick={() => handleSort('model')}
+                    >
+                      <div className="flex items-center gap-1">
+                        模型
+                        {sortColumn === 'model' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+                        ) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
+                      </div>
+                    </TableHead>
+                    <TableHead 
+                      className="cursor-pointer hover:bg-muted/50 transition-colors"
+                      onClick={() => handleSort('tokens')}
+                    >
+                      <div className="flex items-center gap-1">
+                        Token消耗（入/出）
+                        {sortColumn === 'tokens' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+                        ) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
+                      </div>
+                    </TableHead>
+                    <TableHead 
+                      className="text-right cursor-pointer hover:bg-muted/50 transition-colors"
+                      onClick={() => handleSort('peakTPM')}
+                    >
+                      <div className="flex items-center justify-end gap-1">
+                        峰值每分钟Token数
+                        {sortColumn === 'peakTPM' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+                        ) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
+                      </div>
+                    </TableHead>
+                    <TableHead 
+                      className="text-right cursor-pointer hover:bg-muted/50 transition-colors"
+                      onClick={() => handleSort('avgTPMDaily')}
+                    >
+                      <div className="flex items-center justify-end gap-1">
+                        每分钟均Token数
+                        {sortColumn === 'avgTPMDaily' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+                        ) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
+                      </div>
+                    </TableHead>
+                    <TableHead 
+                      className="text-right cursor-pointer hover:bg-muted/50 transition-colors"
+                      onClick={() => handleSort('avgTPMBusiness')}
+                    >
+                      <div className="flex items-center justify-end gap-1">
+                        工作时段每分钟均Token数
+                        {sortColumn === 'avgTPMBusiness' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+                        ) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
+                      </div>
+                    </TableHead>
+                    <TableHead 
+                      className="text-right cursor-pointer hover:bg-muted/50 transition-colors"
+                      onClick={() => handleSort('ttftAvg')}
+                    >
+                      <div className="flex items-center justify-end gap-1">
+                        首Token平均时延
+                        {sortColumn === 'ttftAvg' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+                        ) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
+                      </div>
+                    </TableHead>
+                    <TableHead 
+                      className="text-right cursor-pointer hover:bg-muted/50 transition-colors"
+                      onClick={() => handleSort('ttftP98')}
+                    >
+                      <div className="flex items-center justify-end gap-1">
+                        首Token P98时延
+                        {sortColumn === 'ttftP98' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+                        ) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
+                      </div>
+                    </TableHead>
+                    <TableHead 
+                      className="text-right cursor-pointer hover:bg-muted/50 transition-colors"
+                      onClick={() => handleSort('tpotAvg')}
+                    >
+                      <div className="flex items-center justify-end gap-1">
+                        Token生成速度
+                        {sortColumn === 'tpotAvg' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+                        ) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
+                      </div>
+                    </TableHead>
+                    <TableHead 
+                      className="text-right cursor-pointer hover:bg-muted/50 transition-colors"
+                      onClick={() => handleSort('requests')}
+                    >
+                      <div className="flex items-center justify-end gap-1">
+                        请求数 (成功/总)
+                        {sortColumn === 'requests' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+                        ) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
+                      </div>
+                    </TableHead>
+                    <TableHead 
+                      className="text-right cursor-pointer hover:bg-muted/50 transition-colors"
+                      onClick={() => handleSort('errorCount')}
+                    >
+                      <div className="flex items-center justify-end gap-1">
+                        错误数
+                        {sortColumn === 'errorCount' ? (
+                          sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+                        ) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
+                      </div>
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {modelUsageData.map((item) => (
+                    <TableRow key={item.model}>
+                      <TableCell className="font-medium">{item.model}</TableCell>
+                      <TableCell className="font-medium">
+                        {formatTokens(item.tokens)}
+                        <span className="text-muted-foreground text-xs ml-1">
+                          ({formatTokens(item.inputTokens)}/{formatTokens(item.outputTokens)})
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-right">{formatTokens(item.peakTPM)}</TableCell>
+                      <TableCell className="text-right">{formatTokens(item.avgTPMDaily)}</TableCell>
+                      <TableCell className="text-right">{formatTokens(item.avgTPMBusiness)}</TableCell>
+                      <TableCell className="text-right">{item.ttftAvg} 秒</TableCell>
+                      <TableCell className="text-right">{item.ttftP98} 秒</TableCell>
+                      <TableCell className="text-right">{item.tpotAvg} t/s</TableCell>
+                      <TableCell className="text-right">{item.successfulRequests.toLocaleString()}/{item.requests.toLocaleString()}</TableCell>
+                      <TableCell className="text-right text-destructive">{item.errorCount}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+
+          {/* 错误分析区域 */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* 按错误代码统计 */}
             <Card className="enterprise-card">
@@ -797,15 +1060,10 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                           </span>
                         </TableCell>
                         <TableCell>{item.name}</TableCell>
-                        <TableCell className="text-right font-medium">{item.count} 次</TableCell>
+                        <TableCell className="text-right font-medium">{item.count}</TableCell>
                         <TableCell className="text-right text-muted-foreground">{item.percentage}%</TableCell>
                       </TableRow>
                     ))}
-                    <TableRow className="bg-muted/30 font-medium">
-                      <TableCell colSpan={2}>总计</TableCell>
-                      <TableCell className="text-right">{errorByType.reduce((sum, e) => sum + e.count, 0)} 次</TableCell>
-                      <TableCell className="text-right">100%</TableCell>
-                    </TableRow>
                   </TableBody>
                 </Table>
               </CardContent>
@@ -817,26 +1075,24 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                 <CardTitle className="text-base">按模型错误分布</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="max-h-[300px] overflow-y-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>模型</TableHead>
-                        <TableHead className="text-right">错误数 (次)</TableHead>
-                        <TableHead className="text-right">错误率</TableHead>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>模型</TableHead>
+                      <TableHead className="text-right">错误数</TableHead>
+                      <TableHead className="text-right">成功率</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {modelUsageData.slice(0, 7).map((item) => (
+                      <TableRow key={item.model}>
+                        <TableCell className="font-medium">{item.model}</TableCell>
+                        <TableCell className="text-right text-destructive font-medium">{item.errorCount}</TableCell>
+                        <TableCell className="text-right">{item.successRate}%</TableCell>
                       </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredModelUsageData.map((item) => (
-                        <TableRow key={item.model}>
-                          <TableCell className="font-medium">{item.model}</TableCell>
-                          <TableCell className="text-right text-destructive font-medium">{item.errorCount} 次</TableCell>
-                          <TableCell className="text-right">{item.errorRate}%</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
+                    ))}
+                  </TableBody>
+                </Table>
               </CardContent>
             </Card>
           </div>
@@ -919,7 +1175,7 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
             </CardContent>
           </Card>
 
-          {/* 错误明细表格 */}
+          {/* 错误明细表格 - 去掉客户列 */}
           <Card className="enterprise-card">
             <CardHeader>
               <CardTitle className="text-base">错误明细</CardTitle>
@@ -930,77 +1186,68 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                   <TableRow>
                     <TableHead>模型</TableHead>
                     <TableHead>错误代码</TableHead>
-                    <TableHead className="text-right">错误数 (次)</TableHead>
-                    <TableHead className="text-right">最近发生时间</TableHead>
+                    <TableHead className="text-right">发生时间</TableHead>
                     <TableHead className="text-center">操作</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {(() => {
-                    const totalPages = Math.ceil(errorDetails.length / errorPageSize);
-                    const paginatedData = errorDetails.slice((errorPage - 1) * errorPageSize, errorPage * errorPageSize);
-                    return (
-                      <>
-                        {paginatedData.map((item) => (
-                          <TableRow key={item.id}>
-                            <TableCell className="font-medium">{item.model}</TableCell>
-                            <TableCell>
-                              <span className={cn(
-                                "px-2 py-0.5 rounded text-xs font-mono font-medium",
-                                item.errorCode === '429' && "bg-yellow-500/10 text-yellow-600",
-                                item.errorCode === '500' && "bg-destructive/10 text-destructive",
-                                item.errorCode === '503' && "bg-orange-500/10 text-orange-600",
-                                item.errorCode === '504' && "bg-purple-500/10 text-purple-600",
-                                item.errorCode === '400' && "bg-blue-500/10 text-blue-600",
-                                item.errorCode === '401' && "bg-red-500/10 text-red-600",
-                              )}>
-                                {item.errorCode}
-                              </span>
-                            </TableCell>
-                            <TableCell className="text-right text-destructive font-medium">{item.errorCount} 次</TableCell>
-                            <TableCell className="text-right text-muted-foreground">{item.timestamp}</TableCell>
-                            <TableCell className="text-center">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => setSelectedErrorDetail(item)}
-                                className="h-7 px-2"
-                              >
-                                查看详情
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                        {totalPages > 1 && (
-                          <TableRow>
-                            <TableCell colSpan={5} className="py-2">
-                              <div className="flex items-center justify-center gap-2">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => setErrorPage(p => Math.max(1, p - 1))}
-                                  disabled={errorPage === 1}
-                                >
-                                  <ChevronLeft className="h-4 w-4" />
-                                </Button>
-                                <span className="text-sm text-muted-foreground">
-                                  第 {errorPage} / {totalPages} 页
-                                </span>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => setErrorPage(p => Math.min(totalPages, p + 1))}
-                                  disabled={errorPage === totalPages}
-                                >
-                                  <ChevronRight className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        )}
-                      </>
-                    );
-                  })()}
+                  {paginatedErrorDetails.data.map((item) => (
+                    <TableRow key={item.id}>
+                      <TableCell className="font-medium">{item.model}</TableCell>
+                      <TableCell>
+                        <span className={cn(
+                          "px-2 py-0.5 rounded text-xs font-mono font-medium",
+                          item.errorCode === '429' && "bg-yellow-500/10 text-yellow-600",
+                          item.errorCode === '500' && "bg-destructive/10 text-destructive",
+                          item.errorCode === '503' && "bg-orange-500/10 text-orange-600",
+                          item.errorCode === '504' && "bg-purple-500/10 text-purple-600",
+                          item.errorCode === '400' && "bg-blue-500/10 text-blue-600",
+                          item.errorCode === '401' && "bg-red-500/10 text-red-600",
+                        )}>
+                          {item.errorCode}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-right text-muted-foreground">{item.timestamp}</TableCell>
+                      <TableCell className="text-center">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleViewErrorDetail(item)}
+                          className="h-7 px-2"
+                        >
+                          <Eye className="w-4 h-4 mr-1" />
+                          查看详情
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {paginatedErrorDetails.totalPages > 1 && (
+                    <TableRow>
+                      <TableCell colSpan={4} className="py-2">
+                        <div className="flex items-center justify-center gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setErrorPage(p => Math.max(1, p - 1))}
+                            disabled={errorPage === 1}
+                          >
+                            <ChevronLeft className="h-4 w-4" />
+                          </Button>
+                          <span className="text-sm text-muted-foreground">
+                            第 {errorPage} / {paginatedErrorDetails.totalPages} 页
+                          </span>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setErrorPage(p => Math.min(paginatedErrorDetails.totalPages, p + 1))}
+                            disabled={errorPage === paginatedErrorDetails.totalPages}
+                          >
+                            <ChevronRight className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )}
                 </TableBody>
               </Table>
             </CardContent>
@@ -1259,92 +1506,82 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
         </TabsContent>
       </Tabs>
 
-      {/* 错误详情对话框 */}
-      <Dialog open={!!selectedErrorDetail} onOpenChange={(open) => !open && setSelectedErrorDetail(null)}>
+      {/* 错误详情弹窗 */}
+      <Dialog open={errorDetailDialogOpen} onOpenChange={setErrorDetailDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>错误详情</DialogTitle>
           </DialogHeader>
-          {selectedErrorDetail && (
+          {selectedError && (
             <div className="space-y-4">
               {/* 基本信息 */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground">请求 ID</p>
-                  <div className="flex items-center gap-2">
-                    <code className="text-sm font-mono bg-muted px-2 py-1 rounded">{selectedErrorDetail.requestId}</code>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleCopyText(selectedErrorDetail.requestId, '请求 ID')}
-                      className="h-6 w-6 p-0"
-                    >
-                      <Copy className="w-3 h-3" />
-                    </Button>
-                  </div>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground">发生时间</p>
-                  <p className="font-medium">{selectedErrorDetail.timestamp}</p>
-                </div>
-                <div className="space-y-1">
                   <p className="text-xs text-muted-foreground">模型</p>
-                  <p className="font-medium">{selectedErrorDetail.model}</p>
+                  <p className="font-medium">{selectedError.model}</p>
                 </div>
                 <div className="space-y-1">
                   <p className="text-xs text-muted-foreground">错误代码</p>
                   <span className={cn(
-                    "px-2 py-0.5 rounded text-xs font-mono font-medium inline-block",
-                    selectedErrorDetail.errorCode === '429' && "bg-yellow-500/10 text-yellow-600",
-                    selectedErrorDetail.errorCode === '500' && "bg-destructive/10 text-destructive",
-                    selectedErrorDetail.errorCode === '503' && "bg-orange-500/10 text-orange-600",
-                    selectedErrorDetail.errorCode === '504' && "bg-purple-500/10 text-purple-600",
-                    selectedErrorDetail.errorCode === '400' && "bg-blue-500/10 text-blue-600",
-                    selectedErrorDetail.errorCode === '401' && "bg-red-500/10 text-red-600",
+                    "inline-block px-2 py-0.5 rounded text-xs font-mono font-medium",
+                    selectedError.errorCode === '429' && "bg-yellow-500/10 text-yellow-600",
+                    selectedError.errorCode === '500' && "bg-destructive/10 text-destructive",
+                    selectedError.errorCode === '503' && "bg-orange-500/10 text-orange-600",
+                    selectedError.errorCode === '504' && "bg-purple-500/10 text-purple-600",
+                    selectedError.errorCode === '400' && "bg-blue-500/10 text-blue-600",
+                    selectedError.errorCode === '401' && "bg-red-500/10 text-red-600",
                   )}>
-                    {selectedErrorDetail.errorCode}
+                    {selectedError.errorCode}
                   </span>
                 </div>
-              </div>
-
-              {/* 请求详情 */}
-              <div className="border-t pt-4">
-                <h4 className="text-sm font-medium mb-3">请求详情</h4>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <p className="text-xs text-muted-foreground">请求端点</p>
-                    <code className="text-sm font-mono bg-muted px-2 py-1 rounded block">{selectedErrorDetail.endpoint}</code>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-xs text-muted-foreground">重试建议</p>
-                    <p className="font-medium">{selectedErrorDetail.retryAfter}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-xs text-muted-foreground">输入Token数</p>
-                    <p className="font-medium">{selectedErrorDetail.inputTokens?.toLocaleString()} tokens</p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-xs text-muted-foreground">客户端</p>
-                    <p className="font-medium">{selectedErrorDetail.userAgent}</p>
-                  </div>
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground">发生时间</p>
+                  <p className="font-medium">{selectedError.timestamp}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground">Endpoint</p>
+                  <p className="font-mono text-sm">{selectedError.endpoint}</p>
                 </div>
               </div>
-
-              {/* 错误信息 */}
-              <div className="border-t pt-4">
-                <h4 className="text-sm font-medium mb-3">错误信息</h4>
-                <div className="bg-destructive/5 border border-destructive/20 rounded-lg p-4">
-                  <div className="flex items-start justify-between">
-                    <code className="text-sm text-destructive font-mono break-all">{selectedErrorDetail.errorMessage}</code>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleCopyText(selectedErrorDetail.errorMessage, '错误信息')}
-                      className="h-6 w-6 p-0 shrink-0 ml-2"
-                    >
-                      <Copy className="w-3 h-3" />
-                    </Button>
-                  </div>
+              
+              {/* Request ID */}
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground">Request ID</p>
+                <div className="flex items-center gap-2">
+                  <code className="flex-1 bg-muted px-3 py-2 rounded text-sm font-mono">
+                    {selectedError.requestId}
+                  </code>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => handleCopyText(selectedError.requestId, 'Request ID')}
+                  >
+                    <Copy className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+              
+              {/* 错误消息 */}
+              <div className="space-y-1">
+                <p className="text-xs text-muted-foreground">错误消息</p>
+                <div className="bg-destructive/5 border border-destructive/20 rounded-lg p-3">
+                  <p className="text-sm text-destructive">{selectedError.errorMessage}</p>
+                </div>
+              </div>
+              
+              {/* 其他信息 */}
+              <div className="grid grid-cols-3 gap-4 pt-2 border-t">
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground">Input Tokens</p>
+                  <p className="font-medium">{selectedError.inputTokens.toLocaleString()}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground">Retry After</p>
+                  <p className="font-medium">{selectedError.retryAfter}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground">User Agent</p>
+                  <p className="font-mono text-sm">{selectedError.userAgent}</p>
                 </div>
               </div>
             </div>
