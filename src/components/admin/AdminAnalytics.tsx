@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Building2, Users, Zap, TrendingUp, Activity, AlertTriangle, Clock, CalendarIcon, Check, ChevronsUpDown, Cpu } from 'lucide-react';
+import { Building2, Users, Zap, TrendingUp, Activity, AlertTriangle, Clock, CalendarIcon, Check, ChevronsUpDown, Cpu, Eye, Copy, X } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -41,6 +41,22 @@ import {
   CommandItem,
   CommandList,
 } from '@/components/ui/command';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { useToast } from '@/hooks/use-toast';
+
+const ERROR_COLORS: Record<string, string> = {
+  '429': 'hsl(45, 93%, 47%)',
+  '500': 'hsl(0, 84%, 60%)',
+  '503': 'hsl(25, 95%, 53%)',
+  '504': 'hsl(270, 50%, 60%)',
+  '400': 'hsl(213, 94%, 50%)',
+  '401': 'hsl(0, 72%, 51%)',
+};
 
 const COLORS = ['hsl(213, 94%, 50%)', 'hsl(142, 76%, 36%)', 'hsl(38, 92%, 50%)', 'hsl(0, 84%, 60%)'];
 
@@ -344,6 +360,140 @@ const modelErrorDetails = [
   { model: 'Kimi K2', customer: '智能制造有限公司', errorCode: '500', errorCount: 8, timestamp: '2025-01-22 13:55:18' },
 ];
 
+// 按模型的错误趋势数据（每小时）
+const generateModelErrorTrendData = (model: string) => {
+  return Array.from({ length: 24 }, (_, i) => {
+    const baseErrors = model === 'all' ? 15 : 5;
+    const isBusinessHour = i >= 9 && i <= 21;
+    return {
+      hour: `${String(i).padStart(2, '0')}:00`,
+      '429': Math.floor(Math.random() * (isBusinessHour ? 8 : 3)) + (isBusinessHour ? 3 : 1),
+      '500': Math.floor(Math.random() * (isBusinessHour ? 5 : 2)) + (isBusinessHour ? 2 : 0),
+      '503': Math.floor(Math.random() * (isBusinessHour ? 4 : 1)) + (isBusinessHour ? 1 : 0),
+      '504': Math.floor(Math.random() * 3),
+      '400': Math.floor(Math.random() * 2),
+      '401': Math.floor(Math.random() * 1),
+      total: Math.floor(Math.random() * baseErrors) + (isBusinessHour ? baseErrors : baseErrors / 2),
+    };
+  });
+};
+
+// 扩展的错误明细数据（包含更多详情）
+const modelErrorDetailsExtended = [
+  { 
+    id: 'err-001',
+    model: 'GPT-4 Turbo', 
+    customer: '科技创新有限公司', 
+    errorCode: '429', 
+    errorCount: 12, 
+    timestamp: '2025-01-22 10:32:15',
+    requestId: 'req-abc123456',
+    endpoint: '/v1/chat/completions',
+    inputTokens: 2500,
+    errorMessage: 'Rate limit exceeded: Too many requests per minute',
+    retryAfter: '60s',
+    userAgent: 'KSGC-CLI/2.3.1'
+  },
+  { 
+    id: 'err-002',
+    model: 'GPT-4 Turbo', 
+    customer: '科技创新有限公司', 
+    errorCode: '500', 
+    errorCount: 8, 
+    timestamp: '2025-01-22 09:45:22',
+    requestId: 'req-def789012',
+    endpoint: '/v1/chat/completions',
+    inputTokens: 1800,
+    errorMessage: 'Internal server error: Model inference failed',
+    retryAfter: '-',
+    userAgent: 'KSGC-CLI/2.3.1'
+  },
+  { 
+    id: 'err-003',
+    model: 'GPT-4 Turbo', 
+    customer: '医疗健康科技', 
+    errorCode: '429', 
+    errorCount: 18, 
+    timestamp: '2025-01-22 11:15:08',
+    requestId: 'req-ghi345678',
+    endpoint: '/v1/chat/completions',
+    inputTokens: 3200,
+    errorMessage: 'Rate limit exceeded: Token quota exhausted',
+    retryAfter: '120s',
+    userAgent: 'KSGC-CLI/2.3.0'
+  },
+  { 
+    id: 'err-004',
+    model: 'GPT-4o', 
+    customer: '金融数据服务公司', 
+    errorCode: '500', 
+    errorCount: 10, 
+    timestamp: '2025-01-22 13:12:55',
+    requestId: 'req-jkl901234',
+    endpoint: '/v1/chat/completions',
+    inputTokens: 4500,
+    errorMessage: 'Internal server error: Context length exceeded',
+    retryAfter: '-',
+    userAgent: 'KSGC-CLI/2.2.8'
+  },
+  { 
+    id: 'err-005',
+    model: 'GPT-4o', 
+    customer: '金融数据服务公司', 
+    errorCode: '503', 
+    errorCount: 5, 
+    timestamp: '2025-01-22 15:33:18',
+    requestId: 'req-mno567890',
+    endpoint: '/v1/chat/completions',
+    inputTokens: 2100,
+    errorMessage: 'Service temporarily unavailable: High load',
+    retryAfter: '30s',
+    userAgent: 'KSGC-CLI/2.2.8'
+  },
+  { 
+    id: 'err-006',
+    model: 'GPT-4o Mini', 
+    customer: '医疗健康科技', 
+    errorCode: '401', 
+    errorCount: 4, 
+    timestamp: '2025-01-22 09:22:11',
+    requestId: 'req-pqr123456',
+    endpoint: '/v1/chat/completions',
+    inputTokens: 0,
+    errorMessage: 'Authentication failed: Invalid API key',
+    retryAfter: '-',
+    userAgent: 'KSGC-CLI/2.1.0'
+  },
+  { 
+    id: 'err-007',
+    model: 'Claude 3.5 Sonnet', 
+    customer: '医疗健康科技', 
+    errorCode: '503', 
+    errorCount: 12, 
+    timestamp: '2025-01-22 15:22:08',
+    requestId: 'req-stu789012',
+    endpoint: '/v1/messages',
+    inputTokens: 5600,
+    errorMessage: 'Service temporarily unavailable: Model overloaded',
+    retryAfter: '45s',
+    userAgent: 'KSGC-CLI/2.3.1'
+  },
+  { 
+    id: 'err-008',
+    model: 'DeepSeek V3', 
+    customer: '科技创新有限公司', 
+    errorCode: '429', 
+    errorCount: 25, 
+    timestamp: '2025-01-22 09:15:22',
+    requestId: 'req-vwx345678',
+    endpoint: '/v1/chat/completions',
+    inputTokens: 8900,
+    errorMessage: 'Rate limit exceeded: Concurrent request limit reached',
+    retryAfter: '90s',
+    userAgent: 'KSGC-CLI/2.3.1'
+  },
+];
+
 // 生成每小时性能趋势数据
 const generateHourlyPerformanceData = (model: string) => {
   return Array.from({ length: 24 }, (_, i) => ({
@@ -356,6 +506,7 @@ const generateHourlyPerformanceData = (model: string) => {
 };
 
 export function AdminAnalytics() {
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<'global' | 'customer' | 'model'>('global');
   
   // Global tab state
@@ -384,6 +535,23 @@ export function AdminAnalytics() {
   });
   const [modelTabFilter, setModelTabFilter] = useState<string>('all');
   const [modelTabPopoverOpen, setModelTabPopoverOpen] = useState(false);
+  
+  // Error detail dialog state
+  const [selectedError, setSelectedError] = useState<typeof modelErrorDetailsExtended[0] | null>(null);
+  const [errorDetailDialogOpen, setErrorDetailDialogOpen] = useState(false);
+
+  const handleViewErrorDetail = (error: typeof modelErrorDetailsExtended[0]) => {
+    setSelectedError(error);
+    setErrorDetailDialogOpen(true);
+  };
+
+  const handleCopyText = (text: string, label: string) => {
+    navigator.clipboard.writeText(text);
+    toast({
+      title: "已复制",
+      description: `${label}已复制到剪贴板`,
+    });
+  };
 
   const handleGlobalPresetChange = (preset: TimeRangePreset) => {
     setGlobalTimeRangePreset(preset);
@@ -1653,12 +1821,17 @@ export function AdminAnalytics() {
     return modelErrorByType[modelTabFilter] || [];
   }, [modelTabFilter]);
 
-  // 过滤后的模型错误明细
-  const filteredModelErrorDetails = useMemo(() => {
+  // 过滤后的模型错误明细（使用扩展数据）
+  const filteredModelErrorDetailsExtended = useMemo(() => {
     if (modelTabFilter === 'all') {
-      return modelErrorDetails;
+      return modelErrorDetailsExtended;
     }
-    return modelErrorDetails.filter(e => e.model === modelTabFilter);
+    return modelErrorDetailsExtended.filter(e => e.model === modelTabFilter);
+  }, [modelTabFilter]);
+
+  // 错误趋势数据
+  const modelErrorTrendData = useMemo(() => {
+    return generateModelErrorTrendData(modelTabFilter);
   }, [modelTabFilter]);
 
   const renderModelTab = () => (
@@ -2135,6 +2308,68 @@ export function AdminAnalytics() {
         )}
       </div>
 
+      {/* 错误趋势图 */}
+      <Card className="enterprise-card">
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <TrendingUp className="w-4 h-4" />
+            错误趋势 (每小时) {modelTabFilter !== 'all' && `- ${modelTabFilter}`}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <ComposedChart data={modelErrorTrendData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis dataKey="hour" tick={{ fontSize: 10 }} />
+                <YAxis tick={{ fontSize: 12 }} />
+                <Tooltip />
+                <Bar dataKey="429" stackId="errors" fill={ERROR_COLORS['429']} name="429 请求频率限制" />
+                <Bar dataKey="500" stackId="errors" fill={ERROR_COLORS['500']} name="500 服务器错误" />
+                <Bar dataKey="503" stackId="errors" fill={ERROR_COLORS['503']} name="503 服务不可用" />
+                <Bar dataKey="504" stackId="errors" fill={ERROR_COLORS['504']} name="504 网关超时" />
+                <Bar dataKey="400" stackId="errors" fill={ERROR_COLORS['400']} name="400 请求参数错误" />
+                <Bar dataKey="401" stackId="errors" fill={ERROR_COLORS['401']} name="401 认证失败" />
+                <Line 
+                  type="monotone" 
+                  dataKey="total" 
+                  stroke="hsl(var(--foreground))" 
+                  strokeWidth={2}
+                  dot={false}
+                  name="总错误数"
+                />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="flex flex-wrap gap-3 mt-3 justify-center text-xs">
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 rounded" style={{ backgroundColor: ERROR_COLORS['429'] }} />
+              <span>429</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 rounded" style={{ backgroundColor: ERROR_COLORS['500'] }} />
+              <span>500</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 rounded" style={{ backgroundColor: ERROR_COLORS['503'] }} />
+              <span>503</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 rounded" style={{ backgroundColor: ERROR_COLORS['504'] }} />
+              <span>504</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 rounded" style={{ backgroundColor: ERROR_COLORS['400'] }} />
+              <span>400</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <div className="w-3 h-3 rounded" style={{ backgroundColor: ERROR_COLORS['401'] }} />
+              <span>401</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* 模型错误明细表格 */}
       <Card className="enterprise-card">
         <CardHeader>
@@ -2150,13 +2385,14 @@ export function AdminAnalytics() {
                 {modelTabFilter === 'all' && <TableHead>模型</TableHead>}
                 <TableHead>客户</TableHead>
                 <TableHead>错误代码</TableHead>
-                <TableHead className="text-right">错误数</TableHead>
+                <TableHead className="text-right">错误数 (次)</TableHead>
                 <TableHead className="text-right">最近发生时间</TableHead>
+                <TableHead className="text-center">操作</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredModelErrorDetails.map((item, index) => (
-                <TableRow key={index}>
+              {filteredModelErrorDetailsExtended.map((item) => (
+                <TableRow key={item.id}>
                   {modelTabFilter === 'all' && <TableCell className="font-medium">{item.model}</TableCell>}
                   <TableCell>{item.customer}</TableCell>
                   <TableCell>
@@ -2172,8 +2408,19 @@ export function AdminAnalytics() {
                       {item.errorCode}
                     </span>
                   </TableCell>
-                  <TableCell className="text-right text-destructive font-medium">{item.errorCount}</TableCell>
+                  <TableCell className="text-right text-destructive font-medium">{item.errorCount} 次</TableCell>
                   <TableCell className="text-right text-muted-foreground">{item.timestamp}</TableCell>
+                  <TableCell className="text-center">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleViewErrorDetail(item)}
+                      className="h-7 px-2"
+                    >
+                      <Eye className="w-4 h-4 mr-1" />
+                      查看详情
+                    </Button>
+                  </TableCell>
                 </TableRow>
               ))}
               {/* 总计行 */}
@@ -2181,13 +2428,118 @@ export function AdminAnalytics() {
                 {modelTabFilter === 'all' && <TableCell>-</TableCell>}
                 <TableCell>总计</TableCell>
                 <TableCell>-</TableCell>
-                <TableCell className="text-right text-destructive">{filteredModelErrorDetails.reduce((sum, e) => sum + e.errorCount, 0)}</TableCell>
+                <TableCell className="text-right text-destructive">{filteredModelErrorDetailsExtended.reduce((sum, e) => sum + e.errorCount, 0)} 次</TableCell>
+                <TableCell>-</TableCell>
                 <TableCell>-</TableCell>
               </TableRow>
             </TableBody>
           </Table>
         </CardContent>
       </Card>
+
+      {/* 错误详情弹窗 */}
+      <Dialog open={errorDetailDialogOpen} onOpenChange={setErrorDetailDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-destructive" />
+              错误详情
+            </DialogTitle>
+          </DialogHeader>
+          {selectedError && (
+            <div className="space-y-4">
+              {/* 基本信息 */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground">模型</p>
+                  <p className="font-medium">{selectedError.model}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground">客户</p>
+                  <p className="font-medium">{selectedError.customer}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground">错误代码</p>
+                  <span className={cn(
+                    "inline-block px-2 py-0.5 rounded text-xs font-mono font-medium",
+                    selectedError.errorCode === '429' && "bg-yellow-500/10 text-yellow-600",
+                    selectedError.errorCode === '500' && "bg-destructive/10 text-destructive",
+                    selectedError.errorCode === '503' && "bg-orange-500/10 text-orange-600",
+                    selectedError.errorCode === '504' && "bg-purple-500/10 text-purple-600",
+                    selectedError.errorCode === '400' && "bg-blue-500/10 text-blue-600",
+                    selectedError.errorCode === '401' && "bg-red-500/10 text-red-600",
+                  )}>
+                    {selectedError.errorCode}
+                  </span>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground">错误次数</p>
+                  <p className="font-medium text-destructive">{selectedError.errorCount} 次</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground">发生时间</p>
+                  <p className="font-medium">{selectedError.timestamp}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground">重试间隔</p>
+                  <p className="font-medium">{selectedError.retryAfter}</p>
+                </div>
+              </div>
+
+              {/* 请求信息 */}
+              <div className="border-t pt-4">
+                <h4 className="text-sm font-medium mb-3">请求信息</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground">请求ID</p>
+                    <div className="flex items-center gap-2">
+                      <code className="text-xs bg-muted px-2 py-1 rounded font-mono">{selectedError.requestId}</code>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleCopyText(selectedError.requestId, '请求ID')}
+                        className="h-6 w-6 p-0"
+                      >
+                        <Copy className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground">接口端点</p>
+                    <code className="text-xs bg-muted px-2 py-1 rounded font-mono">{selectedError.endpoint}</code>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground">输入Token数</p>
+                    <p className="font-medium">{selectedError.inputTokens.toLocaleString()} tokens</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground">客户端</p>
+                    <p className="font-medium">{selectedError.userAgent}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* 错误信息 */}
+              <div className="border-t pt-4">
+                <h4 className="text-sm font-medium mb-3">错误信息</h4>
+                <div className="bg-destructive/5 border border-destructive/20 rounded-lg p-4">
+                  <div className="flex items-start justify-between">
+                    <code className="text-sm text-destructive font-mono break-all">{selectedError.errorMessage}</code>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleCopyText(selectedError.errorMessage, '错误信息')}
+                      className="h-6 w-6 p-0 shrink-0 ml-2"
+                    >
+                      <Copy className="w-3 h-3" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 
