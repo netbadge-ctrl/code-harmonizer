@@ -1916,14 +1916,6 @@ export function AdminAnalytics() {
                 </div>
               </CardContent>
             </Card>
-            <Card className="enterprise-card">
-              <CardContent className="p-4">
-                <div className="text-center">
-                  <p className="text-2xl font-bold text-destructive">{customerStats.avgErrorRate}<span className="text-sm font-normal">%</span></p>
-                  <p className="text-xs text-muted-foreground">平均错误率</p>
-                </div>
-              </CardContent>
-            </Card>
           </div>
 
           {/* 使用趋势图 */}
@@ -2562,14 +2554,6 @@ export function AdminAnalytics() {
             <div className="text-center">
               <p className="text-2xl font-bold text-destructive">{modelPerformanceStats.totalErrors} <span className="text-sm font-normal text-muted-foreground">次</span></p>
               <p className="text-xs text-muted-foreground">错误总数</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="enterprise-card">
-          <CardContent className="p-4">
-            <div className="text-center">
-              <p className="text-2xl font-bold text-destructive">{modelPerformanceStats.avgErrorRate}<span className="text-sm font-normal">%</span></p>
-              <p className="text-xs text-muted-foreground">平均错误率</p>
             </div>
           </CardContent>
         </Card>
