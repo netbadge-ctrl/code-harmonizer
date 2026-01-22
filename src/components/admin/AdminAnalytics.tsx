@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Building2, CalendarIcon, Check, ChevronsUpDown, Eye, Copy, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Building2, CalendarIcon, Check, ChevronsUpDown, Eye, Copy, ChevronLeft, ChevronRight, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -301,12 +301,51 @@ export function AdminAnalytics() {
 
   const selectedCustomer = mockCustomers.find(c => c.id === selectedCustomerId);
 
+  // 模型性能指标排序状态
+  const [sortColumn, setSortColumn] = useState<string>('tokens');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+
+  // 排序处理
+  const handleSort = (column: string) => {
+    if (sortColumn === column) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortColumn(column);
+      setSortDirection('desc');
+    }
+  };
+
   // 计算数据
   const modelUsageData = useMemo(() => {
-    const data = generateModelUsageData(selectedCustomer?.companyName || null);
-    if (modelFilter === 'all') return data;
-    return data.filter(m => m.model === modelFilter);
-  }, [selectedCustomer, modelFilter]);
+    let data = generateModelUsageData(selectedCustomer?.companyName || null);
+    if (modelFilter !== 'all') {
+      data = data.filter(m => m.model === modelFilter);
+    }
+    
+    // 排序
+    return [...data].sort((a, b) => {
+      let aVal: number | string, bVal: number | string;
+      switch (sortColumn) {
+        case 'model': aVal = a.model; bVal = b.model; break;
+        case 'tokens': aVal = a.tokens; bVal = b.tokens; break;
+        case 'peakTPM': aVal = a.peakTPM; bVal = b.peakTPM; break;
+        case 'avgTPMDaily': aVal = a.avgTPMDaily; bVal = b.avgTPMDaily; break;
+        case 'avgTPMBusiness': aVal = a.avgTPMBusiness; bVal = b.avgTPMBusiness; break;
+        case 'ttftAvg': aVal = a.ttftAvg; bVal = b.ttftAvg; break;
+        case 'ttftP98': aVal = a.ttftP98; bVal = b.ttftP98; break;
+        case 'tpotAvg': aVal = a.tpotAvg; bVal = b.tpotAvg; break;
+        case 'requests': aVal = a.requests; bVal = b.requests; break;
+        case 'errorCount': aVal = a.errorCount; bVal = b.errorCount; break;
+        default: aVal = a.tokens; bVal = b.tokens;
+      }
+      if (typeof aVal === 'string') {
+        return sortDirection === 'asc' 
+          ? aVal.localeCompare(bVal as string) 
+          : (bVal as string).localeCompare(aVal);
+      }
+      return sortDirection === 'asc' ? aVal - (bVal as number) : (bVal as number) - aVal;
+    });
+  }, [selectedCustomer, modelFilter, sortColumn, sortDirection]);
 
   const dailyTrendData = useMemo(() => generateDailyTrendData(), []);
   const modelTrendData = useMemo(() => generateModelTrendData(), []);
@@ -620,40 +659,6 @@ export function AdminAnalytics() {
             </div>
           </CardContent>
         </Card>
-        <Card className="enterprise-card">
-          <CardContent className="p-4">
-            <div className="text-center">
-              <p className="text-2xl font-bold text-foreground">{stats.avgTTFT}s / {stats.avgTPOT}</p>
-              <p className="text-xs text-muted-foreground">首Token时延 / 生成速度</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="enterprise-card">
-          <CardContent className="p-4">
-            <div className="text-center">
-              <p className="text-2xl font-bold text-foreground">
-                {stats.avgInputLatency}s / {stats.avgOutputLatency}s
-              </p>
-              <p className="text-xs text-muted-foreground">千Token时长 (输入/输出)</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="enterprise-card">
-          <CardContent className="p-4">
-            <div className="text-center">
-              <p className="text-2xl font-bold text-foreground">{stats.avgSuccessRate}%</p>
-              <p className="text-xs text-muted-foreground">成功率</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="enterprise-card">
-          <CardContent className="p-4">
-            <div className="text-center">
-              <p className="text-2xl font-bold text-destructive">{stats.totalErrors}</p>
-              <p className="text-xs text-muted-foreground">错误总数</p>
-            </div>
-          </CardContent>
-        </Card>
       </div>
 
       {/* Token 消耗趋势 - 全宽 */}
@@ -944,28 +949,128 @@ export function AdminAnalytics() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Token消耗</TableHead>
-                <TableHead>模型</TableHead>
-                <TableHead className="text-right">峰值每分钟Token数</TableHead>
-                <TableHead className="text-right">每分钟均Token数</TableHead>
-                <TableHead className="text-right">工作时段每分钟均Token数</TableHead>
-                <TableHead className="text-right">首Token平均时延</TableHead>
-                <TableHead className="text-right">首Token P98时延</TableHead>
-                <TableHead className="text-right">Token生成速度</TableHead>
-                <TableHead className="text-right">请求数 (成功/总)</TableHead>
-                <TableHead className="text-right">错误数</TableHead>
+                <TableHead 
+                  className="cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={() => handleSort('model')}
+                >
+                  <div className="flex items-center gap-1">
+                    模型
+                    {sortColumn === 'model' ? (
+                      sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+                    ) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
+                  </div>
+                </TableHead>
+                <TableHead 
+                  className="cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={() => handleSort('tokens')}
+                >
+                  <div className="flex items-center gap-1">
+                    Token消耗（入/出）
+                    {sortColumn === 'tokens' ? (
+                      sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+                    ) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
+                  </div>
+                </TableHead>
+                <TableHead 
+                  className="text-right cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={() => handleSort('peakTPM')}
+                >
+                  <div className="flex items-center justify-end gap-1">
+                    峰值每分钟Token数
+                    {sortColumn === 'peakTPM' ? (
+                      sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+                    ) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
+                  </div>
+                </TableHead>
+                <TableHead 
+                  className="text-right cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={() => handleSort('avgTPMDaily')}
+                >
+                  <div className="flex items-center justify-end gap-1">
+                    每分钟均Token数
+                    {sortColumn === 'avgTPMDaily' ? (
+                      sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+                    ) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
+                  </div>
+                </TableHead>
+                <TableHead 
+                  className="text-right cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={() => handleSort('avgTPMBusiness')}
+                >
+                  <div className="flex items-center justify-end gap-1">
+                    工作时段每分钟均Token数
+                    {sortColumn === 'avgTPMBusiness' ? (
+                      sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+                    ) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
+                  </div>
+                </TableHead>
+                <TableHead 
+                  className="text-right cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={() => handleSort('ttftAvg')}
+                >
+                  <div className="flex items-center justify-end gap-1">
+                    首Token平均时延
+                    {sortColumn === 'ttftAvg' ? (
+                      sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+                    ) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
+                  </div>
+                </TableHead>
+                <TableHead 
+                  className="text-right cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={() => handleSort('ttftP98')}
+                >
+                  <div className="flex items-center justify-end gap-1">
+                    首Token P98时延
+                    {sortColumn === 'ttftP98' ? (
+                      sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+                    ) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
+                  </div>
+                </TableHead>
+                <TableHead 
+                  className="text-right cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={() => handleSort('tpotAvg')}
+                >
+                  <div className="flex items-center justify-end gap-1">
+                    Token生成速度
+                    {sortColumn === 'tpotAvg' ? (
+                      sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+                    ) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
+                  </div>
+                </TableHead>
+                <TableHead 
+                  className="text-right cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={() => handleSort('requests')}
+                >
+                  <div className="flex items-center justify-end gap-1">
+                    请求数 (成功/总)
+                    {sortColumn === 'requests' ? (
+                      sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+                    ) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
+                  </div>
+                </TableHead>
+                <TableHead 
+                  className="text-right cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={() => handleSort('errorCount')}
+                >
+                  <div className="flex items-center justify-end gap-1">
+                    错误数
+                    {sortColumn === 'errorCount' ? (
+                      sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+                    ) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
+                  </div>
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {modelUsageData.map((item) => (
                 <TableRow key={item.model}>
+                  <TableCell className="font-medium">{item.model}</TableCell>
                   <TableCell className="font-medium">
                     {formatTokens(item.tokens)}
                     <span className="text-muted-foreground text-xs ml-1">
                       ({formatTokens(item.inputTokens)}/{formatTokens(item.outputTokens)})
                     </span>
                   </TableCell>
-                  <TableCell className="font-medium">{item.model}</TableCell>
                   <TableCell className="text-right">{formatTokens(item.peakTPM)}</TableCell>
                   <TableCell className="text-right">{formatTokens(item.avgTPMDaily)}</TableCell>
                   <TableCell className="text-right">{formatTokens(item.avgTPMBusiness)}</TableCell>
@@ -976,30 +1081,6 @@ export function AdminAnalytics() {
                   <TableCell className="text-right text-destructive">{item.errorCount}</TableCell>
                 </TableRow>
               ))}
-              {/* 总计/平均行 */}
-              <TableRow className="border-t-2 font-medium">
-                <TableCell>
-                  {formatTokens(stats.totalTokens)}
-                  <span className="text-muted-foreground text-xs ml-1">
-                    ({formatTokens(stats.totalInputTokens)}/{formatTokens(stats.totalOutputTokens)})
-                  </span>
-                </TableCell>
-                <TableCell>总计/平均</TableCell>
-                <TableCell className="text-right">{formatTokens(Math.max(...modelUsageData.map(m => m.peakTPM)))}</TableCell>
-                <TableCell className="text-right">-</TableCell>
-                <TableCell className="text-right">-</TableCell>
-                <TableCell className="text-right">
-                  {(modelUsageData.reduce((sum, m) => sum + m.ttftAvg, 0) / modelUsageData.length).toFixed(2)} 秒
-                </TableCell>
-                <TableCell className="text-right">-</TableCell>
-                <TableCell className="text-right">
-                  {(modelUsageData.reduce((sum, m) => sum + m.tpotAvg, 0) / modelUsageData.length).toFixed(1)} t/s
-                </TableCell>
-                <TableCell className="text-right">
-                  {modelUsageData.reduce((sum, m) => sum + m.successfulRequests, 0).toLocaleString()}/{stats.totalRequests.toLocaleString()}
-                </TableCell>
-                <TableCell className="text-right text-destructive">{stats.totalErrors}</TableCell>
-              </TableRow>
             </TableBody>
           </Table>
         </CardContent>
