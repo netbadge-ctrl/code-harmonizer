@@ -158,8 +158,107 @@ const modelTrendData = generateModelTrendData();
 
 type TimeRangePreset = '15min' | '4hours' | '24hours' | '7days' | 'custom';
 
+// 模型性能指标数据
+const modelPerformanceData = [
+  { 
+    model: 'GPT-4 Turbo', 
+    peakTPM: 125000, 
+    avgTPMDaily: 85000, 
+    avgTPMBusiness: 98000, 
+    ttftAvg: 0.42, 
+    ttftP98: 1.25, 
+    tpotAvg: 28.5,
+    tokens: 45000000,
+    requests: 12500,
+    successRate: 99.2
+  },
+  { 
+    model: 'GPT-4o', 
+    peakTPM: 180000, 
+    avgTPMDaily: 120000, 
+    avgTPMBusiness: 145000, 
+    ttftAvg: 0.35, 
+    ttftP98: 0.98, 
+    tpotAvg: 35.2,
+    tokens: 38000000,
+    requests: 15200,
+    successRate: 99.5
+  },
+  { 
+    model: 'GPT-4o Mini', 
+    peakTPM: 250000, 
+    avgTPMDaily: 180000, 
+    avgTPMBusiness: 210000, 
+    ttftAvg: 0.22, 
+    ttftP98: 0.65, 
+    tpotAvg: 48.6,
+    tokens: 28000000,
+    requests: 22000,
+    successRate: 99.8
+  },
+  { 
+    model: 'Claude 3.5 Sonnet', 
+    peakTPM: 150000, 
+    avgTPMDaily: 95000, 
+    avgTPMBusiness: 115000, 
+    ttftAvg: 0.38, 
+    ttftP98: 1.15, 
+    tpotAvg: 32.1,
+    tokens: 52000000,
+    requests: 18000,
+    successRate: 99.3
+  },
+  { 
+    model: 'Claude 3 Opus', 
+    peakTPM: 80000, 
+    avgTPMDaily: 45000, 
+    avgTPMBusiness: 55000, 
+    ttftAvg: 0.85, 
+    ttftP98: 2.45, 
+    tpotAvg: 18.5,
+    tokens: 15000000,
+    requests: 4500,
+    successRate: 98.9
+  },
+  { 
+    model: 'DeepSeek V3', 
+    peakTPM: 320000, 
+    avgTPMDaily: 220000, 
+    avgTPMBusiness: 280000, 
+    ttftAvg: 0.18, 
+    ttftP98: 0.52, 
+    tpotAvg: 65.8,
+    tokens: 32000000,
+    requests: 28000,
+    successRate: 99.6
+  },
+  { 
+    model: 'Kimi K2', 
+    peakTPM: 200000, 
+    avgTPMDaily: 140000, 
+    avgTPMBusiness: 165000, 
+    ttftAvg: 0.28, 
+    ttftP98: 0.78, 
+    tpotAvg: 42.3,
+    tokens: 18000000,
+    requests: 9800,
+    successRate: 99.4
+  },
+];
+
+// 生成每小时性能趋势数据
+const generateHourlyPerformanceData = (model: string) => {
+  return Array.from({ length: 24 }, (_, i) => ({
+    hour: `${String(i).padStart(2, '0')}:00`,
+    ttft: Math.random() * 0.3 + 0.2,
+    ttftP98: Math.random() * 0.8 + 0.5,
+    tpot: Math.random() * 20 + 25,
+    tpm: Math.floor(Math.random() * 50000) + (i >= 9 && i <= 21 ? 100000 : 50000),
+  }));
+};
+
 export function AdminAnalytics() {
-  const [activeTab, setActiveTab] = useState<'global' | 'customer'>('global');
+  const [activeTab, setActiveTab] = useState<'global' | 'customer' | 'model'>('global');
   
   // Global tab state
   const [globalTimeRangePreset, setGlobalTimeRangePreset] = useState<TimeRangePreset>('7days');
@@ -178,6 +277,15 @@ export function AdminAnalytics() {
   });
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>('');
   const [customerPopoverOpen, setCustomerPopoverOpen] = useState(false);
+  
+  // Model data tab state
+  const [modelTimeRangePreset, setModelTimeRangePreset] = useState<TimeRangePreset>('7days');
+  const [modelDateRange, setModelDateRange] = useState<{ from: Date; to: Date }>({
+    from: subDays(new Date(), 7),
+    to: new Date(),
+  });
+  const [modelTabFilter, setModelTabFilter] = useState<string>('all');
+  const [modelTabPopoverOpen, setModelTabPopoverOpen] = useState(false);
 
   const handleGlobalPresetChange = (preset: TimeRangePreset) => {
     setGlobalTimeRangePreset(preset);
@@ -213,6 +321,25 @@ export function AdminAnalytics() {
         break;
       case '7days':
         setCustomerDateRange({ from: subDays(now, 7), to: now });
+        break;
+    }
+  };
+
+  const handleModelPresetChange = (preset: TimeRangePreset) => {
+    setModelTimeRangePreset(preset);
+    const now = new Date();
+    switch (preset) {
+      case '15min':
+        setModelDateRange({ from: subMinutes(now, 15), to: now });
+        break;
+      case '4hours':
+        setModelDateRange({ from: subHours(now, 4), to: now });
+        break;
+      case '24hours':
+        setModelDateRange({ from: subHours(now, 24), to: now });
+        break;
+      case '7days':
+        setModelDateRange({ from: subDays(now, 7), to: now });
         break;
     }
   };
@@ -328,13 +455,14 @@ export function AdminAnalytics() {
     onDateRangeChange: (range: { from: Date; to: Date }) => void,
     onPresetSet: (preset: TimeRangePreset) => void
   ) => (
-    <div className="flex flex-wrap items-center gap-2 mb-6">
-      <span className="text-sm text-muted-foreground">查询时间：</span>
-      <div className="flex flex-wrap gap-2">
+    <div className="flex items-center gap-2 overflow-x-auto pb-2">
+      <span className="text-sm text-muted-foreground whitespace-nowrap">查询时间：</span>
+      <div className="flex items-center gap-2 flex-nowrap">
         <Button
           variant={preset === '15min' ? 'default' : 'outline'}
           size="sm"
           onClick={() => onPresetChange('15min')}
+          className="whitespace-nowrap"
         >
           最近15分钟
         </Button>
@@ -342,6 +470,7 @@ export function AdminAnalytics() {
           variant={preset === '4hours' ? 'default' : 'outline'}
           size="sm"
           onClick={() => onPresetChange('4hours')}
+          className="whitespace-nowrap"
         >
           最近4小时
         </Button>
@@ -349,6 +478,7 @@ export function AdminAnalytics() {
           variant={preset === '24hours' ? 'default' : 'outline'}
           size="sm"
           onClick={() => onPresetChange('24hours')}
+          className="whitespace-nowrap"
         >
           最近24小时
         </Button>
@@ -356,6 +486,7 @@ export function AdminAnalytics() {
           variant={preset === '7days' ? 'default' : 'outline'}
           size="sm"
           onClick={() => onPresetChange('7days')}
+          className="whitespace-nowrap"
         >
           最近7天
         </Button>
@@ -364,7 +495,7 @@ export function AdminAnalytics() {
             <Button
               variant={preset === 'custom' ? 'default' : 'outline'}
               size="sm"
-              className="min-w-[200px] justify-start"
+              className="min-w-[200px] justify-start whitespace-nowrap"
             >
               <CalendarIcon className="mr-2 h-4 w-4" />
               {preset === 'custom' ? (
@@ -400,15 +531,16 @@ export function AdminAnalytics() {
 
   const renderGlobalTab = () => (
     <div className="space-y-6">
-      {/* 时间范围和模型筛选 - 同一行 */}
-      <div className="flex flex-wrap items-center gap-4 mb-6">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-sm text-muted-foreground">查询时间：</span>
-          <div className="flex flex-wrap gap-2">
+      {/* 时间范围和模型筛选 - 同一行不折行 */}
+      <div className="flex items-center gap-4 mb-6 overflow-x-auto pb-2">
+        <div className="flex items-center gap-2 flex-nowrap">
+          <span className="text-sm text-muted-foreground whitespace-nowrap">查询时间：</span>
+          <div className="flex items-center gap-2 flex-nowrap">
             <Button
               variant={globalTimeRangePreset === '15min' ? 'default' : 'outline'}
               size="sm"
               onClick={() => handleGlobalPresetChange('15min')}
+              className="whitespace-nowrap"
             >
               最近15分钟
             </Button>
@@ -416,6 +548,7 @@ export function AdminAnalytics() {
               variant={globalTimeRangePreset === '4hours' ? 'default' : 'outline'}
               size="sm"
               onClick={() => handleGlobalPresetChange('4hours')}
+              className="whitespace-nowrap"
             >
               最近4小时
             </Button>
@@ -423,6 +556,7 @@ export function AdminAnalytics() {
               variant={globalTimeRangePreset === '24hours' ? 'default' : 'outline'}
               size="sm"
               onClick={() => handleGlobalPresetChange('24hours')}
+              className="whitespace-nowrap"
             >
               最近24小时
             </Button>
@@ -430,6 +564,7 @@ export function AdminAnalytics() {
               variant={globalTimeRangePreset === '7days' ? 'default' : 'outline'}
               size="sm"
               onClick={() => handleGlobalPresetChange('7days')}
+              className="whitespace-nowrap"
             >
               最近7天
             </Button>
@@ -438,7 +573,7 @@ export function AdminAnalytics() {
                 <Button
                   variant={globalTimeRangePreset === 'custom' ? 'default' : 'outline'}
                   size="sm"
-                  className="min-w-[200px] justify-start"
+                  className="min-w-[200px] justify-start whitespace-nowrap"
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
                   {globalTimeRangePreset === 'custom' ? (
@@ -472,8 +607,8 @@ export function AdminAnalytics() {
         </div>
         
         {/* 模型筛选 */}
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">模型筛选：</span>
+        <div className="flex items-center gap-2 flex-nowrap">
+          <span className="text-sm text-muted-foreground whitespace-nowrap">模型筛选：</span>
           <Popover open={globalModelPopoverOpen} onOpenChange={setGlobalModelPopoverOpen}>
             <PopoverTrigger asChild>
               <Button
@@ -1083,10 +1218,10 @@ export function AdminAnalytics() {
 
   const renderCustomerTab = () => (
     <div className="space-y-6">
-      {/* 客户筛选和时间范围选择 */}
-      <div className="flex flex-wrap items-center gap-4 mb-6">
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-muted-foreground">选择客户：</span>
+      {/* 客户筛选和时间范围选择 - 同一行不折行 */}
+      <div className="flex items-center gap-4 mb-6 overflow-x-auto pb-2">
+        <div className="flex items-center gap-2 flex-nowrap">
+          <span className="text-sm text-muted-foreground whitespace-nowrap">选择客户：</span>
           <Popover open={customerPopoverOpen} onOpenChange={setCustomerPopoverOpen}>
             <PopoverTrigger asChild>
               <Button
@@ -1131,16 +1266,81 @@ export function AdminAnalytics() {
             </PopoverContent>
           </Popover>
         </div>
+        
+        {/* 时间范围选择 - 内联 */}
+        <div className="flex items-center gap-2 flex-nowrap">
+          <span className="text-sm text-muted-foreground whitespace-nowrap">查询时间：</span>
+          <div className="flex items-center gap-2 flex-nowrap">
+            <Button
+              variant={customerTimeRangePreset === '15min' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => handleCustomerPresetChange('15min')}
+              className="whitespace-nowrap"
+            >
+              最近15分钟
+            </Button>
+            <Button
+              variant={customerTimeRangePreset === '4hours' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => handleCustomerPresetChange('4hours')}
+              className="whitespace-nowrap"
+            >
+              最近4小时
+            </Button>
+            <Button
+              variant={customerTimeRangePreset === '24hours' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => handleCustomerPresetChange('24hours')}
+              className="whitespace-nowrap"
+            >
+              最近24小时
+            </Button>
+            <Button
+              variant={customerTimeRangePreset === '7days' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => handleCustomerPresetChange('7days')}
+              className="whitespace-nowrap"
+            >
+              最近7天
+            </Button>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant={customerTimeRangePreset === 'custom' ? 'default' : 'outline'}
+                  size="sm"
+                  className="min-w-[200px] justify-start whitespace-nowrap"
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {customerTimeRangePreset === 'custom' ? (
+                    <>
+                      {format(customerDateRange.from, 'yyyy/MM/dd', { locale: zhCN })} - {format(customerDateRange.to, 'yyyy/MM/dd', { locale: zhCN })}
+                    </>
+                  ) : (
+                    '自定义日期'
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="range"
+                  selected={{ from: customerDateRange.from, to: customerDateRange.to }}
+                  onSelect={(range) => {
+                    if (range?.from && range?.to) {
+                      setCustomerDateRange({ from: range.from, to: range.to });
+                      setCustomerTimeRangePreset('custom');
+                    } else if (range?.from) {
+                      setCustomerDateRange({ from: range.from, to: range.from });
+                      setCustomerTimeRangePreset('custom');
+                    }
+                  }}
+                  numberOfMonths={2}
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+        </div>
       </div>
-      
-      {/* 时间范围选择 */}
-      {renderTimeRangePicker(
-        customerTimeRangePreset,
-        customerDateRange,
-        handleCustomerPresetChange,
-        setCustomerDateRange,
-        setCustomerTimeRangePreset
-      )}
 
       {selectedCustomer ? (
         <>
@@ -1301,13 +1501,401 @@ export function AdminAnalytics() {
     </div>
   );
 
+  // 过滤后的模型性能数据
+  const filteredModelPerformanceData = useMemo(() => {
+    if (modelTabFilter === 'all') {
+      return modelPerformanceData;
+    }
+    return modelPerformanceData.filter(m => m.model === modelTabFilter);
+  }, [modelTabFilter]);
+
+  // 模型性能汇总统计
+  const modelPerformanceStats = useMemo(() => {
+    const data = filteredModelPerformanceData;
+    return {
+      totalTokens: data.reduce((sum, m) => sum + m.tokens, 0),
+      totalRequests: data.reduce((sum, m) => sum + m.requests, 0),
+      avgTTFT: data.length > 0 
+        ? (data.reduce((sum, m) => sum + m.ttftAvg, 0) / data.length).toFixed(2)
+        : '0',
+      avgTPOT: data.length > 0 
+        ? (data.reduce((sum, m) => sum + m.tpotAvg, 0) / data.length).toFixed(1)
+        : '0',
+      peakTPM: Math.max(...data.map(m => m.peakTPM)),
+      avgSuccessRate: data.length > 0 
+        ? (data.reduce((sum, m) => sum + m.successRate, 0) / data.length).toFixed(1)
+        : '0',
+    };
+  }, [filteredModelPerformanceData]);
+
+  const renderModelTab = () => (
+    <div className="space-y-6">
+      {/* 时间范围和模型筛选 - 同一行不折行 */}
+      <div className="flex items-center gap-4 mb-6 overflow-x-auto pb-2">
+        <div className="flex items-center gap-2 flex-nowrap">
+          <span className="text-sm text-muted-foreground whitespace-nowrap">查询时间：</span>
+          <div className="flex items-center gap-2 flex-nowrap">
+            <Button
+              variant={modelTimeRangePreset === '15min' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => handleModelPresetChange('15min')}
+              className="whitespace-nowrap"
+            >
+              最近15分钟
+            </Button>
+            <Button
+              variant={modelTimeRangePreset === '4hours' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => handleModelPresetChange('4hours')}
+              className="whitespace-nowrap"
+            >
+              最近4小时
+            </Button>
+            <Button
+              variant={modelTimeRangePreset === '24hours' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => handleModelPresetChange('24hours')}
+              className="whitespace-nowrap"
+            >
+              最近24小时
+            </Button>
+            <Button
+              variant={modelTimeRangePreset === '7days' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => handleModelPresetChange('7days')}
+              className="whitespace-nowrap"
+            >
+              最近7天
+            </Button>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant={modelTimeRangePreset === 'custom' ? 'default' : 'outline'}
+                  size="sm"
+                  className="min-w-[200px] justify-start whitespace-nowrap"
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {modelTimeRangePreset === 'custom' ? (
+                    <>
+                      {format(modelDateRange.from, 'yyyy/MM/dd', { locale: zhCN })} - {format(modelDateRange.to, 'yyyy/MM/dd', { locale: zhCN })}
+                    </>
+                  ) : (
+                    '自定义日期'
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="range"
+                  selected={{ from: modelDateRange.from, to: modelDateRange.to }}
+                  onSelect={(range) => {
+                    if (range?.from && range?.to) {
+                      setModelDateRange({ from: range.from, to: range.to });
+                      setModelTimeRangePreset('custom');
+                    } else if (range?.from) {
+                      setModelDateRange({ from: range.from, to: range.from });
+                      setModelTimeRangePreset('custom');
+                    }
+                  }}
+                  numberOfMonths={2}
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+        </div>
+        
+        {/* 模型筛选 */}
+        <div className="flex items-center gap-2 flex-nowrap">
+          <span className="text-sm text-muted-foreground whitespace-nowrap">模型筛选：</span>
+          <Popover open={modelTabPopoverOpen} onOpenChange={setModelTabPopoverOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                aria-expanded={modelTabPopoverOpen}
+                className="w-[200px] justify-between"
+              >
+                <Cpu className="mr-2 h-4 w-4" />
+                {modelTabFilter === 'all' ? '全部模型' : modelTabFilter}
+                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[200px] p-0">
+              <Command>
+                <CommandInput placeholder="搜索模型..." />
+                <CommandList>
+                  <CommandEmpty>未找到模型</CommandEmpty>
+                  <CommandGroup>
+                    <CommandItem
+                      value="all"
+                      onSelect={() => {
+                        setModelTabFilter('all');
+                        setModelTabPopoverOpen(false);
+                      }}
+                    >
+                      <Check
+                        className={cn(
+                          "mr-2 h-4 w-4",
+                          modelTabFilter === 'all' ? "opacity-100" : "opacity-0"
+                        )}
+                      />
+                      全部模型
+                    </CommandItem>
+                    {availableModels.map((model) => (
+                      <CommandItem
+                        key={model}
+                        value={model}
+                        onSelect={() => {
+                          setModelTabFilter(model);
+                          setModelTabPopoverOpen(false);
+                        }}
+                      >
+                        <Check
+                          className={cn(
+                            "mr-2 h-4 w-4",
+                            modelTabFilter === model ? "opacity-100" : "opacity-0"
+                          )}
+                        />
+                        {model}
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
+        </div>
+      </div>
+
+      {/* 模型性能概览统计卡片 */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <Card className="enterprise-card">
+          <CardContent className="p-4">
+            <div className="text-center">
+              <p className="text-2xl font-bold text-foreground">{formatTokens(modelPerformanceStats.peakTPM)}</p>
+              <p className="text-xs text-muted-foreground">峰值 TPM</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="enterprise-card">
+          <CardContent className="p-4">
+            <div className="text-center">
+              <p className="text-2xl font-bold text-foreground">{modelPerformanceStats.avgTTFT}s</p>
+              <p className="text-xs text-muted-foreground">平均 TTFT</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="enterprise-card">
+          <CardContent className="p-4">
+            <div className="text-center">
+              <p className="text-2xl font-bold text-foreground">{modelPerformanceStats.avgTPOT}</p>
+              <p className="text-xs text-muted-foreground">平均 TPOT (tokens/s)</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="enterprise-card">
+          <CardContent className="p-4">
+            <div className="text-center">
+              <p className="text-2xl font-bold text-foreground">{formatTokens(modelPerformanceStats.totalTokens)}</p>
+              <p className="text-xs text-muted-foreground">Token 消耗</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="enterprise-card">
+          <CardContent className="p-4">
+            <div className="text-center">
+              <p className="text-2xl font-bold text-foreground">{modelPerformanceStats.totalRequests.toLocaleString()}</p>
+              <p className="text-xs text-muted-foreground">请求总数</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="enterprise-card">
+          <CardContent className="p-4">
+            <div className="text-center">
+              <p className="text-2xl font-bold text-success">{modelPerformanceStats.avgSuccessRate}%</p>
+              <p className="text-xs text-muted-foreground">成功率</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* 模型性能指标表格 */}
+      <Card className="enterprise-card">
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Cpu className="w-4 h-4" />
+            模型性能指标 {modelTabFilter !== 'all' && `- ${modelTabFilter}`}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>模型</TableHead>
+                  <TableHead className="text-right">峰值 TPM</TableHead>
+                  <TableHead className="text-right">平均 TPM (按天)</TableHead>
+                  <TableHead className="text-right">平均 TPM (09:30-21:30)</TableHead>
+                  <TableHead className="text-right">TTFT 平均时延 (s)</TableHead>
+                  <TableHead className="text-right">P98 TTFT (s)</TableHead>
+                  <TableHead className="text-right">TPOT (tokens/s)</TableHead>
+                  <TableHead className="text-right">Token 消耗</TableHead>
+                  <TableHead className="text-right">请求数</TableHead>
+                  <TableHead className="text-right">成功率</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredModelPerformanceData.map((item) => (
+                  <TableRow key={item.model}>
+                    <TableCell className="font-medium">{item.model}</TableCell>
+                    <TableCell className="text-right">{formatTokens(item.peakTPM)}</TableCell>
+                    <TableCell className="text-right">{formatTokens(item.avgTPMDaily)}</TableCell>
+                    <TableCell className="text-right">{formatTokens(item.avgTPMBusiness)}</TableCell>
+                    <TableCell className="text-right">{item.ttftAvg.toFixed(2)}</TableCell>
+                    <TableCell className="text-right">{item.ttftP98.toFixed(2)}</TableCell>
+                    <TableCell className="text-right">{item.tpotAvg.toFixed(1)}</TableCell>
+                    <TableCell className="text-right">{formatTokens(item.tokens)}</TableCell>
+                    <TableCell className="text-right">{item.requests.toLocaleString()}</TableCell>
+                    <TableCell className="text-right text-success font-medium">{item.successRate}%</TableCell>
+                  </TableRow>
+                ))}
+                {/* 总计行 */}
+                <TableRow className="bg-muted/30 font-medium">
+                  <TableCell>总计/平均</TableCell>
+                  <TableCell className="text-right">{formatTokens(modelPerformanceStats.peakTPM)}</TableCell>
+                  <TableCell className="text-right">-</TableCell>
+                  <TableCell className="text-right">-</TableCell>
+                  <TableCell className="text-right">{modelPerformanceStats.avgTTFT}</TableCell>
+                  <TableCell className="text-right">-</TableCell>
+                  <TableCell className="text-right">{modelPerformanceStats.avgTPOT}</TableCell>
+                  <TableCell className="text-right">{formatTokens(modelPerformanceStats.totalTokens)}</TableCell>
+                  <TableCell className="text-right">{modelPerformanceStats.totalRequests.toLocaleString()}</TableCell>
+                  <TableCell className="text-right text-success">{modelPerformanceStats.avgSuccessRate}%</TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* TTFT 和 TPOT 趋势图 */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card className="enterprise-card">
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <Clock className="w-4 h-4" />
+              TTFT 首Token时延趋势 (每小时)
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <ComposedChart data={generateHourlyPerformanceData(modelTabFilter === 'all' ? 'GPT-4 Turbo' : modelTabFilter)}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis dataKey="hour" tick={{ fontSize: 10 }} />
+                  <YAxis tick={{ fontSize: 12 }} unit="s" />
+                  <Tooltip formatter={(value: number) => `${value.toFixed(2)}s`} />
+                  <Bar 
+                    dataKey="ttft" 
+                    fill="hsl(213, 94%, 50%)"
+                    opacity={0.6}
+                    name="平均 TTFT"
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="ttftP98" 
+                    stroke="hsl(0, 84%, 60%)" 
+                    strokeWidth={2}
+                    dot={false}
+                    name="P98 TTFT"
+                  />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="flex gap-4 mt-2 justify-center text-xs">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded" style={{ backgroundColor: 'hsl(213, 94%, 50%)', opacity: 0.6 }} />
+                <span>平均 TTFT</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-0.5" style={{ backgroundColor: 'hsl(0, 84%, 60%)' }} />
+                <span>P98 TTFT</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="enterprise-card">
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <TrendingUp className="w-4 h-4" />
+              TPOT Token生成速度趋势 (每小时)
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={generateHourlyPerformanceData(modelTabFilter === 'all' ? 'GPT-4 Turbo' : modelTabFilter)}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis dataKey="hour" tick={{ fontSize: 10 }} />
+                  <YAxis tick={{ fontSize: 12 }} unit=" t/s" />
+                  <Tooltip formatter={(value: number) => `${value.toFixed(1)} tokens/s`} />
+                  <Line 
+                    type="monotone" 
+                    dataKey="tpot" 
+                    stroke="hsl(142, 76%, 36%)" 
+                    strokeWidth={2}
+                    name="TPOT"
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* TPM 趋势图 */}
+      <Card className="enterprise-card">
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Activity className="w-4 h-4" />
+            TPM 趋势 (每小时)
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <ComposedChart data={generateHourlyPerformanceData(modelTabFilter === 'all' ? 'GPT-4 Turbo' : modelTabFilter)}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <XAxis dataKey="hour" tick={{ fontSize: 10 }} />
+                <YAxis tick={{ fontSize: 12 }} tickFormatter={(value) => formatTokens(value)} />
+                <Tooltip formatter={(value: number) => formatTokens(value)} />
+                <Bar 
+                  dataKey="tpm" 
+                  fill="hsl(38, 92%, 50%)"
+                  opacity={0.8}
+                  name="TPM"
+                />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </div>
+          <p className="text-xs text-muted-foreground text-center mt-2">
+            注：工作时段 (09:30-21:30) TPM 通常显著高于非工作时段
+          </p>
+        </CardContent>
+      </Card>
+    </div>
+  );
+
   return (
     <div className="space-y-6">
       {/* Tab 切换 */}
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'global' | 'customer')}>
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'global' | 'customer' | 'model')}>
         <TabsList>
           <TabsTrigger value="global">全局数据</TabsTrigger>
           <TabsTrigger value="customer">客户数据</TabsTrigger>
+          <TabsTrigger value="model">模型数据</TabsTrigger>
         </TabsList>
         
         <TabsContent value="global" className="mt-6">
@@ -1316,6 +1904,10 @@ export function AdminAnalytics() {
         
         <TabsContent value="customer" className="mt-6">
           {renderCustomerTab()}
+        </TabsContent>
+
+        <TabsContent value="model" className="mt-6">
+          {renderModelTab()}
         </TabsContent>
       </Tabs>
     </div>
