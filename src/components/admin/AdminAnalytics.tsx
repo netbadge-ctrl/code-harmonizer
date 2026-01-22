@@ -93,7 +93,7 @@ const errorByType = [
   { code: '401', name: '认证失败', count: 4, percentage: 3.3 },
 ];
 
-// 模拟按客户+模型的错误数据（增加错误类型和详情）
+// 模拟按客户+模型的错误数据（增加错误类型和详情）- 20条
 const errorByCustomerModel = [
   { id: 'global-err-001', customer: '科技创新有限公司', model: 'GPT-4 Turbo', errorCode: '429', errorCount: 12, timestamp: '2025-01-22 10:32:15', requestId: 'req-g001abc123', endpoint: '/v1/chat/completions', inputTokens: 2500, errorMessage: 'Rate limit exceeded: Too many requests per minute', retryAfter: '60s', userAgent: 'KSGC-CLI/2.3.1' },
   { id: 'global-err-002', customer: '科技创新有限公司', model: 'GPT-4 Turbo', errorCode: '500', errorCount: 8, timestamp: '2025-01-22 09:45:22', requestId: 'req-g002def456', endpoint: '/v1/chat/completions', inputTokens: 1800, errorMessage: 'Internal server error: Model inference failed', retryAfter: '-', userAgent: 'KSGC-CLI/2.3.1' },
@@ -113,6 +113,8 @@ const errorByCustomerModel = [
   { id: 'global-err-016', customer: '教育科技集团', model: 'GPT-4o Mini', errorCode: '400', errorCount: 2, timestamp: '2025-01-22 11:55:33', requestId: 'req-g016tuv678', endpoint: '/v1/chat/completions', inputTokens: 500, errorMessage: 'Bad request: Message content exceeds maximum length', retryAfter: '-', userAgent: 'KSGC-CLI/2.2.5' },
   { id: 'global-err-017', customer: '教育科技集团', model: 'GPT-4o Mini', errorCode: '500', errorCount: 1, timestamp: '2025-01-22 14:08:27', requestId: 'req-g017wxy901', endpoint: '/v1/chat/completions', inputTokens: 1800, errorMessage: 'Internal server error: Unexpected model response', retryAfter: '-', userAgent: 'KSGC-CLI/2.2.5' },
   { id: 'global-err-018', customer: '智能制造有限公司', model: 'GPT-4o', errorCode: '504', errorCount: 1, timestamp: '2025-01-22 16:45:02', requestId: 'req-g018zab234', endpoint: '/v1/chat/completions', inputTokens: 6000, errorMessage: 'Gateway timeout: Long-running request terminated', retryAfter: '-', userAgent: 'KSGC-CLI/2.3.1' },
+  { id: 'global-err-019', customer: '智能制造有限公司', model: 'DeepSeek V3', errorCode: '429', errorCount: 7, timestamp: '2025-01-22 09:18:33', requestId: 'req-g019cde567', endpoint: '/v1/chat/completions', inputTokens: 4200, errorMessage: 'Rate limit exceeded: Requests per second exceeded', retryAfter: '30s', userAgent: 'KSGC-CLI/2.3.1' },
+  { id: 'global-err-020', customer: '教育科技集团', model: 'Kimi K2', errorCode: '503', errorCount: 4, timestamp: '2025-01-22 17:22:45', requestId: 'req-g020fgh890', endpoint: '/v1/chat/completions', inputTokens: 2600, errorMessage: 'Service temporarily unavailable: Maintenance window', retryAfter: '120s', userAgent: 'KSGC-CLI/2.2.5' },
 ];
 
 // 模拟分钟级千Token时长数据
@@ -129,7 +131,7 @@ const latencyPerKTokenMinute = [
   { time: '10:09', inputLatency: 0.42, outputLatency: 1.87 },
 ];
 
-// 模拟模型列表
+// 模拟模型列表 (20个模型)
 const availableModels = [
   'GPT-4 Turbo',
   'GPT-4o',
@@ -138,6 +140,19 @@ const availableModels = [
   'Claude 3 Opus',
   'DeepSeek V3',
   'Kimi K2',
+  'Qwen 2.5 Max',
+  'GLM-4',
+  'Gemini 1.5 Pro',
+  'Gemini 1.5 Flash',
+  'Mistral Large',
+  'Llama 3.1 405B',
+  'Yi Large',
+  'Baichuan 4',
+  'InternLM 2.5',
+  'Doubao Pro',
+  'Moonshot V1',
+  'Spark Max',
+  'Hunyuan Pro',
 ];
 
 // 模拟按模型的使用数据
@@ -378,120 +393,28 @@ const generateModelErrorTrendData = (model: string) => {
   });
 };
 
-// 扩展的错误明细数据（包含更多详情）
+// 扩展的错误明细数据（包含更多详情）- 20条
 const modelErrorDetailsExtended = [
-  { 
-    id: 'err-001',
-    model: 'GPT-4 Turbo', 
-    customer: '科技创新有限公司', 
-    errorCode: '429', 
-    errorCount: 12, 
-    timestamp: '2025-01-22 10:32:15',
-    requestId: 'req-abc123456',
-    endpoint: '/v1/chat/completions',
-    inputTokens: 2500,
-    errorMessage: 'Rate limit exceeded: Too many requests per minute',
-    retryAfter: '60s',
-    userAgent: 'KSGC-CLI/2.3.1'
-  },
-  { 
-    id: 'err-002',
-    model: 'GPT-4 Turbo', 
-    customer: '科技创新有限公司', 
-    errorCode: '500', 
-    errorCount: 8, 
-    timestamp: '2025-01-22 09:45:22',
-    requestId: 'req-def789012',
-    endpoint: '/v1/chat/completions',
-    inputTokens: 1800,
-    errorMessage: 'Internal server error: Model inference failed',
-    retryAfter: '-',
-    userAgent: 'KSGC-CLI/2.3.1'
-  },
-  { 
-    id: 'err-003',
-    model: 'GPT-4 Turbo', 
-    customer: '医疗健康科技', 
-    errorCode: '429', 
-    errorCount: 18, 
-    timestamp: '2025-01-22 11:15:08',
-    requestId: 'req-ghi345678',
-    endpoint: '/v1/chat/completions',
-    inputTokens: 3200,
-    errorMessage: 'Rate limit exceeded: Token quota exhausted',
-    retryAfter: '120s',
-    userAgent: 'KSGC-CLI/2.3.0'
-  },
-  { 
-    id: 'err-004',
-    model: 'GPT-4o', 
-    customer: '金融数据服务公司', 
-    errorCode: '500', 
-    errorCount: 10, 
-    timestamp: '2025-01-22 13:12:55',
-    requestId: 'req-jkl901234',
-    endpoint: '/v1/chat/completions',
-    inputTokens: 4500,
-    errorMessage: 'Internal server error: Context length exceeded',
-    retryAfter: '-',
-    userAgent: 'KSGC-CLI/2.2.8'
-  },
-  { 
-    id: 'err-005',
-    model: 'GPT-4o', 
-    customer: '金融数据服务公司', 
-    errorCode: '503', 
-    errorCount: 5, 
-    timestamp: '2025-01-22 15:33:18',
-    requestId: 'req-mno567890',
-    endpoint: '/v1/chat/completions',
-    inputTokens: 2100,
-    errorMessage: 'Service temporarily unavailable: High load',
-    retryAfter: '30s',
-    userAgent: 'KSGC-CLI/2.2.8'
-  },
-  { 
-    id: 'err-006',
-    model: 'GPT-4o Mini', 
-    customer: '医疗健康科技', 
-    errorCode: '401', 
-    errorCount: 4, 
-    timestamp: '2025-01-22 09:22:11',
-    requestId: 'req-pqr123456',
-    endpoint: '/v1/chat/completions',
-    inputTokens: 0,
-    errorMessage: 'Authentication failed: Invalid API key',
-    retryAfter: '-',
-    userAgent: 'KSGC-CLI/2.1.0'
-  },
-  { 
-    id: 'err-007',
-    model: 'Claude 3.5 Sonnet', 
-    customer: '医疗健康科技', 
-    errorCode: '503', 
-    errorCount: 12, 
-    timestamp: '2025-01-22 15:22:08',
-    requestId: 'req-stu789012',
-    endpoint: '/v1/messages',
-    inputTokens: 5600,
-    errorMessage: 'Service temporarily unavailable: Model overloaded',
-    retryAfter: '45s',
-    userAgent: 'KSGC-CLI/2.3.1'
-  },
-  { 
-    id: 'err-008',
-    model: 'DeepSeek V3', 
-    customer: '科技创新有限公司', 
-    errorCode: '429', 
-    errorCount: 25, 
-    timestamp: '2025-01-22 09:15:22',
-    requestId: 'req-vwx345678',
-    endpoint: '/v1/chat/completions',
-    inputTokens: 8900,
-    errorMessage: 'Rate limit exceeded: Concurrent request limit reached',
-    retryAfter: '90s',
-    userAgent: 'KSGC-CLI/2.3.1'
-  },
+  { id: 'err-001', model: 'GPT-4 Turbo', customer: '科技创新有限公司', errorCode: '429', errorCount: 12, timestamp: '2025-01-22 10:32:15', requestId: 'req-abc123456', endpoint: '/v1/chat/completions', inputTokens: 2500, errorMessage: 'Rate limit exceeded: Too many requests per minute', retryAfter: '60s', userAgent: 'KSGC-CLI/2.3.1' },
+  { id: 'err-002', model: 'GPT-4 Turbo', customer: '科技创新有限公司', errorCode: '500', errorCount: 8, timestamp: '2025-01-22 09:45:22', requestId: 'req-def789012', endpoint: '/v1/chat/completions', inputTokens: 1800, errorMessage: 'Internal server error: Model inference failed', retryAfter: '-', userAgent: 'KSGC-CLI/2.3.1' },
+  { id: 'err-003', model: 'GPT-4 Turbo', customer: '医疗健康科技', errorCode: '429', errorCount: 18, timestamp: '2025-01-22 11:15:08', requestId: 'req-ghi345678', endpoint: '/v1/chat/completions', inputTokens: 3200, errorMessage: 'Rate limit exceeded: Token quota exhausted', retryAfter: '120s', userAgent: 'KSGC-CLI/2.3.0' },
+  { id: 'err-004', model: 'GPT-4o', customer: '金融数据服务公司', errorCode: '500', errorCount: 10, timestamp: '2025-01-22 13:12:55', requestId: 'req-jkl901234', endpoint: '/v1/chat/completions', inputTokens: 4500, errorMessage: 'Internal server error: Context length exceeded', retryAfter: '-', userAgent: 'KSGC-CLI/2.2.8' },
+  { id: 'err-005', model: 'GPT-4o', customer: '金融数据服务公司', errorCode: '503', errorCount: 5, timestamp: '2025-01-22 15:33:18', requestId: 'req-mno567890', endpoint: '/v1/chat/completions', inputTokens: 2100, errorMessage: 'Service temporarily unavailable: High load', retryAfter: '30s', userAgent: 'KSGC-CLI/2.2.8' },
+  { id: 'err-006', model: 'GPT-4o Mini', customer: '医疗健康科技', errorCode: '401', errorCount: 4, timestamp: '2025-01-22 09:22:11', requestId: 'req-pqr123456', endpoint: '/v1/chat/completions', inputTokens: 0, errorMessage: 'Authentication failed: Invalid API key', retryAfter: '-', userAgent: 'KSGC-CLI/2.1.0' },
+  { id: 'err-007', model: 'Claude 3.5 Sonnet', customer: '医疗健康科技', errorCode: '503', errorCount: 12, timestamp: '2025-01-22 15:22:08', requestId: 'req-stu789012', endpoint: '/v1/messages', inputTokens: 5600, errorMessage: 'Service temporarily unavailable: Model overloaded', retryAfter: '45s', userAgent: 'KSGC-CLI/2.3.1' },
+  { id: 'err-008', model: 'DeepSeek V3', customer: '科技创新有限公司', errorCode: '429', errorCount: 25, timestamp: '2025-01-22 09:15:22', requestId: 'req-vwx345678', endpoint: '/v1/chat/completions', inputTokens: 8900, errorMessage: 'Rate limit exceeded: Concurrent request limit reached', retryAfter: '90s', userAgent: 'KSGC-CLI/2.3.1' },
+  { id: 'err-009', model: 'Kimi K2', customer: '教育科技集团', errorCode: '504', errorCount: 6, timestamp: '2025-01-22 14:35:42', requestId: 'req-yza901234', endpoint: '/v1/chat/completions', inputTokens: 6800, errorMessage: 'Gateway timeout: Response exceeded 30 seconds', retryAfter: '-', userAgent: 'KSGC-CLI/2.2.5' },
+  { id: 'err-010', model: 'Qwen 2.5 Max', customer: '智能制造有限公司', errorCode: '500', errorCount: 9, timestamp: '2025-01-22 16:18:33', requestId: 'req-bcd567890', endpoint: '/v1/chat/completions', inputTokens: 3400, errorMessage: 'Internal server error: Memory allocation failed', retryAfter: '-', userAgent: 'KSGC-CLI/2.3.2' },
+  { id: 'err-011', model: 'GLM-4', customer: '科技创新有限公司', errorCode: '429', errorCount: 14, timestamp: '2025-01-22 11:42:18', requestId: 'req-efg123456', endpoint: '/v1/chat/completions', inputTokens: 2900, errorMessage: 'Rate limit exceeded: Daily quota reached', retryAfter: '3600s', userAgent: 'KSGC-CLI/2.3.0' },
+  { id: 'err-012', model: 'Gemini 1.5 Pro', customer: '金融数据服务公司', errorCode: '503', errorCount: 7, timestamp: '2025-01-22 10:55:27', requestId: 'req-hij789012', endpoint: '/v1/chat/completions', inputTokens: 4100, errorMessage: 'Service unavailable: Region capacity limit', retryAfter: '60s', userAgent: 'KSGC-CLI/2.3.1' },
+  { id: 'err-013', model: 'Mistral Large', customer: '医疗健康科技', errorCode: '400', errorCount: 3, timestamp: '2025-01-22 13:28:44', requestId: 'req-klm345678', endpoint: '/v1/chat/completions', inputTokens: 850, errorMessage: 'Bad request: Invalid message format', retryAfter: '-', userAgent: 'KSGC-CLI/2.2.8' },
+  { id: 'err-014', model: 'Llama 3.1 405B', customer: '教育科技集团', errorCode: '504', errorCount: 11, timestamp: '2025-01-22 15:48:12', requestId: 'req-nop901234', endpoint: '/v1/chat/completions', inputTokens: 7200, errorMessage: 'Gateway timeout: Long-running inference', retryAfter: '-', userAgent: 'KSGC-CLI/2.2.5' },
+  { id: 'err-015', model: 'Yi Large', customer: '智能制造有限公司', errorCode: '429', errorCount: 8, timestamp: '2025-01-22 09:35:55', requestId: 'req-qrs567890', endpoint: '/v1/chat/completions', inputTokens: 3600, errorMessage: 'Rate limit exceeded: Burst limit reached', retryAfter: '45s', userAgent: 'KSGC-CLI/2.3.2' },
+  { id: 'err-016', model: 'Baichuan 4', customer: '科技创新有限公司', errorCode: '500', errorCount: 5, timestamp: '2025-01-22 12:15:38', requestId: 'req-tuv123456', endpoint: '/v1/chat/completions', inputTokens: 2200, errorMessage: 'Internal server error: Model checkpoint error', retryAfter: '-', userAgent: 'KSGC-CLI/2.3.0' },
+  { id: 'err-017', model: 'InternLM 2.5', customer: '金融数据服务公司', errorCode: '503', errorCount: 4, timestamp: '2025-01-22 14:42:21', requestId: 'req-wxy789012', endpoint: '/v1/chat/completions', inputTokens: 1900, errorMessage: 'Service temporarily unavailable', retryAfter: '30s', userAgent: 'KSGC-CLI/2.3.1' },
+  { id: 'err-018', model: 'Doubao Pro', customer: '医疗健康科技', errorCode: '401', errorCount: 2, timestamp: '2025-01-22 08:55:14', requestId: 'req-zab345678', endpoint: '/v1/chat/completions', inputTokens: 0, errorMessage: 'Unauthorized: Token expired', retryAfter: '-', userAgent: 'KSGC-CLI/2.2.8' },
+  { id: 'err-019', model: 'Moonshot V1', customer: '教育科技集团', errorCode: '429', errorCount: 16, timestamp: '2025-01-22 11:08:47', requestId: 'req-cde901234', endpoint: '/v1/chat/completions', inputTokens: 4800, errorMessage: 'Rate limit exceeded: RPM limit reached', retryAfter: '60s', userAgent: 'KSGC-CLI/2.2.5' },
+  { id: 'err-020', model: 'Spark Max', customer: '智能制造有限公司', errorCode: '504', errorCount: 7, timestamp: '2025-01-22 16:52:33', requestId: 'req-fgh567890', endpoint: '/v1/chat/completions', inputTokens: 5500, errorMessage: 'Gateway timeout: Upstream connection failed', retryAfter: '-', userAgent: 'KSGC-CLI/2.3.2' },
 ];
 
 // 生成每小时性能趋势数据
@@ -1608,14 +1531,16 @@ export function AdminAnalytics() {
     </div>
   );
 
-  // 客户数据 - 生成该客户的模型使用数据（包含输入输出token和千token时长）
+  // 客户数据 - 生成该客户的模型使用数据（包含输入输出token和千token时长）- 20个模型
   const customerModelUsageDataRaw = useMemo(() => {
     if (!selectedCustomer) return [];
-    return availableModels.slice(0, 4).map((model, i) => {
-      const totalTokens = Math.floor(selectedCustomer.usage.monthlyTokens * (0.35 - i * 0.08) + Math.random() * 100000);
+    return availableModels.map((model, i) => {
+      // 生成递减的token分布，确保前面的模型消耗更多
+      const factor = Math.max(0.02, 0.18 - i * 0.008);
+      const totalTokens = Math.floor(selectedCustomer.usage.monthlyTokens * factor + Math.random() * 100000);
       const inputTokens = Math.floor(totalTokens * (0.3 + Math.random() * 0.15)); // 30-45% input
       const outputTokens = totalTokens - inputTokens;
-      const totalRequests = Math.floor(selectedCustomer.usage.monthlyRequests * (0.35 - i * 0.08) + Math.random() * 100);
+      const totalRequests = Math.floor(selectedCustomer.usage.monthlyRequests * factor + Math.random() * 100);
       const successfulRequests = Math.floor(totalRequests * 0.99 + Math.random() * 50);
       
       return {
@@ -1712,24 +1637,38 @@ export function AdminAnalytics() {
     });
   }, [selectedCustomer]);
 
-  // 客户数据 - 错误明细
+  // 客户数据 - 错误明细 (20条)
   const customerErrorDetails = useMemo(() => {
     if (!selectedCustomer) return [];
-    return customerModelUsageData.slice(0, 6).map((m, i) => ({
-      id: `cust-err-${i}`,
-      model: m.model,
-      errorCode: ['429', '500', '503', '504', '400', '401'][i % 6],
-      errorCount: Math.floor(Math.random() * 10) + 2,
-      timestamp: `2025-01-22 ${String(10 + i).padStart(2, '0')}:${String(Math.floor(Math.random() * 60)).padStart(2, '0')}:${String(Math.floor(Math.random() * 60)).padStart(2, '0')}`,
-      requestId: `req-${Math.random().toString(36).substring(2, 12)}`,
-      endpoint: '/v1/chat/completions',
-      inputTokens: Math.floor(Math.random() * 3000) + 500,
-      errorMessage: ['Rate limit exceeded', 'Internal server error', 'Service unavailable', 'Gateway timeout', 'Bad request parameters', 'Authentication failed'][i % 6],
-      retryAfter: i % 6 === 0 ? '60s' : '-',
-      userAgent: `KSGC-CLI/${selectedCustomer.clientVersion}`,
-      customer: selectedCustomer.companyName,
-    }));
-  }, [selectedCustomer, customerModelUsageData]);
+    const errorCodes = ['429', '500', '503', '504', '400', '401'];
+    const errorMessages = [
+      'Rate limit exceeded: Too many requests',
+      'Internal server error: Processing failed',
+      'Service temporarily unavailable',
+      'Gateway timeout: Upstream too slow',
+      'Bad request: Invalid parameters',
+      'Authentication failed: Invalid token'
+    ];
+    // 生成20条错误记录
+    return Array.from({ length: 20 }, (_, i) => {
+      const modelIndex = i % availableModels.length;
+      const errorIndex = i % 6;
+      return {
+        id: `cust-err-${i}`,
+        model: availableModels[modelIndex],
+        errorCode: errorCodes[errorIndex],
+        errorCount: Math.floor(Math.random() * 15) + 2,
+        timestamp: `2025-01-22 ${String(8 + Math.floor(i / 2)).padStart(2, '0')}:${String(Math.floor(Math.random() * 60)).padStart(2, '0')}:${String(Math.floor(Math.random() * 60)).padStart(2, '0')}`,
+        requestId: `req-${Math.random().toString(36).substring(2, 14)}`,
+        endpoint: '/v1/chat/completions',
+        inputTokens: Math.floor(Math.random() * 5000) + 500,
+        errorMessage: errorMessages[errorIndex],
+        retryAfter: errorIndex === 0 ? '60s' : (errorIndex === 2 ? '30s' : '-'),
+        userAgent: `KSGC-CLI/${selectedCustomer.clientVersion}`,
+        customer: selectedCustomer.companyName,
+      };
+    });
+  }, [selectedCustomer]);
 
   const renderCustomerTab = () => (
     <div className="space-y-6">
