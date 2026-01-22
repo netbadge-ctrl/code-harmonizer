@@ -944,21 +944,27 @@ export function AdminAnalytics() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>Token消耗</TableHead>
                 <TableHead>模型</TableHead>
                 <TableHead className="text-right">峰值每分钟Token数</TableHead>
-                <TableHead className="text-right">日均每分钟Token数</TableHead>
-                <TableHead className="text-right">工作时段每分钟Token数</TableHead>
-                <TableHead className="text-right">首Token平均时延 (秒)</TableHead>
-                <TableHead className="text-right">首Token P98时延 (秒)</TableHead>
-                <TableHead className="text-right">Token生成速度 (tokens/秒)</TableHead>
-                <TableHead className="text-right">Token消耗</TableHead>
-                <TableHead className="text-right">请求数 (次)</TableHead>
-                <TableHead className="text-right">成功率</TableHead>
+                <TableHead className="text-right">每分钟均Token数</TableHead>
+                <TableHead className="text-right">工作时段每分钟均Token数</TableHead>
+                <TableHead className="text-right">首Token平均时延</TableHead>
+                <TableHead className="text-right">首Token P98时延</TableHead>
+                <TableHead className="text-right">Token生成速度</TableHead>
+                <TableHead className="text-right">请求数 (成功/总)</TableHead>
+                <TableHead className="text-right">错误数</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {modelUsageData.map((item) => (
                 <TableRow key={item.model}>
+                  <TableCell className="font-medium">
+                    {formatTokens(item.tokens)}
+                    <span className="text-muted-foreground text-xs ml-1">
+                      ({formatTokens(item.inputTokens)}/{formatTokens(item.outputTokens)})
+                    </span>
+                  </TableCell>
                   <TableCell className="font-medium">{item.model}</TableCell>
                   <TableCell className="text-right">{formatTokens(item.peakTPM)}</TableCell>
                   <TableCell className="text-right">{formatTokens(item.avgTPMDaily)}</TableCell>
@@ -966,13 +972,18 @@ export function AdminAnalytics() {
                   <TableCell className="text-right">{item.ttftAvg} 秒</TableCell>
                   <TableCell className="text-right">{item.ttftP98} 秒</TableCell>
                   <TableCell className="text-right">{item.tpotAvg} t/s</TableCell>
-                  <TableCell className="text-right">{formatTokens(item.tokens)}</TableCell>
-                  <TableCell className="text-right">{item.requests.toLocaleString()} 次</TableCell>
-                  <TableCell className="text-right text-green-600">{item.successRate}%</TableCell>
+                  <TableCell className="text-right">{item.successfulRequests.toLocaleString()}/{item.requests.toLocaleString()}</TableCell>
+                  <TableCell className="text-right text-destructive">{item.errorCount}</TableCell>
                 </TableRow>
               ))}
               {/* 总计/平均行 */}
               <TableRow className="border-t-2 font-medium">
+                <TableCell>
+                  {formatTokens(stats.totalTokens)}
+                  <span className="text-muted-foreground text-xs ml-1">
+                    ({formatTokens(stats.totalInputTokens)}/{formatTokens(stats.totalOutputTokens)})
+                  </span>
+                </TableCell>
                 <TableCell>总计/平均</TableCell>
                 <TableCell className="text-right">{formatTokens(Math.max(...modelUsageData.map(m => m.peakTPM)))}</TableCell>
                 <TableCell className="text-right">-</TableCell>
@@ -984,9 +995,10 @@ export function AdminAnalytics() {
                 <TableCell className="text-right">
                   {(modelUsageData.reduce((sum, m) => sum + m.tpotAvg, 0) / modelUsageData.length).toFixed(1)} t/s
                 </TableCell>
-                <TableCell className="text-right">{formatTokens(stats.totalTokens)}</TableCell>
-                <TableCell className="text-right">{stats.totalRequests.toLocaleString()} 次</TableCell>
-                <TableCell className="text-right text-green-600">{stats.avgSuccessRate}%</TableCell>
+                <TableCell className="text-right">
+                  {modelUsageData.reduce((sum, m) => sum + m.successfulRequests, 0).toLocaleString()}/{stats.totalRequests.toLocaleString()}
+                </TableCell>
+                <TableCell className="text-right text-destructive">{stats.totalErrors}</TableCell>
               </TableRow>
             </TableBody>
           </Table>
