@@ -1482,58 +1482,102 @@ export function AdminAnalytics() {
     </div>
   );
 
+  // 客户数据 - 生成该客户的模型使用数据
+  const customerModelUsageData = useMemo(() => {
+    if (!selectedCustomer) return [];
+    return availableModels.slice(0, 4).map((model, i) => ({
+      model,
+      tokens: Math.floor(selectedCustomer.usage.monthlyTokens * (0.35 - i * 0.08) + Math.random() * 100000),
+      requests: Math.floor(selectedCustomer.usage.monthlyRequests * (0.35 - i * 0.08) + Math.random() * 100),
+      successfulRequests: Math.floor(selectedCustomer.usage.monthlyRequests * (0.35 - i * 0.08) * 0.99 + Math.random() * 50),
+      ttftAvg: +(Math.random() * 0.4 + 0.2).toFixed(2),
+      ttftP98: +(Math.random() * 0.8 + 0.5).toFixed(2),
+      tpotAvg: +(Math.random() * 20 + 25).toFixed(1),
+      errorCount: Math.floor(Math.random() * 30 + 5),
+      errorRate: +(Math.random() * 1.2 + 0.2).toFixed(2),
+      successRate: +(99 - Math.random() * 1.5).toFixed(1),
+    }));
+  }, [selectedCustomer]);
+
+  // 客户数据 - 汇总统计
+  const customerStats = useMemo(() => {
+    if (!selectedCustomer || customerModelUsageData.length === 0) {
+      return {
+        totalTokens: 0,
+        totalRequests: 0,
+        avgTTFT: '0',
+        avgTPOT: '0',
+        totalErrors: 0,
+        avgErrorRate: '0',
+        avgSuccessRate: '0',
+      };
+    }
+    const data = customerModelUsageData;
+    return {
+      totalTokens: data.reduce((sum, m) => sum + m.tokens, 0),
+      totalRequests: data.reduce((sum, m) => sum + m.requests, 0),
+      avgTTFT: (data.reduce((sum, m) => sum + m.ttftAvg, 0) / data.length).toFixed(2),
+      avgTPOT: (data.reduce((sum, m) => sum + m.tpotAvg, 0) / data.length).toFixed(1),
+      totalErrors: data.reduce((sum, m) => sum + m.errorCount, 0),
+      avgErrorRate: (data.reduce((sum, m) => sum + m.errorRate, 0) / data.length).toFixed(2),
+      avgSuccessRate: (data.reduce((sum, m) => sum + m.successRate, 0) / data.length).toFixed(1),
+    };
+  }, [selectedCustomer, customerModelUsageData]);
+
+  // 客户数据 - 错误类型分布
+  const customerErrorByType = useMemo(() => {
+    if (!selectedCustomer) return [];
+    const totalErrors = customerStats.totalErrors;
+    return [
+      { code: '429', name: '请求频率限制', count: Math.floor(totalErrors * 0.35), percentage: 35.0 },
+      { code: '500', name: '服务器内部错误', count: Math.floor(totalErrors * 0.25), percentage: 25.0 },
+      { code: '503', name: '服务不可用', count: Math.floor(totalErrors * 0.18), percentage: 18.0 },
+      { code: '504', name: '网关超时', count: Math.floor(totalErrors * 0.12), percentage: 12.0 },
+      { code: '400', name: '请求参数错误', count: Math.floor(totalErrors * 0.07), percentage: 7.0 },
+      { code: '401', name: '认证失败', count: Math.floor(totalErrors * 0.03), percentage: 3.0 },
+    ];
+  }, [selectedCustomer, customerStats.totalErrors]);
+
+  // 客户数据 - 错误趋势
+  const customerErrorTrendData = useMemo(() => {
+    return Array.from({ length: 24 }, (_, i) => {
+      const isBusinessHour = i >= 9 && i <= 21;
+      return {
+        hour: `${String(i).padStart(2, '0')}:00`,
+        '429': Math.floor(Math.random() * (isBusinessHour ? 5 : 2)) + (isBusinessHour ? 2 : 0),
+        '500': Math.floor(Math.random() * (isBusinessHour ? 3 : 1)) + (isBusinessHour ? 1 : 0),
+        '503': Math.floor(Math.random() * (isBusinessHour ? 2 : 1)),
+        '504': Math.floor(Math.random() * 2),
+        '400': Math.floor(Math.random() * 1),
+        '401': Math.floor(Math.random() * 1),
+        total: Math.floor(Math.random() * 8) + (isBusinessHour ? 6 : 2),
+      };
+    });
+  }, [selectedCustomer]);
+
+  // 客户数据 - 错误明细
+  const customerErrorDetails = useMemo(() => {
+    if (!selectedCustomer) return [];
+    return customerModelUsageData.slice(0, 6).map((m, i) => ({
+      id: `cust-err-${i}`,
+      model: m.model,
+      errorCode: ['429', '500', '503', '504', '400', '401'][i % 6],
+      errorCount: Math.floor(Math.random() * 10) + 2,
+      timestamp: `2025-01-22 ${String(10 + i).padStart(2, '0')}:${String(Math.floor(Math.random() * 60)).padStart(2, '0')}:${String(Math.floor(Math.random() * 60)).padStart(2, '0')}`,
+      requestId: `req-${Math.random().toString(36).substring(2, 12)}`,
+      endpoint: '/v1/chat/completions',
+      inputTokens: Math.floor(Math.random() * 3000) + 500,
+      errorMessage: ['Rate limit exceeded', 'Internal server error', 'Service unavailable', 'Gateway timeout', 'Bad request parameters', 'Authentication failed'][i % 6],
+      retryAfter: i % 6 === 0 ? '60s' : '-',
+      userAgent: `KSGC-CLI/${selectedCustomer.clientVersion}`,
+      customer: selectedCustomer.companyName,
+    }));
+  }, [selectedCustomer, customerModelUsageData]);
+
   const renderCustomerTab = () => (
     <div className="space-y-6">
-      {/* 客户筛选和时间范围选择 - 同一行不折行 */}
+      {/* 时间范围和客户筛选 - 同一行 */}
       <div className="flex items-center gap-4 mb-6 overflow-x-auto pb-2">
-        <div className="flex items-center gap-2 flex-nowrap">
-          <span className="text-sm text-muted-foreground whitespace-nowrap">选择客户：</span>
-          <Popover open={customerPopoverOpen} onOpenChange={setCustomerPopoverOpen}>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                role="combobox"
-                aria-expanded={customerPopoverOpen}
-                className="w-[280px] justify-between"
-              >
-                {selectedCustomer
-                  ? `${selectedCustomer.companyName} (${selectedCustomer.customerCode})`
-                  : "请选择客户"}
-                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-[280px] p-0">
-              <Command>
-                <CommandInput placeholder="搜索客户名称或识别码..." />
-                <CommandList>
-                  <CommandEmpty>未找到客户</CommandEmpty>
-                  <CommandGroup>
-                    {mockCustomers.map((customer) => (
-                      <CommandItem
-                        key={customer.id}
-                        value={`${customer.companyName} ${customer.customerCode}`}
-                        onSelect={() => {
-                          setSelectedCustomerId(customer.id);
-                          setCustomerPopoverOpen(false);
-                        }}
-                      >
-                        <Check
-                          className={cn(
-                            "mr-2 h-4 w-4",
-                            selectedCustomerId === customer.id ? "opacity-100" : "opacity-0"
-                          )}
-                        />
-                        {customer.companyName} ({customer.customerCode})
-                      </CommandItem>
-                    ))}
-                  </CommandGroup>
-                </CommandList>
-              </Command>
-            </PopoverContent>
-          </Popover>
-        </div>
-        
-        {/* 时间范围选择 - 内联 */}
         <div className="flex items-center gap-2 flex-nowrap">
           <span className="text-sm text-muted-foreground whitespace-nowrap">查询时间：</span>
           <div className="flex items-center gap-2 flex-nowrap">
@@ -1606,67 +1650,126 @@ export function AdminAnalytics() {
             </Popover>
           </div>
         </div>
+        
+        {/* 客户筛选 */}
+        <div className="flex items-center gap-2 flex-nowrap">
+          <span className="text-sm text-muted-foreground whitespace-nowrap">选择客户：</span>
+          <Popover open={customerPopoverOpen} onOpenChange={setCustomerPopoverOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                role="combobox"
+                aria-expanded={customerPopoverOpen}
+                className="w-[240px] justify-between"
+              >
+                <Building2 className="mr-2 h-4 w-4" />
+                {selectedCustomer ? selectedCustomer.companyName : '请选择客户...'}
+                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[280px] p-0">
+              <Command>
+                <CommandInput placeholder="搜索客户..." />
+                <CommandList>
+                  <CommandEmpty>未找到客户</CommandEmpty>
+                  <CommandGroup>
+                    {mockCustomers.map((customer) => (
+                      <CommandItem
+                        key={customer.id}
+                        value={customer.companyName}
+                        onSelect={() => {
+                          setSelectedCustomerId(customer.id);
+                          setCustomerPopoverOpen(false);
+                        }}
+                      >
+                        <Check
+                          className={cn(
+                            "mr-2 h-4 w-4",
+                            selectedCustomerId === customer.id ? "opacity-100" : "opacity-0"
+                          )}
+                        />
+                        {customer.companyName}
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
+                </CommandList>
+              </Command>
+            </PopoverContent>
+          </Popover>
+        </div>
       </div>
 
       {selectedCustomer ? (
         <>
-          {/* 客户统计卡片 */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          {/* 客户概览统计卡片 */}
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-4">
             <Card className="enterprise-card">
               <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-warning/10">
-                    <Zap className="w-5 h-5 text-warning" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-foreground">{formatTokens(selectedCustomer.usage.monthlyTokens)}</p>
-                    <p className="text-xs text-muted-foreground">Token 消耗</p>
-                  </div>
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-foreground">{formatTokens(customerStats.totalTokens)} <span className="text-sm font-normal text-muted-foreground">tokens</span></p>
+                  <p className="text-xs text-muted-foreground">Token 消耗</p>
                 </div>
               </CardContent>
             </Card>
             <Card className="enterprise-card">
               <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-info/10">
-                    <Activity className="w-5 h-5 text-info" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-foreground">{selectedCustomer.usage.monthlyRequests.toLocaleString()}</p>
-                    <p className="text-xs text-muted-foreground">请求次数</p>
-                  </div>
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-foreground">{customerStats.totalRequests.toLocaleString()} <span className="text-sm font-normal text-muted-foreground">次</span></p>
+                  <p className="text-xs text-muted-foreground">请求总数</p>
                 </div>
               </CardContent>
             </Card>
             <Card className="enterprise-card">
               <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-success/10">
-                    <Users className="w-5 h-5 text-success" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-foreground">{selectedCustomer.usage.activeUsers}</p>
-                    <p className="text-xs text-muted-foreground">活跃用户</p>
-                  </div>
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-foreground">{selectedCustomer.usage.activeUsers} <span className="text-sm font-normal text-muted-foreground">人</span></p>
+                  <p className="text-xs text-muted-foreground">活跃用户</p>
                 </div>
               </CardContent>
             </Card>
             <Card className="enterprise-card">
               <CardContent className="p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-secondary/50">
-                    <Clock className="w-5 h-5 text-secondary-foreground" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-foreground">{(Math.random() * 2 + 0.5).toFixed(2)}s</p>
-                    <p className="text-xs text-muted-foreground">平均响应时间</p>
-                  </div>
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-foreground">{customerStats.avgTTFT} <span className="text-sm font-normal text-muted-foreground">秒</span></p>
+                  <p className="text-xs text-muted-foreground">平均首Token时延</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="enterprise-card">
+              <CardContent className="p-4">
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-foreground">{customerStats.avgTPOT} <span className="text-sm font-normal text-muted-foreground">tokens/秒</span></p>
+                  <p className="text-xs text-muted-foreground">Token生成速度</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="enterprise-card">
+              <CardContent className="p-4">
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-success">{customerStats.avgSuccessRate}<span className="text-sm font-normal">%</span></p>
+                  <p className="text-xs text-muted-foreground">成功率</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="enterprise-card">
+              <CardContent className="p-4">
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-destructive">{customerStats.totalErrors} <span className="text-sm font-normal text-muted-foreground">次</span></p>
+                  <p className="text-xs text-muted-foreground">错误总数</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="enterprise-card">
+              <CardContent className="p-4">
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-destructive">{customerStats.avgErrorRate}<span className="text-sm font-normal">%</span></p>
+                  <p className="text-xs text-muted-foreground">平均错误率</p>
                 </div>
               </CardContent>
             </Card>
           </div>
 
-          {/* 客户使用趋势 */}
+          {/* 使用趋势图 */}
           <Card className="enterprise-card">
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2">
@@ -1691,16 +1794,18 @@ export function AdminAnalytics() {
                       tick={{ fontSize: 12 }}
                     />
                     <Tooltip 
-                      formatter={(value: number, name: string) => 
-                        name === 'Token 消耗' ? formatTokens(value) : value
-                      }
+                      formatter={(value: number, name: string) => {
+                        if (name === 'Token 消耗') return [formatTokens(value) + ' tokens', name];
+                        if (name === '请求数') return [value + ' 次', name];
+                        return [value, name];
+                      }}
                     />
                     <Bar 
                       yAxisId="right"
-                      dataKey="activeUsers" 
+                      dataKey="requests" 
                       fill="hsl(38, 92%, 50%)"
                       opacity={0.6}
-                      name="活跃用户"
+                      name="请求数"
                     />
                     <Line 
                       yAxisId="left"
@@ -1716,43 +1821,268 @@ export function AdminAnalytics() {
             </CardContent>
           </Card>
 
-          {/* 模型使用分布 */}
+          {/* 模型使用明细表 */}
           <Card className="enterprise-card">
             <CardHeader>
               <CardTitle className="text-base flex items-center gap-2">
-                <Building2 className="w-4 h-4" />
-                模型使用分布
+                <Cpu className="w-4 h-4" />
+                模型使用明细
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>模型</TableHead>
+                      <TableHead className="text-right">Token消耗</TableHead>
+                      <TableHead className="text-right">请求数 (次)</TableHead>
+                      <TableHead className="text-right">成功请求 (次)</TableHead>
+                      <TableHead className="text-right">首Token平均时延 (秒)</TableHead>
+                      <TableHead className="text-right">首Token P98时延 (秒)</TableHead>
+                      <TableHead className="text-right">Token生成速度 (tokens/秒)</TableHead>
+                      <TableHead className="text-right">成功率</TableHead>
+                      <TableHead className="text-right">错误数 (次)</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {customerModelUsageData.map((item) => (
+                      <TableRow key={item.model}>
+                        <TableCell className="font-medium">{item.model}</TableCell>
+                        <TableCell className="text-right">{formatTokens(item.tokens)}</TableCell>
+                        <TableCell className="text-right">{item.requests.toLocaleString()} 次</TableCell>
+                        <TableCell className="text-right">{item.successfulRequests.toLocaleString()} 次</TableCell>
+                        <TableCell className="text-right">{item.ttftAvg} 秒</TableCell>
+                        <TableCell className="text-right">{item.ttftP98} 秒</TableCell>
+                        <TableCell className="text-right">{item.tpotAvg} t/s</TableCell>
+                        <TableCell className="text-right text-success font-medium">{item.successRate}%</TableCell>
+                        <TableCell className="text-right text-destructive font-medium">{item.errorCount} 次</TableCell>
+                      </TableRow>
+                    ))}
+                    {/* 总计行 */}
+                    <TableRow className="bg-muted/30 font-medium">
+                      <TableCell>总计/平均</TableCell>
+                      <TableCell className="text-right">{formatTokens(customerStats.totalTokens)}</TableCell>
+                      <TableCell className="text-right">{customerStats.totalRequests.toLocaleString()} 次</TableCell>
+                      <TableCell className="text-right">{customerModelUsageData.reduce((sum, m) => sum + m.successfulRequests, 0).toLocaleString()} 次</TableCell>
+                      <TableCell className="text-right">{customerStats.avgTTFT} 秒</TableCell>
+                      <TableCell className="text-right">-</TableCell>
+                      <TableCell className="text-right">{customerStats.avgTPOT} t/s</TableCell>
+                      <TableCell className="text-right text-success">{customerStats.avgSuccessRate}%</TableCell>
+                      <TableCell className="text-right text-destructive">{customerStats.totalErrors} 次</TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* 错误统计区域 */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* 按错误代码统计 */}
+            <Card className="enterprise-card">
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4" />
+                  按错误代码统计
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>错误代码</TableHead>
+                      <TableHead>错误类型</TableHead>
+                      <TableHead className="text-right">次数</TableHead>
+                      <TableHead className="text-right">占比</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {customerErrorByType.map((item) => (
+                      <TableRow key={item.code}>
+                        <TableCell>
+                          <span className={cn(
+                            "px-2 py-0.5 rounded text-xs font-mono font-medium",
+                            item.code === '429' && "bg-yellow-500/10 text-yellow-600",
+                            item.code === '500' && "bg-destructive/10 text-destructive",
+                            item.code === '503' && "bg-orange-500/10 text-orange-600",
+                            item.code === '504' && "bg-purple-500/10 text-purple-600",
+                            item.code === '400' && "bg-blue-500/10 text-blue-600",
+                            item.code === '401' && "bg-red-500/10 text-red-600",
+                          )}>
+                            {item.code}
+                          </span>
+                        </TableCell>
+                        <TableCell>{item.name}</TableCell>
+                        <TableCell className="text-right font-medium">{item.count} 次</TableCell>
+                        <TableCell className="text-right text-muted-foreground">{item.percentage}%</TableCell>
+                      </TableRow>
+                    ))}
+                    {/* 总计行 */}
+                    <TableRow className="bg-muted/30 font-medium">
+                      <TableCell colSpan={2}>总计</TableCell>
+                      <TableCell className="text-right">{customerErrorByType.reduce((sum, e) => sum + e.count, 0)} 次</TableCell>
+                      <TableCell className="text-right">100%</TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+
+            {/* 按模型错误分布 */}
+            <Card className="enterprise-card">
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Cpu className="w-4 h-4" />
+                  按模型错误分布
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>模型</TableHead>
+                      <TableHead className="text-right">错误数 (次)</TableHead>
+                      <TableHead className="text-right">错误率</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {customerModelUsageData.map((item) => (
+                      <TableRow key={item.model}>
+                        <TableCell className="font-medium">{item.model}</TableCell>
+                        <TableCell className="text-right text-destructive font-medium">{item.errorCount} 次</TableCell>
+                        <TableCell className="text-right">{item.errorRate}%</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* 错误趋势图 */}
+          <Card className="enterprise-card">
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <TrendingUp className="w-4 h-4" />
+                错误趋势 (每小时)
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={[
-                        { name: 'GPT-4 Turbo', value: 45 },
-                        { name: 'Claude 3.5', value: 30 },
-                        { name: 'GPT-4o', value: 15 },
-                        { name: '其他', value: 10 },
-                      ]}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={50}
-                      outerRadius={80}
-                      paddingAngle={2}
-                      dataKey="value"
-                      nameKey="name"
-                      label={({ name, value }) => `${name}: ${value}%`}
-                      labelLine={false}
-                    >
-                      {[0, 1, 2, 3].map((index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
+                  <ComposedChart data={customerErrorTrendData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis dataKey="hour" tick={{ fontSize: 10 }} />
+                    <YAxis tick={{ fontSize: 12 }} />
                     <Tooltip />
-                  </PieChart>
+                    <Bar dataKey="429" stackId="errors" fill={ERROR_COLORS['429']} name="429 请求频率限制" />
+                    <Bar dataKey="500" stackId="errors" fill={ERROR_COLORS['500']} name="500 服务器错误" />
+                    <Bar dataKey="503" stackId="errors" fill={ERROR_COLORS['503']} name="503 服务不可用" />
+                    <Bar dataKey="504" stackId="errors" fill={ERROR_COLORS['504']} name="504 网关超时" />
+                    <Bar dataKey="400" stackId="errors" fill={ERROR_COLORS['400']} name="400 请求参数错误" />
+                    <Bar dataKey="401" stackId="errors" fill={ERROR_COLORS['401']} name="401 认证失败" />
+                    <Line 
+                      type="monotone" 
+                      dataKey="total" 
+                      stroke="hsl(var(--foreground))" 
+                      strokeWidth={2}
+                      dot={false}
+                      name="总错误数"
+                    />
+                  </ComposedChart>
                 </ResponsiveContainer>
               </div>
+              <div className="flex flex-wrap gap-3 mt-3 justify-center text-xs">
+                <div className="flex items-center gap-1">
+                  <div className="w-3 h-3 rounded" style={{ backgroundColor: ERROR_COLORS['429'] }} />
+                  <span>429</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-3 h-3 rounded" style={{ backgroundColor: ERROR_COLORS['500'] }} />
+                  <span>500</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-3 h-3 rounded" style={{ backgroundColor: ERROR_COLORS['503'] }} />
+                  <span>503</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-3 h-3 rounded" style={{ backgroundColor: ERROR_COLORS['504'] }} />
+                  <span>504</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-3 h-3 rounded" style={{ backgroundColor: ERROR_COLORS['400'] }} />
+                  <span>400</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className="w-3 h-3 rounded" style={{ backgroundColor: ERROR_COLORS['401'] }} />
+                  <span>401</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* 错误明细表格 */}
+          <Card className="enterprise-card">
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4" />
+                错误明细
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>模型</TableHead>
+                    <TableHead>错误代码</TableHead>
+                    <TableHead className="text-right">错误数 (次)</TableHead>
+                    <TableHead className="text-right">最近发生时间</TableHead>
+                    <TableHead className="text-center">操作</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {customerErrorDetails.map((item) => (
+                    <TableRow key={item.id}>
+                      <TableCell className="font-medium">{item.model}</TableCell>
+                      <TableCell>
+                        <span className={cn(
+                          "px-2 py-0.5 rounded text-xs font-mono font-medium",
+                          item.errorCode === '429' && "bg-yellow-500/10 text-yellow-600",
+                          item.errorCode === '500' && "bg-destructive/10 text-destructive",
+                          item.errorCode === '503' && "bg-orange-500/10 text-orange-600",
+                          item.errorCode === '504' && "bg-purple-500/10 text-purple-600",
+                          item.errorCode === '400' && "bg-blue-500/10 text-blue-600",
+                          item.errorCode === '401' && "bg-red-500/10 text-red-600",
+                        )}>
+                          {item.errorCode}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-right text-destructive font-medium">{item.errorCount} 次</TableCell>
+                      <TableCell className="text-right text-muted-foreground">{item.timestamp}</TableCell>
+                      <TableCell className="text-center">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleViewErrorDetail(item as typeof modelErrorDetailsExtended[0])}
+                          className="h-7 px-2"
+                        >
+                          <Eye className="w-4 h-4 mr-1" />
+                          查看详情
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {/* 总计行 */}
+                  <TableRow className="bg-muted/30 font-medium">
+                    <TableCell>总计</TableCell>
+                    <TableCell>-</TableCell>
+                    <TableCell className="text-right text-destructive">{customerErrorDetails.reduce((sum, e) => sum + e.errorCount, 0)} 次</TableCell>
+                    <TableCell>-</TableCell>
+                    <TableCell>-</TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
             </CardContent>
           </Card>
         </>
