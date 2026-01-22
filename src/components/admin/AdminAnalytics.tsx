@@ -546,9 +546,9 @@ export function AdminAnalytics() {
   const [selectedGlobalError, setSelectedGlobalError] = useState<typeof errorByCustomerModel[0] | null>(null);
   const [globalErrorDetailDialogOpen, setGlobalErrorDetailDialogOpen] = useState(false);
 
-  // Error code filter for error trend charts
-  const [customerErrorCodeFilter, setCustomerErrorCodeFilter] = useState<string>('429');
-  const [modelErrorCodeFilter, setModelErrorCodeFilter] = useState<string>('429');
+  // Selected error code for trend line (null means no line shown)
+  const [customerSelectedErrorCode, setCustomerSelectedErrorCode] = useState<string | null>(null);
+  const [modelSelectedErrorCode, setModelSelectedErrorCode] = useState<string | null>(null);
 
   // Pagination for error details
   const [customerErrorPage, setCustomerErrorPage] = useState(1);
@@ -2183,44 +2183,80 @@ export function AdminAnalytics() {
 
           {/* 错误趋势图 */}
           <Card className="enterprise-card">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardHeader>
               <CardTitle className="text-base">
                 错误趋势 (每小时)
               </CardTitle>
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">选择错误代码：</span>
-                <div className="flex gap-1">
-                  {errorTypes.map((et) => (
-                    <Button
-                      key={et.code}
-                      variant={customerErrorCodeFilter === et.code ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => setCustomerErrorCodeFilter(et.code)}
-                      className="h-7 px-2"
-                    >
-                      {et.code}
-                    </Button>
-                  ))}
-                </div>
-              </div>
             </CardHeader>
             <CardContent>
               <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={customerErrorTrendData}>
+                  <ComposedChart data={customerErrorTrendData}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis dataKey="hour" tick={{ fontSize: 10 }} />
                     <YAxis tick={{ fontSize: 12 }} />
-                    <Tooltip />
-                    <Line 
-                      type="monotone" 
-                      dataKey={customerErrorCodeFilter}
-                      stroke={ERROR_COLORS[customerErrorCodeFilter]}
-                      strokeWidth={2}
-                      name={`${customerErrorCodeFilter} 错误数`}
+                    <Tooltip 
+                      content={({ active, payload, label }) => {
+                        if (active && payload && payload.length) {
+                          const total = payload.reduce((sum, entry) => {
+                            if (entry.dataKey !== 'trendLine') {
+                              return sum + (Number(entry.value) || 0);
+                            }
+                            return sum;
+                          }, 0);
+                          return (
+                            <div className="bg-background border rounded-lg p-3 shadow-lg">
+                              <p className="font-medium mb-2">{label}</p>
+                              {payload.filter(p => p.dataKey !== 'trendLine').map((entry: any) => (
+                                <div key={entry.dataKey} className="flex items-center gap-2 text-sm">
+                                  <div className="w-3 h-3 rounded" style={{ backgroundColor: entry.color }} />
+                                  <span>{entry.dataKey} {errorTypes.find(e => e.code === entry.dataKey)?.name}：{entry.value}</span>
+                                </div>
+                              ))}
+                              <div className="border-t mt-2 pt-2 font-medium text-sm">
+                                总错误数：{total}
+                              </div>
+                            </div>
+                          );
+                        }
+                        return null;
+                      }}
                     />
-                  </LineChart>
+                    <Bar dataKey="429" stackId="errors" fill={ERROR_COLORS['429']} name="429" />
+                    <Bar dataKey="500" stackId="errors" fill={ERROR_COLORS['500']} name="500" />
+                    <Bar dataKey="503" stackId="errors" fill={ERROR_COLORS['503']} name="503" />
+                    <Bar dataKey="504" stackId="errors" fill={ERROR_COLORS['504']} name="504" />
+                    <Bar dataKey="400" stackId="errors" fill={ERROR_COLORS['400']} name="400" />
+                    <Bar dataKey="401" stackId="errors" fill={ERROR_COLORS['401']} name="401" />
+                    {customerSelectedErrorCode && (
+                      <Line 
+                        type="monotone" 
+                        dataKey={customerSelectedErrorCode}
+                        stroke="hsl(var(--foreground))"
+                        strokeWidth={2}
+                        dot={false}
+                        name={`${customerSelectedErrorCode} 趋势`}
+                      />
+                    )}
+                  </ComposedChart>
                 </ResponsiveContainer>
+              </div>
+              <div className="flex flex-wrap gap-3 mt-3 justify-center text-xs">
+                {errorTypes.map((et) => (
+                  <div 
+                    key={et.code}
+                    className={cn(
+                      "flex items-center gap-1 cursor-pointer px-2 py-1 rounded transition-colors",
+                      customerSelectedErrorCode === et.code ? "bg-muted ring-1 ring-foreground" : "hover:bg-muted/50"
+                    )}
+                    onClick={() => setCustomerSelectedErrorCode(
+                      customerSelectedErrorCode === et.code ? null : et.code
+                    )}
+                  >
+                    <div className="w-3 h-3 rounded" style={{ backgroundColor: ERROR_COLORS[et.code] }} />
+                    <span>{et.code}</span>
+                  </div>
+                ))}
               </div>
             </CardContent>
           </Card>
@@ -2862,44 +2898,80 @@ export function AdminAnalytics() {
 
       {/* 错误趋势图 */}
       <Card className="enterprise-card">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <CardHeader>
           <CardTitle className="text-base">
             错误趋势 (每小时) {modelTabFilter !== 'all' && `- ${modelTabFilter}`}
           </CardTitle>
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">选择错误代码：</span>
-            <div className="flex gap-1">
-              {errorTypes.map((et) => (
-                <Button
-                  key={et.code}
-                  variant={modelErrorCodeFilter === et.code ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setModelErrorCodeFilter(et.code)}
-                  className="h-7 px-2"
-                >
-                  {et.code}
-                </Button>
-              ))}
-            </div>
-          </div>
         </CardHeader>
         <CardContent>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={modelErrorTrendData}>
+              <ComposedChart data={modelErrorTrendData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                 <XAxis dataKey="hour" tick={{ fontSize: 10 }} />
                 <YAxis tick={{ fontSize: 12 }} />
-                <Tooltip />
-                <Line 
-                  type="monotone" 
-                  dataKey={modelErrorCodeFilter}
-                  stroke={ERROR_COLORS[modelErrorCodeFilter]}
-                  strokeWidth={2}
-                  name={`${modelErrorCodeFilter} 错误数`}
+                <Tooltip 
+                  content={({ active, payload, label }) => {
+                    if (active && payload && payload.length) {
+                      const total = payload.reduce((sum, entry) => {
+                        if (entry.dataKey !== 'trendLine') {
+                          return sum + (Number(entry.value) || 0);
+                        }
+                        return sum;
+                      }, 0);
+                      return (
+                        <div className="bg-background border rounded-lg p-3 shadow-lg">
+                          <p className="font-medium mb-2">{label}</p>
+                          {payload.filter(p => p.dataKey !== 'trendLine').map((entry: any) => (
+                            <div key={entry.dataKey} className="flex items-center gap-2 text-sm">
+                              <div className="w-3 h-3 rounded" style={{ backgroundColor: entry.color }} />
+                              <span>{entry.dataKey} {errorTypes.find(e => e.code === entry.dataKey)?.name}：{entry.value}</span>
+                            </div>
+                          ))}
+                          <div className="border-t mt-2 pt-2 font-medium text-sm">
+                            总错误数：{total}
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
                 />
-              </LineChart>
+                <Bar dataKey="429" stackId="errors" fill={ERROR_COLORS['429']} name="429" />
+                <Bar dataKey="500" stackId="errors" fill={ERROR_COLORS['500']} name="500" />
+                <Bar dataKey="503" stackId="errors" fill={ERROR_COLORS['503']} name="503" />
+                <Bar dataKey="504" stackId="errors" fill={ERROR_COLORS['504']} name="504" />
+                <Bar dataKey="400" stackId="errors" fill={ERROR_COLORS['400']} name="400" />
+                <Bar dataKey="401" stackId="errors" fill={ERROR_COLORS['401']} name="401" />
+                {modelSelectedErrorCode && (
+                  <Line 
+                    type="monotone" 
+                    dataKey={modelSelectedErrorCode}
+                    stroke="hsl(var(--foreground))"
+                    strokeWidth={2}
+                    dot={false}
+                    name={`${modelSelectedErrorCode} 趋势`}
+                  />
+                )}
+              </ComposedChart>
             </ResponsiveContainer>
+          </div>
+          <div className="flex flex-wrap gap-3 mt-3 justify-center text-xs">
+            {errorTypes.map((et) => (
+              <div 
+                key={et.code}
+                className={cn(
+                  "flex items-center gap-1 cursor-pointer px-2 py-1 rounded transition-colors",
+                  modelSelectedErrorCode === et.code ? "bg-muted ring-1 ring-foreground" : "hover:bg-muted/50"
+                )}
+                onClick={() => setModelSelectedErrorCode(
+                  modelSelectedErrorCode === et.code ? null : et.code
+                )}
+              >
+                <div className="w-3 h-3 rounded" style={{ backgroundColor: ERROR_COLORS[et.code] }} />
+                <span>{et.code}</span>
+              </div>
+            ))}
           </div>
         </CardContent>
       </Card>
