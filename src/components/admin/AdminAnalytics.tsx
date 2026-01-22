@@ -1806,31 +1806,31 @@ export function AdminAnalytics() {
         <Card className="enterprise-card">
           <CardContent className="p-4">
             <div className="text-center">
-              <p className="text-2xl font-bold text-foreground">{formatTokens(modelPerformanceStats.peakTPM)}</p>
-              <p className="text-xs text-muted-foreground">峰值 TPM</p>
+              <p className="text-2xl font-bold text-foreground">{formatTokens(modelPerformanceStats.peakTPM)} <span className="text-sm font-normal text-muted-foreground">tokens/分钟</span></p>
+              <p className="text-xs text-muted-foreground">峰值每分钟Token数</p>
             </div>
           </CardContent>
         </Card>
         <Card className="enterprise-card">
           <CardContent className="p-4">
             <div className="text-center">
-              <p className="text-2xl font-bold text-foreground">{modelPerformanceStats.avgTTFT}s</p>
-              <p className="text-xs text-muted-foreground">平均 TTFT</p>
+              <p className="text-2xl font-bold text-foreground">{modelPerformanceStats.avgTTFT} <span className="text-sm font-normal text-muted-foreground">秒</span></p>
+              <p className="text-xs text-muted-foreground">平均首Token时延</p>
             </div>
           </CardContent>
         </Card>
         <Card className="enterprise-card">
           <CardContent className="p-4">
             <div className="text-center">
-              <p className="text-2xl font-bold text-foreground">{modelPerformanceStats.avgTPOT}</p>
-              <p className="text-xs text-muted-foreground">TPOT (tokens/s)</p>
+              <p className="text-2xl font-bold text-foreground">{modelPerformanceStats.avgTPOT} <span className="text-sm font-normal text-muted-foreground">tokens/秒</span></p>
+              <p className="text-xs text-muted-foreground">平均Token生成速度</p>
             </div>
           </CardContent>
         </Card>
         <Card className="enterprise-card">
           <CardContent className="p-4">
             <div className="text-center">
-              <p className="text-2xl font-bold text-foreground">{formatTokens(modelPerformanceStats.totalTokens)}</p>
+              <p className="text-2xl font-bold text-foreground">{formatTokens(modelPerformanceStats.totalTokens)} <span className="text-sm font-normal text-muted-foreground">tokens</span></p>
               <p className="text-xs text-muted-foreground">Token 消耗</p>
             </div>
           </CardContent>
@@ -1838,7 +1838,7 @@ export function AdminAnalytics() {
         <Card className="enterprise-card">
           <CardContent className="p-4">
             <div className="text-center">
-              <p className="text-2xl font-bold text-foreground">{modelPerformanceStats.totalRequests.toLocaleString()}</p>
+              <p className="text-2xl font-bold text-foreground">{modelPerformanceStats.totalRequests.toLocaleString()} <span className="text-sm font-normal text-muted-foreground">次</span></p>
               <p className="text-xs text-muted-foreground">请求总数</p>
             </div>
           </CardContent>
@@ -1846,7 +1846,7 @@ export function AdminAnalytics() {
         <Card className="enterprise-card">
           <CardContent className="p-4">
             <div className="text-center">
-              <p className="text-2xl font-bold text-success">{modelPerformanceStats.avgSuccessRate}%</p>
+              <p className="text-2xl font-bold text-success">{modelPerformanceStats.avgSuccessRate}<span className="text-sm font-normal">%</span></p>
               <p className="text-xs text-muted-foreground">成功率</p>
             </div>
           </CardContent>
@@ -1854,7 +1854,7 @@ export function AdminAnalytics() {
         <Card className="enterprise-card">
           <CardContent className="p-4">
             <div className="text-center">
-              <p className="text-2xl font-bold text-destructive">{modelPerformanceStats.totalErrors}</p>
+              <p className="text-2xl font-bold text-destructive">{modelPerformanceStats.totalErrors} <span className="text-sm font-normal text-muted-foreground">次</span></p>
               <p className="text-xs text-muted-foreground">错误总数</p>
             </div>
           </CardContent>
@@ -1862,7 +1862,7 @@ export function AdminAnalytics() {
         <Card className="enterprise-card">
           <CardContent className="p-4">
             <div className="text-center">
-              <p className="text-2xl font-bold text-destructive">{modelPerformanceStats.avgErrorRate}%</p>
+              <p className="text-2xl font-bold text-destructive">{modelPerformanceStats.avgErrorRate}<span className="text-sm font-normal">%</span></p>
               <p className="text-xs text-muted-foreground">平均错误率</p>
             </div>
           </CardContent>
@@ -1883,14 +1883,14 @@ export function AdminAnalytics() {
               <TableHeader>
                 <TableRow>
                   <TableHead>模型</TableHead>
-                  <TableHead className="text-right">峰值 TPM</TableHead>
-                  <TableHead className="text-right">平均 TPM (按天)</TableHead>
-                  <TableHead className="text-right">平均 TPM (09:30-21:30)</TableHead>
-                  <TableHead className="text-right">TTFT 平均时延 (s)</TableHead>
-                  <TableHead className="text-right">P98 TTFT (s)</TableHead>
-                  <TableHead className="text-right">TPOT (tokens/s)</TableHead>
-                  <TableHead className="text-right">Token 消耗</TableHead>
-                  <TableHead className="text-right">请求数</TableHead>
+                  <TableHead className="text-right">峰值每分钟Token数</TableHead>
+                  <TableHead className="text-right">日均每分钟Token数</TableHead>
+                  <TableHead className="text-right">工作时段每分钟Token数</TableHead>
+                  <TableHead className="text-right">首Token平均时延 (秒)</TableHead>
+                  <TableHead className="text-right">首Token P98时延 (秒)</TableHead>
+                  <TableHead className="text-right">Token生成速度 (tokens/秒)</TableHead>
+                  <TableHead className="text-right">Token消耗</TableHead>
+                  <TableHead className="text-right">请求数 (次)</TableHead>
                   <TableHead className="text-right">成功率</TableHead>
                 </TableRow>
               </TableHeader>
@@ -1901,11 +1901,11 @@ export function AdminAnalytics() {
                     <TableCell className="text-right">{formatTokens(item.peakTPM)}</TableCell>
                     <TableCell className="text-right">{formatTokens(item.avgTPMDaily)}</TableCell>
                     <TableCell className="text-right">{formatTokens(item.avgTPMBusiness)}</TableCell>
-                    <TableCell className="text-right">{item.ttftAvg.toFixed(2)}</TableCell>
-                    <TableCell className="text-right">{item.ttftP98.toFixed(2)}</TableCell>
-                    <TableCell className="text-right">{item.tpotAvg.toFixed(1)}</TableCell>
+                    <TableCell className="text-right">{item.ttftAvg.toFixed(2)} 秒</TableCell>
+                    <TableCell className="text-right">{item.ttftP98.toFixed(2)} 秒</TableCell>
+                    <TableCell className="text-right">{item.tpotAvg.toFixed(1)} t/s</TableCell>
                     <TableCell className="text-right">{formatTokens(item.tokens)}</TableCell>
-                    <TableCell className="text-right">{item.requests.toLocaleString()}</TableCell>
+                    <TableCell className="text-right">{item.requests.toLocaleString()} 次</TableCell>
                     <TableCell className="text-right text-success font-medium">{item.successRate}%</TableCell>
                   </TableRow>
                 ))}
@@ -1915,11 +1915,11 @@ export function AdminAnalytics() {
                   <TableCell className="text-right">{formatTokens(modelPerformanceStats.peakTPM)}</TableCell>
                   <TableCell className="text-right">-</TableCell>
                   <TableCell className="text-right">-</TableCell>
-                  <TableCell className="text-right">{modelPerformanceStats.avgTTFT}</TableCell>
+                  <TableCell className="text-right">{modelPerformanceStats.avgTTFT} 秒</TableCell>
                   <TableCell className="text-right">-</TableCell>
-                  <TableCell className="text-right">{modelPerformanceStats.avgTPOT}</TableCell>
+                  <TableCell className="text-right">{modelPerformanceStats.avgTPOT} t/s</TableCell>
                   <TableCell className="text-right">{formatTokens(modelPerformanceStats.totalTokens)}</TableCell>
-                  <TableCell className="text-right">{modelPerformanceStats.totalRequests.toLocaleString()}</TableCell>
+                  <TableCell className="text-right">{modelPerformanceStats.totalRequests.toLocaleString()} 次</TableCell>
                   <TableCell className="text-right text-success">{modelPerformanceStats.avgSuccessRate}%</TableCell>
                 </TableRow>
               </TableBody>
@@ -1928,13 +1928,13 @@ export function AdminAnalytics() {
         </CardContent>
       </Card>
 
-      {/* TTFT 和 TPOT 趋势图 */}
+      {/* 首Token时延和Token生成速度趋势图 */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card className="enterprise-card">
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
               <Clock className="w-4 h-4" />
-              TTFT 首Token时延趋势 (每小时)
+              首Token时延趋势 (每小时)
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -1943,13 +1943,13 @@ export function AdminAnalytics() {
                 <ComposedChart data={generateHourlyPerformanceData(modelTabFilter === 'all' ? 'GPT-4 Turbo' : modelTabFilter)}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis dataKey="hour" tick={{ fontSize: 10 }} />
-                  <YAxis tick={{ fontSize: 12 }} unit="s" />
-                  <Tooltip formatter={(value: number) => `${value.toFixed(2)}s`} />
+                  <YAxis tick={{ fontSize: 12 }} unit="秒" />
+                  <Tooltip formatter={(value: number) => `${value.toFixed(2)} 秒`} />
                   <Bar 
                     dataKey="ttft" 
                     fill="hsl(213, 94%, 50%)"
                     opacity={0.6}
-                    name="平均 TTFT"
+                    name="平均首Token时延"
                   />
                   <Line 
                     type="monotone" 
@@ -1957,7 +1957,7 @@ export function AdminAnalytics() {
                     stroke="hsl(0, 84%, 60%)" 
                     strokeWidth={2}
                     dot={false}
-                    name="P98 TTFT"
+                    name="P98首Token时延"
                   />
                 </ComposedChart>
               </ResponsiveContainer>
@@ -1965,11 +1965,11 @@ export function AdminAnalytics() {
             <div className="flex gap-4 mt-2 justify-center text-xs">
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 rounded" style={{ backgroundColor: 'hsl(213, 94%, 50%)', opacity: 0.6 }} />
-                <span>平均 TTFT</span>
+                <span>平均首Token时延</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-3 h-0.5" style={{ backgroundColor: 'hsl(0, 84%, 60%)' }} />
-                <span>P98 TTFT</span>
+                <span>P98首Token时延</span>
               </div>
             </div>
           </CardContent>
@@ -1979,7 +1979,7 @@ export function AdminAnalytics() {
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
               <TrendingUp className="w-4 h-4" />
-              TPOT Token生成速度趋势 (每小时)
+              Token生成速度趋势 (每小时)
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -1988,14 +1988,14 @@ export function AdminAnalytics() {
                 <LineChart data={generateHourlyPerformanceData(modelTabFilter === 'all' ? 'GPT-4 Turbo' : modelTabFilter)}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                   <XAxis dataKey="hour" tick={{ fontSize: 10 }} />
-                  <YAxis tick={{ fontSize: 12 }} unit=" t/s" />
-                  <Tooltip formatter={(value: number) => `${value.toFixed(1)} tokens/s`} />
+                  <YAxis tick={{ fontSize: 12 }} unit=" tokens/秒" />
+                  <Tooltip formatter={(value: number) => `${value.toFixed(1)} tokens/秒`} />
                   <Line 
                     type="monotone" 
                     dataKey="tpot" 
                     stroke="hsl(142, 76%, 36%)" 
                     strokeWidth={2}
-                    name="TPOT"
+                    name="Token生成速度"
                   />
                 </LineChart>
               </ResponsiveContainer>
@@ -2004,12 +2004,12 @@ export function AdminAnalytics() {
         </Card>
       </div>
 
-      {/* TPM 趋势图 */}
+      {/* 每分钟Token数趋势图 */}
       <Card className="enterprise-card">
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
             <Activity className="w-4 h-4" />
-            TPM 趋势 (每小时)
+            每分钟Token数趋势 (每小时)
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -2024,13 +2024,13 @@ export function AdminAnalytics() {
                   dataKey="tpm" 
                   fill="hsl(38, 92%, 50%)"
                   opacity={0.8}
-                  name="TPM"
+                  name="每分钟Token数"
                 />
               </ComposedChart>
             </ResponsiveContainer>
           </div>
           <p className="text-xs text-muted-foreground text-center mt-2">
-            注：工作时段 (09:30-21:30) TPM 通常显著高于非工作时段
+            注：工作时段 (09:30-21:30) 每分钟Token数通常显著高于非工作时段
           </p>
         </CardContent>
       </Card>
