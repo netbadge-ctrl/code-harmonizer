@@ -93,26 +93,26 @@ const errorByType = [
   { code: '401', name: '认证失败', count: 4, percentage: 3.3 },
 ];
 
-// 模拟按客户+模型的错误数据（增加错误类型）
+// 模拟按客户+模型的错误数据（增加错误类型和详情）
 const errorByCustomerModel = [
-  { customer: '科技创新有限公司', model: 'GPT-4 Turbo', errorCode: '429', errorCount: 12 },
-  { customer: '科技创新有限公司', model: 'GPT-4 Turbo', errorCode: '500', errorCount: 8 },
-  { customer: '科技创新有限公司', model: 'GPT-4 Turbo', errorCode: '503', errorCount: 3 },
-  { customer: '科技创新有限公司', model: 'Claude 3.5 Sonnet', errorCode: '429', errorCount: 5 },
-  { customer: '科技创新有限公司', model: 'Claude 3.5 Sonnet', errorCode: '504', errorCount: 3 },
-  { customer: '金融数据服务公司', model: 'GPT-4o', errorCode: '500', errorCount: 10 },
-  { customer: '金融数据服务公司', model: 'GPT-4o', errorCode: '503', errorCount: 5 },
-  { customer: '金融数据服务公司', model: 'GPT-4 Turbo', errorCode: '429', errorCount: 5 },
-  { customer: '医疗健康科技', model: 'GPT-4 Turbo', errorCode: '429', errorCount: 18 },
-  { customer: '医疗健康科技', model: 'GPT-4 Turbo', errorCode: '500', errorCount: 15 },
-  { customer: '医疗健康科技', model: 'GPT-4 Turbo', errorCode: '504', errorCount: 9 },
-  { customer: '医疗健康科技', model: 'Claude 3.5 Sonnet', errorCode: '503', errorCount: 12 },
-  { customer: '医疗健康科技', model: 'Claude 3.5 Sonnet', errorCode: '400', errorCount: 6 },
-  { customer: '医疗健康科技', model: 'GPT-4o Mini', errorCode: '401', errorCount: 4 },
-  { customer: '医疗健康科技', model: 'GPT-4o Mini', errorCode: '429', errorCount: 3 },
-  { customer: '教育科技集团', model: 'GPT-4o Mini', errorCode: '400', errorCount: 2 },
-  { customer: '教育科技集团', model: 'GPT-4o Mini', errorCode: '500', errorCount: 1 },
-  { customer: '智能制造有限公司', model: 'GPT-4o', errorCode: '504', errorCount: 1 },
+  { id: 'global-err-001', customer: '科技创新有限公司', model: 'GPT-4 Turbo', errorCode: '429', errorCount: 12, timestamp: '2025-01-22 10:32:15', requestId: 'req-g001abc123', endpoint: '/v1/chat/completions', inputTokens: 2500, errorMessage: 'Rate limit exceeded: Too many requests per minute', retryAfter: '60s', userAgent: 'KSGC-CLI/2.3.1' },
+  { id: 'global-err-002', customer: '科技创新有限公司', model: 'GPT-4 Turbo', errorCode: '500', errorCount: 8, timestamp: '2025-01-22 09:45:22', requestId: 'req-g002def456', endpoint: '/v1/chat/completions', inputTokens: 1800, errorMessage: 'Internal server error: Model inference failed', retryAfter: '-', userAgent: 'KSGC-CLI/2.3.1' },
+  { id: 'global-err-003', customer: '科技创新有限公司', model: 'GPT-4 Turbo', errorCode: '503', errorCount: 3, timestamp: '2025-01-22 11:05:33', requestId: 'req-g003ghi789', endpoint: '/v1/chat/completions', inputTokens: 2100, errorMessage: 'Service temporarily unavailable', retryAfter: '30s', userAgent: 'KSGC-CLI/2.3.1' },
+  { id: 'global-err-004', customer: '科技创新有限公司', model: 'Claude 3.5 Sonnet', errorCode: '429', errorCount: 5, timestamp: '2025-01-22 08:32:18', requestId: 'req-g004jkl012', endpoint: '/v1/chat/completions', inputTokens: 3200, errorMessage: 'Rate limit exceeded: Token quota exhausted', retryAfter: '120s', userAgent: 'KSGC-CLI/2.3.0' },
+  { id: 'global-err-005', customer: '科技创新有限公司', model: 'Claude 3.5 Sonnet', errorCode: '504', errorCount: 3, timestamp: '2025-01-22 12:45:55', requestId: 'req-g005mno345', endpoint: '/v1/chat/completions', inputTokens: 4500, errorMessage: 'Gateway timeout: Upstream server took too long', retryAfter: '-', userAgent: 'KSGC-CLI/2.3.0' },
+  { id: 'global-err-006', customer: '金融数据服务公司', model: 'GPT-4o', errorCode: '500', errorCount: 10, timestamp: '2025-01-22 13:12:55', requestId: 'req-g006pqr678', endpoint: '/v1/chat/completions', inputTokens: 1500, errorMessage: 'Internal server error: Connection pool exhausted', retryAfter: '-', userAgent: 'KSGC-CLI/2.3.2' },
+  { id: 'global-err-007', customer: '金融数据服务公司', model: 'GPT-4o', errorCode: '503', errorCount: 5, timestamp: '2025-01-22 15:33:18', requestId: 'req-g007stu901', endpoint: '/v1/chat/completions', inputTokens: 2800, errorMessage: 'Service unavailable: High load detected', retryAfter: '45s', userAgent: 'KSGC-CLI/2.3.2' },
+  { id: 'global-err-008', customer: '金融数据服务公司', model: 'GPT-4 Turbo', errorCode: '429', errorCount: 5, timestamp: '2025-01-22 08:55:41', requestId: 'req-g008vwx234', endpoint: '/v1/chat/completions', inputTokens: 3100, errorMessage: 'Rate limit exceeded: Concurrent request limit', retryAfter: '90s', userAgent: 'KSGC-CLI/2.3.2' },
+  { id: 'global-err-009', customer: '医疗健康科技', model: 'GPT-4 Turbo', errorCode: '429', errorCount: 18, timestamp: '2025-01-22 11:15:08', requestId: 'req-g009yza567', endpoint: '/v1/chat/completions', inputTokens: 3200, errorMessage: 'Rate limit exceeded: Token quota exhausted', retryAfter: '120s', userAgent: 'KSGC-CLI/2.3.0' },
+  { id: 'global-err-010', customer: '医疗健康科技', model: 'GPT-4 Turbo', errorCode: '500', errorCount: 15, timestamp: '2025-01-22 14:22:33', requestId: 'req-g010bcd890', endpoint: '/v1/chat/completions', inputTokens: 2400, errorMessage: 'Internal server error: Memory allocation failed', retryAfter: '-', userAgent: 'KSGC-CLI/2.3.0' },
+  { id: 'global-err-011', customer: '医疗健康科技', model: 'GPT-4 Turbo', errorCode: '504', errorCount: 9, timestamp: '2025-01-22 16:08:22', requestId: 'req-g011efg123', endpoint: '/v1/chat/completions', inputTokens: 5200, errorMessage: 'Gateway timeout: Request processing exceeded 30s', retryAfter: '-', userAgent: 'KSGC-CLI/2.3.0' },
+  { id: 'global-err-012', customer: '医疗健康科技', model: 'Claude 3.5 Sonnet', errorCode: '503', errorCount: 12, timestamp: '2025-01-22 15:22:08', requestId: 'req-g012hij456', endpoint: '/v1/chat/completions', inputTokens: 2900, errorMessage: 'Service temporarily unavailable', retryAfter: '60s', userAgent: 'KSGC-CLI/2.3.0' },
+  { id: 'global-err-013', customer: '医疗健康科技', model: 'Claude 3.5 Sonnet', errorCode: '400', errorCount: 6, timestamp: '2025-01-22 16:33:41', requestId: 'req-g013klm789', endpoint: '/v1/chat/completions', inputTokens: 800, errorMessage: 'Bad request: Invalid JSON format in request body', retryAfter: '-', userAgent: 'KSGC-CLI/2.3.0' },
+  { id: 'global-err-014', customer: '医疗健康科技', model: 'GPT-4o Mini', errorCode: '401', errorCount: 4, timestamp: '2025-01-22 09:22:11', requestId: 'req-g014nop012', endpoint: '/v1/chat/completions', inputTokens: 0, errorMessage: 'Unauthorized: Invalid API key provided', retryAfter: '-', userAgent: 'KSGC-CLI/2.3.0' },
+  { id: 'global-err-015', customer: '医疗健康科技', model: 'GPT-4o Mini', errorCode: '429', errorCount: 3, timestamp: '2025-01-22 10:15:44', requestId: 'req-g015qrs345', endpoint: '/v1/chat/completions', inputTokens: 1200, errorMessage: 'Rate limit exceeded: Daily limit reached', retryAfter: '3600s', userAgent: 'KSGC-CLI/2.3.0' },
+  { id: 'global-err-016', customer: '教育科技集团', model: 'GPT-4o Mini', errorCode: '400', errorCount: 2, timestamp: '2025-01-22 11:55:33', requestId: 'req-g016tuv678', endpoint: '/v1/chat/completions', inputTokens: 500, errorMessage: 'Bad request: Message content exceeds maximum length', retryAfter: '-', userAgent: 'KSGC-CLI/2.2.5' },
+  { id: 'global-err-017', customer: '教育科技集团', model: 'GPT-4o Mini', errorCode: '500', errorCount: 1, timestamp: '2025-01-22 14:08:27', requestId: 'req-g017wxy901', endpoint: '/v1/chat/completions', inputTokens: 1800, errorMessage: 'Internal server error: Unexpected model response', retryAfter: '-', userAgent: 'KSGC-CLI/2.2.5' },
+  { id: 'global-err-018', customer: '智能制造有限公司', model: 'GPT-4o', errorCode: '504', errorCount: 1, timestamp: '2025-01-22 16:45:02', requestId: 'req-g018zab234', endpoint: '/v1/chat/completions', inputTokens: 6000, errorMessage: 'Gateway timeout: Long-running request terminated', retryAfter: '-', userAgent: 'KSGC-CLI/2.3.1' },
 ];
 
 // 模拟分钟级千Token时长数据
@@ -536,13 +536,22 @@ export function AdminAnalytics() {
   const [modelTabFilter, setModelTabFilter] = useState<string>('all');
   const [modelTabPopoverOpen, setModelTabPopoverOpen] = useState(false);
   
-  // Error detail dialog state
+  // Error detail dialog state (Model tab)
   const [selectedError, setSelectedError] = useState<typeof modelErrorDetailsExtended[0] | null>(null);
   const [errorDetailDialogOpen, setErrorDetailDialogOpen] = useState(false);
+
+  // Global error detail dialog state
+  const [selectedGlobalError, setSelectedGlobalError] = useState<typeof errorByCustomerModel[0] | null>(null);
+  const [globalErrorDetailDialogOpen, setGlobalErrorDetailDialogOpen] = useState(false);
 
   const handleViewErrorDetail = (error: typeof modelErrorDetailsExtended[0]) => {
     setSelectedError(error);
     setErrorDetailDialogOpen(true);
+  };
+
+  const handleViewGlobalErrorDetail = (error: typeof errorByCustomerModel[0]) => {
+    setSelectedGlobalError(error);
+    setGlobalErrorDetailDialogOpen(true);
   };
 
   const handleCopyText = (text: string, label: string) => {
@@ -1449,14 +1458,16 @@ export function AdminAnalytics() {
                 <TableHead>客户</TableHead>
                 <TableHead>模型</TableHead>
                 <TableHead>错误代码</TableHead>
-                <TableHead className="text-right">错误数</TableHead>
+                <TableHead className="text-right">错误数 (次)</TableHead>
+                <TableHead className="text-right">最近发生时间</TableHead>
+                <TableHead className="text-center">操作</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {errorByCustomerModel
                 .filter(item => globalModelFilter === 'all' || item.model === globalModelFilter)
-                .map((item, index) => (
-                <TableRow key={index}>
+                .map((item) => (
+                <TableRow key={item.id}>
                   <TableCell className="font-medium">{item.customer}</TableCell>
                   <TableCell>{item.model}</TableCell>
                   <TableCell>
@@ -1472,13 +1483,140 @@ export function AdminAnalytics() {
                       {item.errorCode}
                     </span>
                   </TableCell>
-                  <TableCell className="text-right text-destructive font-medium">{item.errorCount}</TableCell>
+                  <TableCell className="text-right text-destructive font-medium">{item.errorCount} 次</TableCell>
+                  <TableCell className="text-right text-muted-foreground">{item.timestamp}</TableCell>
+                  <TableCell className="text-center">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleViewGlobalErrorDetail(item)}
+                      className="h-7 px-2"
+                    >
+                      <Eye className="w-4 h-4 mr-1" />
+                      查看详情
+                    </Button>
+                  </TableCell>
                 </TableRow>
               ))}
+              {/* 总计行 */}
+              <TableRow className="bg-muted/30 font-medium">
+                <TableCell colSpan={3}>总计</TableCell>
+                <TableCell className="text-right text-destructive">
+                  {errorByCustomerModel
+                    .filter(item => globalModelFilter === 'all' || item.model === globalModelFilter)
+                    .reduce((sum, e) => sum + e.errorCount, 0)} 次
+                </TableCell>
+                <TableCell>-</TableCell>
+                <TableCell>-</TableCell>
+              </TableRow>
             </TableBody>
           </Table>
         </CardContent>
       </Card>
+
+      {/* 全局错误详情弹窗 */}
+      <Dialog open={globalErrorDetailDialogOpen} onOpenChange={setGlobalErrorDetailDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-destructive" />
+              错误详情
+            </DialogTitle>
+          </DialogHeader>
+          {selectedGlobalError && (
+            <div className="space-y-4">
+              {/* 基本信息 */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground">客户</p>
+                  <p className="font-medium">{selectedGlobalError.customer}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground">模型</p>
+                  <p className="font-medium">{selectedGlobalError.model}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground">错误代码</p>
+                  <span className={cn(
+                    "inline-block px-2 py-0.5 rounded text-xs font-mono font-medium",
+                    selectedGlobalError.errorCode === '429' && "bg-yellow-500/10 text-yellow-600",
+                    selectedGlobalError.errorCode === '500' && "bg-destructive/10 text-destructive",
+                    selectedGlobalError.errorCode === '503' && "bg-orange-500/10 text-orange-600",
+                    selectedGlobalError.errorCode === '504' && "bg-purple-500/10 text-purple-600",
+                    selectedGlobalError.errorCode === '400' && "bg-blue-500/10 text-blue-600",
+                    selectedGlobalError.errorCode === '401' && "bg-red-500/10 text-red-600",
+                  )}>
+                    {selectedGlobalError.errorCode}
+                  </span>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground">错误次数</p>
+                  <p className="font-medium text-destructive">{selectedGlobalError.errorCount} 次</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground">发生时间</p>
+                  <p className="font-medium">{selectedGlobalError.timestamp}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground">重试间隔</p>
+                  <p className="font-medium">{selectedGlobalError.retryAfter}</p>
+                </div>
+              </div>
+
+              {/* 请求信息 */}
+              <div className="border-t pt-4">
+                <h4 className="text-sm font-medium mb-3">请求信息</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground">请求ID</p>
+                    <div className="flex items-center gap-2">
+                      <code className="text-xs bg-muted px-2 py-1 rounded font-mono">{selectedGlobalError.requestId}</code>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleCopyText(selectedGlobalError.requestId, '请求ID')}
+                        className="h-6 w-6 p-0"
+                      >
+                        <Copy className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground">接口端点</p>
+                    <code className="text-xs bg-muted px-2 py-1 rounded font-mono">{selectedGlobalError.endpoint}</code>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground">输入Token数</p>
+                    <p className="font-medium">{selectedGlobalError.inputTokens.toLocaleString()} tokens</p>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground">客户端</p>
+                    <p className="font-medium">{selectedGlobalError.userAgent}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* 错误信息 */}
+              <div className="border-t pt-4">
+                <h4 className="text-sm font-medium mb-3">错误信息</h4>
+                <div className="bg-destructive/5 border border-destructive/20 rounded-lg p-4">
+                  <div className="flex items-start justify-between">
+                    <code className="text-sm text-destructive font-mono break-all">{selectedGlobalError.errorMessage}</code>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleCopyText(selectedGlobalError.errorMessage, '错误信息')}
+                      className="h-6 w-6 p-0 shrink-0 ml-2"
+                    >
+                      <Copy className="w-3 h-3" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 
