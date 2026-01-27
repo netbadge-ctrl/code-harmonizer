@@ -1,8 +1,9 @@
 import React from 'react';
-import { Bell, Search, HelpCircle, ChevronDown, Globe, Headphones } from 'lucide-react';
+import { Bell, Search, HelpCircle, ChevronDown, Globe, Headphones, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface HeaderProps {
   title: string;
@@ -44,6 +45,18 @@ export function Header({ title, description }: HeaderProps) {
           >
             CLI个人视图
           </a>
+
+          {/* Help Center */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Link to="/help">
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground">
+                  <BookOpen className="w-4 h-4" />
+                </Button>
+              </Link>
+            </TooltipTrigger>
+            <TooltipContent>帮助中心</TooltipContent>
+          </Tooltip>
 
           {/* Notifications */}
           <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground">
