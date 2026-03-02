@@ -4,9 +4,8 @@ import { Header } from '@/components/layout/Header';
 import { CustomerList } from '@/components/admin/CustomerList';
 import { CustomerDetail } from '@/components/admin/CustomerDetail';
 import { AdminAnalytics } from '@/components/admin/AdminAnalytics';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Settings } from 'lucide-react';
 import { CreditRatioManagement } from '@/components/admin/CreditRatioManagement';
+import { GlobalModelConfig } from '@/components/admin/GlobalModelConfig';
 import { AdminView } from '@/types/admin';
 import { cn } from '@/lib/utils';
 
@@ -15,7 +14,7 @@ const viewConfig: Record<AdminView, { title: string; description: string }> = {
   customerDetail: { title: '客户详情', description: '查看客户详细信息' },
   analytics: { title: '数据看板', description: '查看平台整体使用情况' },
   creditRatio: { title: '积分倍率', description: '配置不同模型的积分消耗倍率' },
-  settings: { title: '系统设置', description: '管理后台系统配置' },
+  settings: { title: '全局模型配置', description: '配置平台可用模型范围，查看客户开通情况' },
 };
 
 export function USS() {
@@ -54,19 +53,7 @@ export function USS() {
       case 'creditRatio':
         return <CreditRatioManagement />;
       case 'settings':
-        return (
-          <Card className="enterprise-card">
-            <CardHeader>
-              <CardTitle className="text-base flex items-center gap-2">
-                <Settings className="w-4 h-4" />
-                系统设置
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">管理后台系统设置功能即将推出...</p>
-            </CardContent>
-          </Card>
-        );
+        return <GlobalModelConfig />;
       default:
         return <CustomerList onSelectCustomer={handleSelectCustomer} />;
     }

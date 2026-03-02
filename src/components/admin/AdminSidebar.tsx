@@ -23,7 +23,7 @@ const menuItems = [
   { id: 'customers' as AdminView, label: '客户管理', icon: Building2 },
   { id: 'analytics' as AdminView, label: '数据看板', icon: BarChart3 },
   { id: 'creditRatio' as AdminView, label: '积分倍率', icon: Coins },
-  { id: 'settings' as AdminView, label: '系统设置', icon: Settings },
+  { id: 'settings' as AdminView, label: '模型配置', icon: Settings },
 ];
 
 export function AdminSidebar({ currentView, onViewChange, collapsed, onToggleCollapse }: AdminSidebarProps) {
