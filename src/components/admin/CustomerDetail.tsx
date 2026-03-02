@@ -1,7 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { format, subDays, subHours, subMinutes } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
-import { ArrowLeft, Building2, Users, Zap, Shield, Clock, Activity, Settings, Globe, Eye, CalendarIcon, Cloud, Server, Database, Network, HardDrive, Cpu, MemoryStick, AlertTriangle, CheckCircle2, XCircle, ChevronLeft, ChevronRight, Copy, Check, ChevronsUpDown, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { ArrowLeft, Building2, Users, Zap, Shield, Clock, Activity, Settings, Globe, Eye, CalendarIcon, Cloud, Server, Database, Network, HardDrive, Cpu, MemoryStick, AlertTriangle, CheckCircle2, XCircle, ChevronLeft, ChevronRight, Copy, Check, ChevronsUpDown, ArrowUpDown, ArrowUp, ArrowDown, Search } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import {
   Pagination,
@@ -15,6 +15,7 @@ import {
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -99,28 +100,36 @@ const errorTypes = [
   { code: '401', name: '认证失败', description: 'Unauthorized' },
 ];
 
-// 20个模型列表
+// 全局可用模型列表（从模型配置中获取已启用的模型）
+const globalEnabledModels = [
+  { id: 'gpt4-turbo', name: 'GPT-4 Turbo', type: 'text' as const, typeLabel: '文本模型' },
+  { id: 'gpt4o', name: 'GPT-4o', type: 'text' as const, typeLabel: '文本模型' },
+  { id: 'gpt4o-mini', name: 'GPT-4o Mini', type: 'text' as const, typeLabel: '文本模型' },
+  { id: 'claude35-sonnet', name: 'Claude 3.5 Sonnet', type: 'text' as const, typeLabel: '文本模型' },
+  { id: 'claude3-opus', name: 'Claude 3 Opus', type: 'text' as const, typeLabel: '文本模型' },
+  { id: 'claude3-haiku', name: 'Claude 3 Haiku', type: 'text' as const, typeLabel: '文本模型' },
+  { id: 'gemini-pro', name: 'Gemini Pro', type: 'text' as const, typeLabel: '文本模型' },
+  { id: 'ernie4', name: 'ERNIE-4.0', type: 'text' as const, typeLabel: '文本模型' },
+  { id: 'qwen-max', name: 'Qwen-Max', type: 'text' as const, typeLabel: '文本模型' },
+  { id: 'qwen-turbo', name: 'Qwen-Turbo', type: 'text' as const, typeLabel: '文本模型' },
+  { id: 'deepseek-v3', name: 'DeepSeek V3', type: 'text' as const, typeLabel: '文本模型' },
+  { id: 'kimi-k2', name: 'Kimi K2', type: 'text' as const, typeLabel: '文本模型' },
+  { id: 'kimi-25', name: 'KIMI 2.5', type: 'text' as const, typeLabel: '文本模型' },
+  { id: 'glm-47', name: 'GLM-4.7', type: 'text' as const, typeLabel: '文本模型' },
+  { id: 'glm-5', name: 'GLM-5', type: 'text' as const, typeLabel: '文本模型' },
+  { id: 'gpt4-vision', name: 'GPT-4 Vision', type: 'vision' as const, typeLabel: '视觉理解' },
+  { id: 'gemini-vision', name: 'Gemini Pro Vision', type: 'vision' as const, typeLabel: '视觉理解' },
+];
+
+// 默认开启的模型ID
+const defaultEnabledModelIds = ['kimi-25', 'glm-47', 'glm-5'];
+
+// 20个模型列表（用于使用统计）
 const availableModels = [
-  'GPT-4 Turbo',
-  'GPT-4o',
-  'GPT-4o Mini',
-  'Claude 3.5 Sonnet',
-  'Claude 3 Opus',
-  'DeepSeek V3',
-  'Kimi K2',
-  'Qwen 2.5 Max',
-  'GLM-4',
-  'Gemini 1.5 Pro',
-  'Gemini 1.5 Flash',
-  'Mistral Large',
-  'Llama 3.1 405B',
-  'Yi Large',
-  'Baichuan 4',
-  'InternLM 2.5',
-  'Doubao Pro',
-  'Moonshot V1',
-  'Spark Max',
-  'Hunyuan Pro',
+  'GPT-4 Turbo', 'GPT-4o', 'GPT-4o Mini', 'Claude 3.5 Sonnet', 'Claude 3 Opus',
+  'DeepSeek V3', 'Kimi K2', 'Qwen 2.5 Max', 'GLM-4', 'Gemini 1.5 Pro',
+  'Gemini 1.5 Flash', 'Mistral Large', 'Llama 3.1 405B', 'Yi Large',
+  'Baichuan 4', 'InternLM 2.5', 'Doubao Pro', 'Moonshot V1', 'Spark Max', 'Hunyuan Pro',
 ];
 
 function formatTokens(tokens: number): string {
@@ -199,6 +208,18 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
   
   const [userCurrentPage, setUserCurrentPage] = useState(1);
   const usersPerPage = 10;
+
+  // 可用模型配置状态
+  const [customerModelConfig, setCustomerModelConfig] = useState<Record<string, boolean>>(() => {
+    const config: Record<string, boolean> = {};
+    globalEnabledModels.forEach(m => {
+      config[m.id] = defaultEnabledModelIds.includes(m.id);
+    });
+    return config;
+  });
+  const [modelConfigDialogOpen, setModelConfigDialogOpen] = useState(false);
+  const [modelConfigSearch, setModelConfigSearch] = useState('');
+  const [modelConfigTypeFilter, setModelConfigTypeFilter] = useState<string>('all');
 
   const handlePresetChange = (preset: TimeRangePreset) => {
     setTimeRangePreset(preset);
@@ -503,15 +524,16 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
               </CardContent>
             </Card>
 
-            {/* 认证配置 */}
+            {/* 账号配置 */}
             <Card className="enterprise-card">
               <CardHeader>
                 <CardTitle className="text-base flex items-center gap-2">
-                  <Shield className="w-4 h-4" />
-                  认证配置
+                  <Settings className="w-4 h-4" />
+                  账号配置
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent className="space-y-4">
+                {/* 企业认证方式 */}
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-muted-foreground">企业认证方式</span>
                   <span className={cn(
@@ -521,6 +543,7 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                     {authMethodLabels[customer.authConfig.enterpriseAuthMethod]}
                   </span>
                 </div>
+                {/* IP白名单 */}
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-muted-foreground">IP 白名单</span>
                   <div className="flex items-center gap-2">
@@ -554,47 +577,7 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                     )}
                   </div>
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">已开通模型</span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm">{customer.enabledModels.length} 个</span>
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button variant="ghost" size="sm" className="h-6 px-2">
-                          <Eye className="w-3 h-3" />
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>已开通模型列表</DialogTitle>
-                        </DialogHeader>
-                        <div className="space-y-2 max-h-64 overflow-y-auto">
-                          {customer.enabledModels.map((model, index) => (
-                            <div key={index} className="flex items-center gap-2 p-2 bg-muted rounded-md">
-                              <div 
-                                className="w-3 h-3 rounded-full" 
-                                style={{ backgroundColor: COLORS[index % COLORS.length] }}
-                              />
-                              <span className="text-sm">{model}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </DialogContent>
-                    </Dialog>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* 账户配置 */}
-            <Card className="enterprise-card">
-              <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Settings className="w-4 h-4" />
-                  账户配置
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
+                {/* 模型切换 */}
                 <div className="flex justify-between items-center">
                   <div className="space-y-0.5">
                     <span className="text-sm font-medium">模型切换</span>
@@ -602,9 +585,103 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                   </div>
                   <Switch defaultChecked />
                 </div>
+                {/* 可用模型 */}
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">可用模型</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm">
+                      {Object.values(customerModelConfig).filter(Boolean).length} / {globalEnabledModels.length} 个
+                    </span>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="h-6 px-2"
+                      onClick={() => setModelConfigDialogOpen(true)}
+                    >
+                      <Settings className="w-3 h-3" />
+                    </Button>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </div>
+
+          {/* 可用模型配置弹窗 */}
+          <Dialog open={modelConfigDialogOpen} onOpenChange={setModelConfigDialogOpen}>
+            <DialogContent className="max-w-3xl max-h-[80vh] overflow-hidden flex flex-col">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2 text-base">
+                  <Cpu className="w-4 h-4" />
+                  可用模型配置
+                  <span className="text-muted-foreground font-normal">— {customer.companyName}</span>
+                  <Badge variant="secondary" className="ml-1">
+                    {Object.values(customerModelConfig).filter(Boolean).length}/{globalEnabledModels.length}
+                  </Badge>
+                </DialogTitle>
+              </DialogHeader>
+              {/* 搜索和筛选 */}
+              <div className="flex items-center gap-3 py-2">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    placeholder="搜索模型..."
+                    value={modelConfigSearch}
+                    onChange={e => setModelConfigSearch(e.target.value)}
+                    className="pl-9 h-9"
+                  />
+                </div>
+                <select
+                  value={modelConfigTypeFilter}
+                  onChange={e => setModelConfigTypeFilter(e.target.value)}
+                  className="h-9 px-3 rounded-md border border-input bg-background text-sm"
+                >
+                  <option value="all">全部类型</option>
+                  <option value="text">文本模型</option>
+                  <option value="vision">视觉理解</option>
+                </select>
+              </div>
+              {/* 模型列表 */}
+              <div className="flex-1 overflow-y-auto divide-y divide-border">
+                {(() => {
+                  const filtered = globalEnabledModels.filter(m => {
+                    const matchesSearch = m.name.toLowerCase().includes(modelConfigSearch.toLowerCase());
+                    const matchesType = modelConfigTypeFilter === 'all' || m.type === modelConfigTypeFilter;
+                    return matchesSearch && matchesType;
+                  });
+                  const grouped = filtered.reduce<Record<string, typeof globalEnabledModels>>((acc, m) => {
+                    if (!acc[m.typeLabel]) acc[m.typeLabel] = [];
+                    acc[m.typeLabel].push(m);
+                    return acc;
+                  }, {});
+                  return Object.entries(grouped).map(([typeLabel, models]) => (
+                    <div key={typeLabel} className="py-2">
+                      <div className="flex items-center gap-2 px-1 py-1.5 text-xs font-medium text-muted-foreground">
+                        {models[0].type === 'text' ? <Cpu className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                        {typeLabel}
+                        <Badge variant="secondary" className="text-xs font-normal">{models.length}</Badge>
+                      </div>
+                      {models.map(model => (
+                        <div key={model.id} className="flex items-center justify-between px-2 py-2.5 hover:bg-muted/30 rounded-lg transition-colors">
+                          <div className="flex items-center gap-3">
+                            <span className="text-sm font-medium text-foreground">{model.name}</span>
+                            {defaultEnabledModelIds.includes(model.id) && (
+                              <Badge variant="outline" className="text-[10px] border-emerald-300 text-emerald-600 bg-emerald-50">默认</Badge>
+                            )}
+                          </div>
+                          <Switch
+                            checked={customerModelConfig[model.id] || false}
+                            onCheckedChange={(checked) => {
+                              setCustomerModelConfig(prev => ({ ...prev, [model.id]: checked }));
+                            }}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  ));
+                })()}
+              </div>
+            </DialogContent>
+          </Dialog>
         </TabsContent>
 
         <TabsContent value="usage" className="space-y-6">
