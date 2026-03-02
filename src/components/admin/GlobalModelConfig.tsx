@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Search, Cpu, Eye, Image, Code, Sparkles, Users, ChevronRight, Globe, ToggleLeft } from 'lucide-react';
+import { Search, Cpu, Eye, Users, ChevronRight, Globe, ToggleLeft } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { mockCustomers } from '@/data/adminMockData';
 
@@ -14,7 +14,7 @@ interface GlobalModel {
   id: string;
   name: string;
   provider: string;
-  type: 'text' | 'vision' | 'image' | 'code' | 'multimodal';
+  type: 'text' | 'vision';
   typeLabel: string;
   description: string;
   contextLimit: string;
@@ -30,35 +30,27 @@ const allGlobalModels: GlobalModel[] = [
   { id: 'claude35-sonnet', name: 'Claude 3.5 Sonnet', provider: 'Anthropic', type: 'text', typeLabel: '文本模型', description: '强大的推理和编程能力', contextLimit: '200K', enabled: true, enabledCustomerIds: ['cust_001', 'cust_002', 'cust_005', 'cust_006'] },
   { id: 'claude3-opus', name: 'Claude 3 Opus', provider: 'Anthropic', type: 'text', typeLabel: '文本模型', description: '最强推理能力，复杂任务首选', contextLimit: '200K', enabled: true, enabledCustomerIds: ['cust_001', 'cust_005'] },
   { id: 'claude3-haiku', name: 'Claude 3 Haiku', provider: 'Anthropic', type: 'text', typeLabel: '文本模型', description: '极速响应，轻量任务优选', contextLimit: '200K', enabled: true, enabledCustomerIds: ['cust_005'] },
-  { id: 'gemini-pro', name: 'Gemini Pro', provider: 'Google', type: 'multimodal', typeLabel: '多模态模型', description: '多模态理解与生成能力', contextLimit: '1M', enabled: true, enabledCustomerIds: ['cust_001', 'cust_005'] },
+  { id: 'gemini-pro', name: 'Gemini Pro', provider: 'Google', type: 'text', typeLabel: '文本模型', description: '多模态理解与生成能力', contextLimit: '1M', enabled: true, enabledCustomerIds: ['cust_001', 'cust_005'] },
   { id: 'ernie4', name: 'ERNIE-4.0', provider: '百度', type: 'text', typeLabel: '文本模型', description: '文心一言，中文理解能力出众', contextLimit: '128K', enabled: true, enabledCustomerIds: ['cust_001', 'cust_002', 'cust_003', 'cust_005', 'cust_006'] },
   { id: 'qwen-max', name: 'Qwen-Max', provider: '阿里巴巴', type: 'text', typeLabel: '文本模型', description: '通义千问旗舰模型', contextLimit: '128K', enabled: true, enabledCustomerIds: ['cust_001', 'cust_002', 'cust_005', 'cust_006'] },
   { id: 'qwen-turbo', name: 'Qwen-Turbo', provider: '阿里巴巴', type: 'text', typeLabel: '文本模型', description: '通义千问高速版', contextLimit: '128K', enabled: true, enabledCustomerIds: ['cust_003', 'cust_005'] },
+  { id: 'deepseek-v3', name: 'DeepSeek V3', provider: 'DeepSeek', type: 'text', typeLabel: '文本模型', description: '代码理解与生成专家', contextLimit: '128K', enabled: true, enabledCustomerIds: ['cust_001', 'cust_005'] },
+  { id: 'kimi-k2', name: 'Kimi K2', provider: 'Moonshot', type: 'text', typeLabel: '文本模型', description: '长文本理解与生成，支持200K上下文', contextLimit: '200K', enabled: true, enabledCustomerIds: ['cust_001', 'cust_002', 'cust_005'] },
   // 视觉理解模型
   { id: 'gpt4-vision', name: 'GPT-4 Vision', provider: 'OpenAI', type: 'vision', typeLabel: '视觉理解', description: '图像理解与分析能力', contextLimit: '128K', enabled: true, enabledCustomerIds: ['cust_001', 'cust_005'] },
   { id: 'qwen-vl-max', name: 'Qwen-VL-Max', provider: '阿里巴巴', type: 'vision', typeLabel: '视觉理解', description: '通义千问视觉语言模型', contextLimit: '32K', enabled: false, enabledCustomerIds: [] },
-  // 代码模型
-  { id: 'deepseek-coder', name: 'DeepSeek Coder V2', provider: 'DeepSeek', type: 'code', typeLabel: '代码模型', description: '专业代码生成与理解', contextLimit: '128K', enabled: true, enabledCustomerIds: ['cust_001', 'cust_005'] },
-  { id: 'codestral', name: 'Codestral', provider: 'Mistral', type: 'code', typeLabel: '代码模型', description: '高性能代码生成模型', contextLimit: '32K', enabled: false, enabledCustomerIds: [] },
-  // 图像生成
-  { id: 'dall-e-3', name: 'DALL·E 3', provider: 'OpenAI', type: 'image', typeLabel: '图像生成', description: '高质量图像生成', contextLimit: '-', enabled: false, enabledCustomerIds: [] },
-  { id: 'stable-diffusion-xl', name: 'Stable Diffusion XL', provider: 'Stability AI', type: 'image', typeLabel: '图像生成', description: '开源高性能图像生成', contextLimit: '-', enabled: false, enabledCustomerIds: [] },
+  { id: 'gemini-vision', name: 'Gemini Pro Vision', provider: 'Google', type: 'vision', typeLabel: '视觉理解', description: '高精度图像识别与理解', contextLimit: '1M', enabled: true, enabledCustomerIds: ['cust_001'] },
+  { id: 'claude3-vision', name: 'Claude 3 Vision', provider: 'Anthropic', type: 'vision', typeLabel: '视觉理解', description: '多图理解与跨图推理', contextLimit: '200K', enabled: false, enabledCustomerIds: [] },
 ];
 
 const typeIcons: Record<string, React.ReactNode> = {
   text: <Cpu className="w-3.5 h-3.5" />,
   vision: <Eye className="w-3.5 h-3.5" />,
-  image: <Image className="w-3.5 h-3.5" />,
-  code: <Code className="w-3.5 h-3.5" />,
-  multimodal: <Sparkles className="w-3.5 h-3.5" />,
 };
 
 const typeColors: Record<string, string> = {
   text: 'bg-blue-500/10 text-blue-600 border-blue-200',
   vision: 'bg-purple-500/10 text-purple-600 border-purple-200',
-  image: 'bg-pink-500/10 text-pink-600 border-pink-200',
-  code: 'bg-emerald-500/10 text-emerald-600 border-emerald-200',
-  multimodal: 'bg-amber-500/10 text-amber-600 border-amber-200',
 };
 
 export function GlobalModelConfig() {
@@ -115,9 +107,6 @@ export function GlobalModelConfig() {
     { value: 'all', label: '全部类型' },
     { value: 'text', label: '文本模型' },
     { value: 'vision', label: '视觉理解' },
-    { value: 'code', label: '代码模型' },
-    { value: 'image', label: '图像生成' },
-    { value: 'multimodal', label: '多模态模型' },
   ];
 
   return (
@@ -190,9 +179,8 @@ export function GlobalModelConfig() {
                 <option value="disabled">未启用</option>
               </select>
             </div>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={handleEnableAll}>全部开启</Button>
-              <Button variant="outline" size="sm" onClick={handleDisableAll}>全部关闭</Button>
+            <div className="text-xs text-muted-foreground">
+              共 {filteredModels.length} 个模型
             </div>
           </div>
         </CardContent>
@@ -213,19 +201,18 @@ export function GlobalModelConfig() {
               {typeModels.map(model => (
                 <div key={model.id} className="flex items-center justify-between px-3 py-3 hover:bg-muted/30 rounded-lg transition-colors">
                   <div className="flex items-center gap-4 flex-1 min-w-0">
-                    <div className="flex-1 min-w-0">
+                    <div className="w-[180px] shrink-0">
                       <div className="flex items-center gap-2">
                         <span className="font-medium text-sm text-foreground">{model.name}</span>
-                        <Badge variant="outline" className={cn("text-[10px] px-1.5 py-0 h-4 border", typeColors[model.type])}>
-                          {model.provider}
-                        </Badge>
                         {model.contextLimit !== '-' && (
                           <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
                             {model.contextLimit}
                           </span>
                         )}
                       </div>
-                      <p className="text-xs text-muted-foreground mt-0.5 truncate">{model.description}</p>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-muted-foreground truncate">{model.description}</p>
                     </div>
 
                     {/* Customer count */}
