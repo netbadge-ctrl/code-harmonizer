@@ -1,0 +1,328 @@
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Switch } from '@/components/ui/switch';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Search, Cpu, Eye, Image, Code, Sparkles, Users, ChevronRight, Globe, ToggleLeft } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { mockCustomers } from '@/data/adminMockData';
+
+interface GlobalModel {
+  id: string;
+  name: string;
+  provider: string;
+  type: 'text' | 'vision' | 'image' | 'code' | 'multimodal';
+  typeLabel: string;
+  description: string;
+  contextLimit: string;
+  enabled: boolean;
+  enabledCustomerIds: string[];
+}
+
+const allGlobalModels: GlobalModel[] = [
+  // 文本模型
+  { id: 'gpt4-turbo', name: 'GPT-4 Turbo', provider: 'OpenAI', type: 'text', typeLabel: '文本模型', description: '最强文本生成能力，支持128K上下文', contextLimit: '128K', enabled: true, enabledCustomerIds: ['cust_001', 'cust_005'] },
+  { id: 'gpt4o', name: 'GPT-4o', provider: 'OpenAI', type: 'text', typeLabel: '文本模型', description: '高性能多模态模型，速度与能力平衡', contextLimit: '128K', enabled: true, enabledCustomerIds: ['cust_001', 'cust_002', 'cust_004', 'cust_005', 'cust_006'] },
+  { id: 'gpt4o-mini', name: 'GPT-4o Mini', provider: 'OpenAI', type: 'text', typeLabel: '文本模型', description: '轻量高效模型，适合日常任务', contextLimit: '128K', enabled: true, enabledCustomerIds: ['cust_001', 'cust_002', 'cust_003', 'cust_004', 'cust_005'] },
+  { id: 'claude35-sonnet', name: 'Claude 3.5 Sonnet', provider: 'Anthropic', type: 'text', typeLabel: '文本模型', description: '强大的推理和编程能力', contextLimit: '200K', enabled: true, enabledCustomerIds: ['cust_001', 'cust_002', 'cust_005', 'cust_006'] },
+  { id: 'claude3-opus', name: 'Claude 3 Opus', provider: 'Anthropic', type: 'text', typeLabel: '文本模型', description: '最强推理能力，复杂任务首选', contextLimit: '200K', enabled: true, enabledCustomerIds: ['cust_001', 'cust_005'] },
+  { id: 'claude3-haiku', name: 'Claude 3 Haiku', provider: 'Anthropic', type: 'text', typeLabel: '文本模型', description: '极速响应，轻量任务优选', contextLimit: '200K', enabled: true, enabledCustomerIds: ['cust_005'] },
+  { id: 'gemini-pro', name: 'Gemini Pro', provider: 'Google', type: 'multimodal', typeLabel: '多模态模型', description: '多模态理解与生成能力', contextLimit: '1M', enabled: true, enabledCustomerIds: ['cust_001', 'cust_005'] },
+  { id: 'ernie4', name: 'ERNIE-4.0', provider: '百度', type: 'text', typeLabel: '文本模型', description: '文心一言，中文理解能力出众', contextLimit: '128K', enabled: true, enabledCustomerIds: ['cust_001', 'cust_002', 'cust_003', 'cust_005', 'cust_006'] },
+  { id: 'qwen-max', name: 'Qwen-Max', provider: '阿里巴巴', type: 'text', typeLabel: '文本模型', description: '通义千问旗舰模型', contextLimit: '128K', enabled: true, enabledCustomerIds: ['cust_001', 'cust_002', 'cust_005', 'cust_006'] },
+  { id: 'qwen-turbo', name: 'Qwen-Turbo', provider: '阿里巴巴', type: 'text', typeLabel: '文本模型', description: '通义千问高速版', contextLimit: '128K', enabled: true, enabledCustomerIds: ['cust_003', 'cust_005'] },
+  // 视觉理解模型
+  { id: 'gpt4-vision', name: 'GPT-4 Vision', provider: 'OpenAI', type: 'vision', typeLabel: '视觉理解', description: '图像理解与分析能力', contextLimit: '128K', enabled: true, enabledCustomerIds: ['cust_001', 'cust_005'] },
+  { id: 'qwen-vl-max', name: 'Qwen-VL-Max', provider: '阿里巴巴', type: 'vision', typeLabel: '视觉理解', description: '通义千问视觉语言模型', contextLimit: '32K', enabled: false, enabledCustomerIds: [] },
+  // 代码模型
+  { id: 'deepseek-coder', name: 'DeepSeek Coder V2', provider: 'DeepSeek', type: 'code', typeLabel: '代码模型', description: '专业代码生成与理解', contextLimit: '128K', enabled: true, enabledCustomerIds: ['cust_001', 'cust_005'] },
+  { id: 'codestral', name: 'Codestral', provider: 'Mistral', type: 'code', typeLabel: '代码模型', description: '高性能代码生成模型', contextLimit: '32K', enabled: false, enabledCustomerIds: [] },
+  // 图像生成
+  { id: 'dall-e-3', name: 'DALL·E 3', provider: 'OpenAI', type: 'image', typeLabel: '图像生成', description: '高质量图像生成', contextLimit: '-', enabled: false, enabledCustomerIds: [] },
+  { id: 'stable-diffusion-xl', name: 'Stable Diffusion XL', provider: 'Stability AI', type: 'image', typeLabel: '图像生成', description: '开源高性能图像生成', contextLimit: '-', enabled: false, enabledCustomerIds: [] },
+];
+
+const typeIcons: Record<string, React.ReactNode> = {
+  text: <Cpu className="w-3.5 h-3.5" />,
+  vision: <Eye className="w-3.5 h-3.5" />,
+  image: <Image className="w-3.5 h-3.5" />,
+  code: <Code className="w-3.5 h-3.5" />,
+  multimodal: <Sparkles className="w-3.5 h-3.5" />,
+};
+
+const typeColors: Record<string, string> = {
+  text: 'bg-blue-500/10 text-blue-600 border-blue-200',
+  vision: 'bg-purple-500/10 text-purple-600 border-purple-200',
+  image: 'bg-pink-500/10 text-pink-600 border-pink-200',
+  code: 'bg-emerald-500/10 text-emerald-600 border-emerald-200',
+  multimodal: 'bg-amber-500/10 text-amber-600 border-amber-200',
+};
+
+export function GlobalModelConfig() {
+  const [models, setModels] = useState<GlobalModel[]>(allGlobalModels);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [typeFilter, setTypeFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [selectedModel, setSelectedModel] = useState<GlobalModel | null>(null);
+  const [customerDialogOpen, setCustomerDialogOpen] = useState(false);
+
+  const handleToggleModel = (modelId: string) => {
+    setModels(prev => prev.map(m => m.id === modelId ? { ...m, enabled: !m.enabled } : m));
+  };
+
+  const handleEnableAll = () => {
+    setModels(prev => prev.map(m => ({ ...m, enabled: true })));
+  };
+
+  const handleDisableAll = () => {
+    setModels(prev => prev.map(m => ({ ...m, enabled: false })));
+  };
+
+  const filteredModels = models.filter(m => {
+    const matchesSearch = m.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      m.provider.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesType = typeFilter === 'all' || m.type === typeFilter;
+    const matchesStatus = statusFilter === 'all' || 
+      (statusFilter === 'enabled' && m.enabled) || 
+      (statusFilter === 'disabled' && !m.enabled);
+    return matchesSearch && matchesType && matchesStatus;
+  });
+
+  // Group by type
+  const groupedModels = filteredModels.reduce<Record<string, GlobalModel[]>>((acc, m) => {
+    const key = m.typeLabel;
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(m);
+    return acc;
+  }, {});
+
+  const enabledCount = models.filter(m => m.enabled).length;
+  const totalCustomersUsingModels = new Set(models.flatMap(m => m.enabledCustomerIds)).size;
+
+  const openCustomerDialog = (model: GlobalModel) => {
+    setSelectedModel(model);
+    setCustomerDialogOpen(true);
+  };
+
+  const getCustomerInfo = (customerId: string) => {
+    return mockCustomers.find(c => c.id === customerId);
+  };
+
+  const typeOptions = [
+    { value: 'all', label: '全部类型' },
+    { value: 'text', label: '文本模型' },
+    { value: 'vision', label: '视觉理解' },
+    { value: 'code', label: '代码模型' },
+    { value: 'image', label: '图像生成' },
+    { value: 'multimodal', label: '多模态模型' },
+  ];
+
+  return (
+    <div className="space-y-4">
+      {/* Header Stats */}
+      <div className="grid grid-cols-3 gap-4">
+        <Card className="enterprise-card">
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Globe className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-foreground">{models.length}</p>
+              <p className="text-xs text-muted-foreground">模型总数</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="enterprise-card">
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+              <ToggleLeft className="w-5 h-5 text-emerald-600" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-foreground">{enabledCount} <span className="text-sm font-normal text-muted-foreground">/ {models.length}</span></p>
+              <p className="text-xs text-muted-foreground">已启用模型</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="enterprise-card">
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
+              <Users className="w-5 h-5 text-blue-600" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-foreground">{totalCustomersUsingModels}</p>
+              <p className="text-xs text-muted-foreground">使用中客户数</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Toolbar */}
+      <Card className="enterprise-card">
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3 flex-1">
+              <div className="relative max-w-xs flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="搜索模型名称或提供商..."
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  className="pl-9 h-9"
+                />
+              </div>
+              <select
+                value={typeFilter}
+                onChange={e => setTypeFilter(e.target.value)}
+                className="h-9 px-3 rounded-md border border-input bg-background text-sm"
+              >
+                {typeOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+              <select
+                value={statusFilter}
+                onChange={e => setStatusFilter(e.target.value)}
+                className="h-9 px-3 rounded-md border border-input bg-background text-sm"
+              >
+                <option value="all">全部状态</option>
+                <option value="enabled">已启用</option>
+                <option value="disabled">未启用</option>
+              </select>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={handleEnableAll}>全部开启</Button>
+              <Button variant="outline" size="sm" onClick={handleDisableAll}>全部关闭</Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Model Groups */}
+      {Object.entries(groupedModels).map(([typeLabel, typeModels]) => (
+        <Card key={typeLabel} className="enterprise-card">
+          <CardHeader className="pb-2 pt-4 px-5">
+            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              {typeIcons[typeModels[0].type]}
+              {typeLabel}
+              <Badge variant="secondary" className="text-xs font-normal">{typeModels.length}</Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="px-2 pb-2">
+            <div className="divide-y divide-border">
+              {typeModels.map(model => (
+                <div key={model.id} className="flex items-center justify-between px-3 py-3 hover:bg-muted/30 rounded-lg transition-colors">
+                  <div className="flex items-center gap-4 flex-1 min-w-0">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-sm text-foreground">{model.name}</span>
+                        <Badge variant="outline" className={cn("text-[10px] px-1.5 py-0 h-4 border", typeColors[model.type])}>
+                          {model.provider}
+                        </Badge>
+                        {model.contextLimit !== '-' && (
+                          <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                            {model.contextLimit}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-0.5 truncate">{model.description}</p>
+                    </div>
+
+                    {/* Customer count */}
+                    <button
+                      onClick={() => model.enabledCustomerIds.length > 0 && openCustomerDialog(model)}
+                      className={cn(
+                        "flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs transition-colors shrink-0",
+                        model.enabledCustomerIds.length > 0
+                          ? "text-primary hover:bg-primary/10 cursor-pointer"
+                          : "text-muted-foreground cursor-default"
+                      )}
+                    >
+                      <Users className="w-3.5 h-3.5" />
+                      <span className="font-medium">{model.enabledCustomerIds.length}</span>
+                      <span className="text-muted-foreground">客户</span>
+                      {model.enabledCustomerIds.length > 0 && (
+                        <ChevronRight className="w-3 h-3 text-muted-foreground" />
+                      )}
+                    </button>
+                  </div>
+
+                  {/* Toggle */}
+                  <Switch
+                    checked={model.enabled}
+                    onCheckedChange={() => handleToggleModel(model.id)}
+                    className="ml-4"
+                  />
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+
+      {filteredModels.length === 0 && (
+        <Card className="enterprise-card">
+          <CardContent className="p-12 text-center">
+            <p className="text-muted-foreground">没有找到匹配的模型</p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Customer Detail Dialog */}
+      <Dialog open={customerDialogOpen} onOpenChange={setCustomerDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base">
+              <Cpu className="w-4 h-4" />
+              {selectedModel?.name}
+              <span className="text-muted-foreground font-normal">— 已开通客户</span>
+              <Badge variant="secondary" className="ml-1">{selectedModel?.enabledCustomerIds.length}</Badge>
+            </DialogTitle>
+          </DialogHeader>
+          <div className="mt-2">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>客户名称</TableHead>
+                  <TableHead>客户识别码</TableHead>
+                  <TableHead>订阅方案</TableHead>
+                  <TableHead>订阅状态</TableHead>
+                  <TableHead className="text-right">活跃用户</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {selectedModel?.enabledCustomerIds.map(cid => {
+                  const customer = getCustomerInfo(cid);
+                  if (!customer) return null;
+                  return (
+                    <TableRow key={cid}>
+                      <TableCell className="font-medium">{customer.companyName}</TableCell>
+                      <TableCell>
+                        <code className="text-xs bg-muted px-1.5 py-0.5 rounded">{customer.customerCode}</code>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={customer.subscription.plan === 'professional' ? 'default' : 'secondary'} className="text-xs">
+                          {customer.subscription.plan === 'professional' ? '专业版' : '基础版'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className={cn("text-xs",
+                          customer.subscription.status === 'active' && 'border-emerald-300 text-emerald-600 bg-emerald-50',
+                          customer.subscription.status === 'trial' && 'border-amber-300 text-amber-600 bg-amber-50',
+                          customer.subscription.status === 'expired' && 'border-red-300 text-red-600 bg-red-50',
+                        )}>
+                          {customer.subscription.status === 'active' ? '正常' : customer.subscription.status === 'trial' ? '试用' : '已过期'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">{customer.usage.activeUsers}</TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
