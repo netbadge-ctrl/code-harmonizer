@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Search, Cpu, Eye, Users, ChevronRight, Globe, ToggleLeft } from 'lucide-react';
+import { Search, Cpu, Eye, Users, ChevronRight, Globe, ToggleLeft, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { mockCustomers } from '@/data/adminMockData';
 
@@ -20,27 +20,29 @@ interface GlobalModel {
   contextLimit: string;
   enabled: boolean;
   enabledCustomerIds: string[];
+  lastCalledAt: string | null;
+  customerLastCalled: Record<string, string | null>;
 }
 
 const allGlobalModels: GlobalModel[] = [
   // 文本模型
-  { id: 'gpt4-turbo', name: 'GPT-4 Turbo', provider: 'OpenAI', type: 'text', typeLabel: '文本模型', description: '最强文本生成能力，支持128K上下文', contextLimit: '128K', enabled: true, enabledCustomerIds: ['cust_001', 'cust_005'] },
-  { id: 'gpt4o', name: 'GPT-4o', provider: 'OpenAI', type: 'text', typeLabel: '文本模型', description: '高性能多模态模型，速度与能力平衡', contextLimit: '128K', enabled: true, enabledCustomerIds: ['cust_001', 'cust_002', 'cust_004', 'cust_005', 'cust_006'] },
-  { id: 'gpt4o-mini', name: 'GPT-4o Mini', provider: 'OpenAI', type: 'text', typeLabel: '文本模型', description: '轻量高效模型，适合日常任务', contextLimit: '128K', enabled: true, enabledCustomerIds: ['cust_001', 'cust_002', 'cust_003', 'cust_004', 'cust_005'] },
-  { id: 'claude35-sonnet', name: 'Claude 3.5 Sonnet', provider: 'Anthropic', type: 'text', typeLabel: '文本模型', description: '强大的推理和编程能力', contextLimit: '200K', enabled: true, enabledCustomerIds: ['cust_001', 'cust_002', 'cust_005', 'cust_006'] },
-  { id: 'claude3-opus', name: 'Claude 3 Opus', provider: 'Anthropic', type: 'text', typeLabel: '文本模型', description: '最强推理能力，复杂任务首选', contextLimit: '200K', enabled: true, enabledCustomerIds: ['cust_001', 'cust_005'] },
-  { id: 'claude3-haiku', name: 'Claude 3 Haiku', provider: 'Anthropic', type: 'text', typeLabel: '文本模型', description: '极速响应，轻量任务优选', contextLimit: '200K', enabled: true, enabledCustomerIds: ['cust_005'] },
-  { id: 'gemini-pro', name: 'Gemini Pro', provider: 'Google', type: 'text', typeLabel: '文本模型', description: '多模态理解与生成能力', contextLimit: '1M', enabled: true, enabledCustomerIds: ['cust_001', 'cust_005'] },
-  { id: 'ernie4', name: 'ERNIE-4.0', provider: '百度', type: 'text', typeLabel: '文本模型', description: '文心一言，中文理解能力出众', contextLimit: '128K', enabled: true, enabledCustomerIds: ['cust_001', 'cust_002', 'cust_003', 'cust_005', 'cust_006'] },
-  { id: 'qwen-max', name: 'Qwen-Max', provider: '阿里巴巴', type: 'text', typeLabel: '文本模型', description: '通义千问旗舰模型', contextLimit: '128K', enabled: true, enabledCustomerIds: ['cust_001', 'cust_002', 'cust_005', 'cust_006'] },
-  { id: 'qwen-turbo', name: 'Qwen-Turbo', provider: '阿里巴巴', type: 'text', typeLabel: '文本模型', description: '通义千问高速版', contextLimit: '128K', enabled: true, enabledCustomerIds: ['cust_003', 'cust_005'] },
-  { id: 'deepseek-v3', name: 'DeepSeek V3', provider: 'DeepSeek', type: 'text', typeLabel: '文本模型', description: '代码理解与生成专家', contextLimit: '128K', enabled: true, enabledCustomerIds: ['cust_001', 'cust_005'] },
-  { id: 'kimi-k2', name: 'Kimi K2', provider: 'Moonshot', type: 'text', typeLabel: '文本模型', description: '长文本理解与生成，支持200K上下文', contextLimit: '200K', enabled: true, enabledCustomerIds: ['cust_001', 'cust_002', 'cust_005'] },
+  { id: 'gpt4-turbo', name: 'GPT-4 Turbo', provider: 'OpenAI', type: 'text', typeLabel: '文本模型', description: '最强文本生成能力，支持128K上下文', contextLimit: '128K', enabled: true, enabledCustomerIds: ['cust_001', 'cust_005'], lastCalledAt: '2026-03-02 14:32', customerLastCalled: { 'cust_001': '2026-03-02 14:32', 'cust_005': '2026-03-01 09:15' } },
+  { id: 'gpt4o', name: 'GPT-4o', provider: 'OpenAI', type: 'text', typeLabel: '文本模型', description: '高性能多模态模型，速度与能力平衡', contextLimit: '128K', enabled: true, enabledCustomerIds: ['cust_001', 'cust_002', 'cust_004', 'cust_005', 'cust_006'], lastCalledAt: '2026-03-02 15:10', customerLastCalled: { 'cust_001': '2026-03-02 15:10', 'cust_002': '2026-03-02 11:45', 'cust_004': '2026-02-28 16:20', 'cust_005': '2026-03-01 20:30', 'cust_006': '2026-02-27 08:50' } },
+  { id: 'gpt4o-mini', name: 'GPT-4o Mini', provider: 'OpenAI', type: 'text', typeLabel: '文本模型', description: '轻量高效模型，适合日常任务', contextLimit: '128K', enabled: true, enabledCustomerIds: ['cust_001', 'cust_002', 'cust_003', 'cust_004', 'cust_005'], lastCalledAt: '2026-03-02 16:05', customerLastCalled: { 'cust_001': '2026-03-02 16:05', 'cust_002': '2026-03-02 10:30', 'cust_003': '2026-02-25 14:10', 'cust_004': '2026-03-01 09:00', 'cust_005': '2026-03-02 12:45' } },
+  { id: 'claude35-sonnet', name: 'Claude 3.5 Sonnet', provider: 'Anthropic', type: 'text', typeLabel: '文本模型', description: '强大的推理和编程能力', contextLimit: '200K', enabled: true, enabledCustomerIds: ['cust_001', 'cust_002', 'cust_005', 'cust_006'], lastCalledAt: '2026-03-02 13:20', customerLastCalled: { 'cust_001': '2026-03-02 13:20', 'cust_002': '2026-03-01 17:40', 'cust_005': '2026-02-28 22:10', 'cust_006': '2026-02-26 11:30' } },
+  { id: 'claude3-opus', name: 'Claude 3 Opus', provider: 'Anthropic', type: 'text', typeLabel: '文本模型', description: '最强推理能力，复杂任务首选', contextLimit: '200K', enabled: true, enabledCustomerIds: ['cust_001', 'cust_005'], lastCalledAt: '2026-02-28 19:50', customerLastCalled: { 'cust_001': '2026-02-28 19:50', 'cust_005': '2026-02-27 15:30' } },
+  { id: 'claude3-haiku', name: 'Claude 3 Haiku', provider: 'Anthropic', type: 'text', typeLabel: '文本模型', description: '极速响应，轻量任务优选', contextLimit: '200K', enabled: true, enabledCustomerIds: ['cust_005'], lastCalledAt: '2026-03-01 08:15', customerLastCalled: { 'cust_005': '2026-03-01 08:15' } },
+  { id: 'gemini-pro', name: 'Gemini Pro', provider: 'Google', type: 'text', typeLabel: '文本模型', description: '多模态理解与生成能力', contextLimit: '1M', enabled: true, enabledCustomerIds: ['cust_001', 'cust_005'], lastCalledAt: '2026-03-02 10:00', customerLastCalled: { 'cust_001': '2026-03-02 10:00', 'cust_005': '2026-02-28 14:20' } },
+  { id: 'ernie4', name: 'ERNIE-4.0', provider: '百度', type: 'text', typeLabel: '文本模型', description: '文心一言，中文理解能力出众', contextLimit: '128K', enabled: true, enabledCustomerIds: ['cust_001', 'cust_002', 'cust_003', 'cust_005', 'cust_006'], lastCalledAt: '2026-03-02 15:55', customerLastCalled: { 'cust_001': '2026-03-02 15:55', 'cust_002': '2026-03-02 09:30', 'cust_003': '2026-02-24 16:40', 'cust_005': '2026-03-01 18:20', 'cust_006': '2026-02-25 10:10' } },
+  { id: 'qwen-max', name: 'Qwen-Max', provider: '阿里巴巴', type: 'text', typeLabel: '文本模型', description: '通义千问旗舰模型', contextLimit: '128K', enabled: true, enabledCustomerIds: ['cust_001', 'cust_002', 'cust_005', 'cust_006'], lastCalledAt: '2026-03-02 14:10', customerLastCalled: { 'cust_001': '2026-03-02 14:10', 'cust_002': '2026-03-01 20:15', 'cust_005': '2026-02-28 11:30', 'cust_006': '2026-02-27 09:45' } },
+  { id: 'qwen-turbo', name: 'Qwen-Turbo', provider: '阿里巴巴', type: 'text', typeLabel: '文本模型', description: '通义千问高速版', contextLimit: '128K', enabled: true, enabledCustomerIds: ['cust_003', 'cust_005'], lastCalledAt: '2026-03-01 22:30', customerLastCalled: { 'cust_003': '2026-02-26 13:50', 'cust_005': '2026-03-01 22:30' } },
+  { id: 'deepseek-v3', name: 'DeepSeek V3', provider: 'DeepSeek', type: 'text', typeLabel: '文本模型', description: '代码理解与生成专家', contextLimit: '128K', enabled: true, enabledCustomerIds: ['cust_001', 'cust_005'], lastCalledAt: '2026-03-02 11:25', customerLastCalled: { 'cust_001': '2026-03-02 11:25', 'cust_005': '2026-02-28 17:40' } },
+  { id: 'kimi-k2', name: 'Kimi K2', provider: 'Moonshot', type: 'text', typeLabel: '文本模型', description: '长文本理解与生成，支持200K上下文', contextLimit: '200K', enabled: true, enabledCustomerIds: ['cust_001', 'cust_002', 'cust_005'], lastCalledAt: '2026-03-02 09:40', customerLastCalled: { 'cust_001': '2026-03-02 09:40', 'cust_002': '2026-03-01 14:55', 'cust_005': '2026-02-27 21:10' } },
   // 视觉理解模型
-  { id: 'gpt4-vision', name: 'GPT-4 Vision', provider: 'OpenAI', type: 'vision', typeLabel: '视觉理解', description: '图像理解与分析能力', contextLimit: '128K', enabled: true, enabledCustomerIds: ['cust_001', 'cust_005'] },
-  { id: 'qwen-vl-max', name: 'Qwen-VL-Max', provider: '阿里巴巴', type: 'vision', typeLabel: '视觉理解', description: '通义千问视觉语言模型', contextLimit: '32K', enabled: false, enabledCustomerIds: [] },
-  { id: 'gemini-vision', name: 'Gemini Pro Vision', provider: 'Google', type: 'vision', typeLabel: '视觉理解', description: '高精度图像识别与理解', contextLimit: '1M', enabled: true, enabledCustomerIds: ['cust_001'] },
-  { id: 'claude3-vision', name: 'Claude 3 Vision', provider: 'Anthropic', type: 'vision', typeLabel: '视觉理解', description: '多图理解与跨图推理', contextLimit: '200K', enabled: false, enabledCustomerIds: [] },
+  { id: 'gpt4-vision', name: 'GPT-4 Vision', provider: 'OpenAI', type: 'vision', typeLabel: '视觉理解', description: '图像理解与分析能力', contextLimit: '128K', enabled: true, enabledCustomerIds: ['cust_001', 'cust_005'], lastCalledAt: '2026-03-01 16:45', customerLastCalled: { 'cust_001': '2026-03-01 16:45', 'cust_005': '2026-02-28 10:30' } },
+  { id: 'qwen-vl-max', name: 'Qwen-VL-Max', provider: '阿里巴巴', type: 'vision', typeLabel: '视觉理解', description: '通义千问视觉语言模型', contextLimit: '32K', enabled: false, enabledCustomerIds: [], lastCalledAt: null, customerLastCalled: {} },
+  { id: 'gemini-vision', name: 'Gemini Pro Vision', provider: 'Google', type: 'vision', typeLabel: '视觉理解', description: '高精度图像识别与理解', contextLimit: '1M', enabled: true, enabledCustomerIds: ['cust_001'], lastCalledAt: '2026-02-27 13:20', customerLastCalled: { 'cust_001': '2026-02-27 13:20' } },
+  { id: 'claude3-vision', name: 'Claude 3 Vision', provider: 'Anthropic', type: 'vision', typeLabel: '视觉理解', description: '多图理解与跨图推理', contextLimit: '200K', enabled: false, enabledCustomerIds: [], lastCalledAt: null, customerLastCalled: {} },
 ];
 
 const typeIcons: Record<string, React.ReactNode> = {
@@ -215,6 +217,12 @@ export function GlobalModelConfig() {
                       <p className="text-xs text-muted-foreground truncate">{model.description}</p>
                     </div>
 
+                    {/* Last called */}
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground shrink-0 w-[140px]">
+                      <Clock className="w-3.5 h-3.5" />
+                      <span>{model.lastCalledAt || '暂无调用'}</span>
+                    </div>
+
                     {/* Customer count */}
                     <button
                       onClick={() => model.enabledCustomerIds.length > 0 && openCustomerDialog(model)}
@@ -274,35 +282,40 @@ export function GlobalModelConfig() {
                   <TableHead>客户识别码</TableHead>
                   <TableHead>订阅方案</TableHead>
                   <TableHead>订阅状态</TableHead>
+                  <TableHead>最后调用时间</TableHead>
                   <TableHead className="text-right">活跃用户</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {selectedModel?.enabledCustomerIds.map(cid => {
-                  const customer = getCustomerInfo(cid);
-                  if (!customer) return null;
-                  return (
-                    <TableRow key={cid}>
-                      <TableCell className="font-medium">{customer.companyName}</TableCell>
-                      <TableCell>
-                        <code className="text-xs bg-muted px-1.5 py-0.5 rounded">{customer.customerCode}</code>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={customer.subscription.plan === 'professional' ? 'default' : 'secondary'} className="text-xs">
-                          {customer.subscription.plan === 'professional' ? '专业版' : '基础版'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className={cn("text-xs",
-                          customer.subscription.status === 'active' && 'border-emerald-300 text-emerald-600 bg-emerald-50',
-                          customer.subscription.status === 'trial' && 'border-amber-300 text-amber-600 bg-amber-50',
-                          customer.subscription.status === 'expired' && 'border-red-300 text-red-600 bg-red-50',
-                        )}>
-                          {customer.subscription.status === 'active' ? '正常' : customer.subscription.status === 'trial' ? '试用' : '已过期'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">{customer.usage.activeUsers}</TableCell>
-                    </TableRow>
+                 </TableRow>
+               </TableHeader>
+               <TableBody>
+                 {selectedModel?.enabledCustomerIds.map(cid => {
+                   const customer = getCustomerInfo(cid);
+                   if (!customer) return null;
+                   const lastCalled = selectedModel.customerLastCalled[cid];
+                   return (
+                     <TableRow key={cid}>
+                       <TableCell className="font-medium">{customer.companyName}</TableCell>
+                       <TableCell>
+                         <code className="text-xs bg-muted px-1.5 py-0.5 rounded">{customer.customerCode}</code>
+                       </TableCell>
+                       <TableCell>
+                         <Badge variant={customer.subscription.plan === 'professional' ? 'default' : 'secondary'} className="text-xs">
+                           {customer.subscription.plan === 'professional' ? '专业版' : '基础版'}
+                         </Badge>
+                       </TableCell>
+                       <TableCell>
+                         <Badge variant="outline" className={cn("text-xs",
+                           customer.subscription.status === 'active' && 'border-emerald-300 text-emerald-600 bg-emerald-50',
+                           customer.subscription.status === 'trial' && 'border-amber-300 text-amber-600 bg-amber-50',
+                           customer.subscription.status === 'expired' && 'border-red-300 text-red-600 bg-red-50',
+                         )}>
+                           {customer.subscription.status === 'active' ? '正常' : customer.subscription.status === 'trial' ? '试用' : '已过期'}
+                         </Badge>
+                       </TableCell>
+                       <TableCell>
+                         <span className="text-xs text-muted-foreground">{lastCalled || '暂无调用'}</span>
+                       </TableCell>
+                       <TableCell className="text-right">{customer.usage.activeUsers}</TableCell>
+                     </TableRow>
                   );
                 })}
               </TableBody>
