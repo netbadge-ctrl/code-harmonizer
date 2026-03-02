@@ -113,42 +113,6 @@ export function GlobalModelConfig() {
 
   return (
     <div className="space-y-4">
-      {/* Header Stats */}
-      <div className="grid grid-cols-3 gap-4">
-        <Card className="enterprise-card">
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-              <Globe className="w-5 h-5 text-primary" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-foreground">{models.length}</p>
-              <p className="text-xs text-muted-foreground">模型总数</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="enterprise-card">
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-emerald-500/10 flex items-center justify-center">
-              <ToggleLeft className="w-5 h-5 text-emerald-600" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-foreground">{enabledCount} <span className="text-sm font-normal text-muted-foreground">/ {models.length}</span></p>
-              <p className="text-xs text-muted-foreground">已启用模型</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="enterprise-card">
-          <CardContent className="p-4 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
-              <Users className="w-5 h-5 text-blue-600" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-foreground">{totalCustomersUsingModels}</p>
-              <p className="text-xs text-muted-foreground">使用中客户数</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
 
       {/* Toolbar */}
       <Card className="enterprise-card">
@@ -182,7 +146,7 @@ export function GlobalModelConfig() {
               </select>
             </div>
             <div className="text-xs text-muted-foreground">
-              共 {filteredModels.length} 个模型
+              已启用 {enabledCount}/{models.length} 个模型
             </div>
           </div>
         </CardContent>
@@ -265,7 +229,7 @@ export function GlobalModelConfig() {
 
       {/* Customer Detail Dialog */}
       <Dialog open={customerDialogOpen} onOpenChange={setCustomerDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-4xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-base">
               <Cpu className="w-4 h-4" />
