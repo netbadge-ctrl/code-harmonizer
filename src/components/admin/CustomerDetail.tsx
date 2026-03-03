@@ -681,7 +681,7 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                               <div className="flex items-center gap-2">
                                 <span className="text-sm font-medium">{model.name}</span>
                                 {isDefault && (
-                                  <Badge variant="outline" className="text-[10px] border-emerald-300 text-emerald-600 bg-emerald-50">默认</Badge>
+                                  <Badge variant="outline" className="text-[10px] border-emerald-300 text-emerald-600 bg-emerald-50">默认可见</Badge>
                                 )}
                               </div>
                             </TableCell>
