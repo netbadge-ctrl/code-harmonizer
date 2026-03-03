@@ -118,6 +118,7 @@ export function GlobalModelConfig() {
 
   return (
     <div className="space-y-4">
+      <p className="text-sm text-muted-foreground">配置每个模型开放可用的客户及所有路账户默认可用的模型。可用不代表默认开通</p>
 
       {/* Toolbar */}
       <Card className="enterprise-card">
