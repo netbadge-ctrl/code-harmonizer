@@ -648,62 +648,76 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                 </select>
               </div>
               {/* 模型列表 */}
-              <div className="flex-1 overflow-y-auto divide-y divide-border">
-                {(() => {
-                  const filtered = globalEnabledModels.filter(m => {
-                    const matchesSearch = m.name.toLowerCase().includes(modelConfigSearch.toLowerCase());
-                    const matchesType = modelConfigTypeFilter === 'all' || m.type === modelConfigTypeFilter;
-                    return matchesSearch && matchesType;
-                  });
-                  const grouped = filtered.reduce<Record<string, typeof globalEnabledModels>>((acc, m) => {
-                    if (!acc[m.typeLabel]) acc[m.typeLabel] = [];
-                    acc[m.typeLabel].push(m);
-                    return acc;
-                  }, {});
-                  return Object.entries(grouped).map(([typeLabel, models]) => (
-                    <div key={typeLabel} className="py-2">
-                      <div className="flex items-center gap-2 px-1 py-1.5 text-xs font-medium text-muted-foreground">
-                        {models[0].type === 'text' ? <Cpu className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                        {typeLabel}
-                        <Badge variant="secondary" className="text-xs font-normal">{models.length}</Badge>
-                      </div>
-                      {models.map(model => {
+              <div className="flex-1 overflow-y-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[200px]">模型名称</TableHead>
+                      <TableHead className="w-[100px]">模型类型</TableHead>
+                      <TableHead className="w-[100px]">开通状态</TableHead>
+                      <TableHead className="w-[80px] text-right">可见</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {(() => {
+                      const filtered = globalEnabledModels.filter(m => {
+                        const matchesSearch = m.name.toLowerCase().includes(modelConfigSearch.toLowerCase());
+                        const matchesType = modelConfigTypeFilter === 'all' || m.type === modelConfigTypeFilter;
+                        return matchesSearch && matchesType;
+                      });
+                      // 按模型类型（文本优先）+ 模型名称排序
+                      const sorted = [...filtered].sort((a, b) => {
+                        const typeOrder = a.type === b.type ? 0 : a.type === 'text' ? -1 : 1;
+                        if (typeOrder !== 0) return typeOrder;
+                        return a.name.localeCompare(b.name);
+                      });
+                      return sorted.map(model => {
                         const isEnabled = customerSelfEnabledModelIds.includes(model.id);
                         const isDefault = defaultEnabledModelIds.includes(model.id);
                         const isVisible = isDefault || (customerModelConfig[model.id] || false);
                         return (
-                          <div key={model.id} className="flex items-center justify-between px-2 py-2.5 hover:bg-muted/30 rounded-lg transition-colors">
-                            <div className="flex items-center gap-3">
-                              <span className="text-sm font-medium text-foreground">{model.name}</span>
-                              {isDefault && (
-                                <Badge variant="outline" className="text-[10px] border-emerald-300 text-emerald-600 bg-emerald-50">默认</Badge>
-                              )}
+                          <TableRow key={model.id}>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-medium">{model.name}</span>
+                                {isDefault && (
+                                  <Badge variant="outline" className="text-[10px] border-emerald-300 text-emerald-600 bg-emerald-50">默认</Badge>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="secondary" className="text-xs font-normal">
+                                {model.type === 'text' ? '文本模型' : '视觉理解'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
                               {isEnabled ? (
                                 <Badge variant="outline" className="text-[10px] border-blue-300 text-blue-600 bg-blue-50">已开通</Badge>
                               ) : (
                                 <Badge variant="outline" className="text-[10px] border-muted-foreground/30 text-muted-foreground">未开通</Badge>
                               )}
-                            </div>
-                            <Switch
-                              checked={isVisible}
-                              disabled={isDefault}
-                              onCheckedChange={(checked) => {
-                                if (!isDefault) {
-                                  if (!checked && isEnabled) {
-                                    // 关闭已开通模型的可见性，需要二次确认
-                                    setConfirmDisableModel({ id: model.id, name: model.name });
-                                  } else {
-                                    setCustomerModelConfig(prev => ({ ...prev, [model.id]: checked }));
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <Switch
+                                checked={isVisible}
+                                disabled={isDefault}
+                                onCheckedChange={(checked) => {
+                                  if (!isDefault) {
+                                    if (!checked && isEnabled) {
+                                      setConfirmDisableModel({ id: model.id, name: model.name });
+                                    } else {
+                                      setCustomerModelConfig(prev => ({ ...prev, [model.id]: checked }));
+                                    }
                                   }
-                                }
-                              }}
-                            />
-                          </div>
+                                }}
+                              />
+                            </TableCell>
+                          </TableRow>
                         );
-                      })}
-                    </div>
-                  ));
-                })()}
+                      });
+                    })()}
+                  </TableBody>
+                </Table>
               </div>
             </DialogContent>
           </Dialog>
