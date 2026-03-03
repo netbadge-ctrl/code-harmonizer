@@ -61,7 +61,7 @@ export function GlobalModelConfig() {
   const [models, setModels] = useState<GlobalModel[]>(allGlobalModels);
   const [searchQuery, setSearchQuery] = useState('');
   const [typeFilter, setTypeFilter] = useState<string>('all');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  
   const [selectedModel, setSelectedModel] = useState<GlobalModel | null>(null);
   const [customerDialogOpen, setCustomerDialogOpen] = useState(false);
 
@@ -87,10 +87,7 @@ export function GlobalModelConfig() {
     const matchesSearch = m.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       m.provider.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesType = typeFilter === 'all' || m.type === typeFilter;
-    const matchesStatus = statusFilter === 'all' || 
-      (statusFilter === 'enabled' && m.enabled) || 
-      (statusFilter === 'disabled' && !m.enabled);
-    return matchesSearch && matchesType && matchesStatus;
+    return matchesSearch && matchesType;
   });
 
   // Group by type
@@ -143,15 +140,6 @@ export function GlobalModelConfig() {
               >
                 {typeOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
               </select>
-              <select
-                value={statusFilter}
-                onChange={e => setStatusFilter(e.target.value)}
-                className="h-9 px-3 rounded-md border border-input bg-background text-sm"
-              >
-                <option value="all">全部状态</option>
-                <option value="enabled">已启用</option>
-                <option value="disabled">未启用</option>
-              </select>
             </div>
             <div className="text-xs text-muted-foreground">
               已启用 {enabledCount}/{models.length} 个模型
@@ -171,6 +159,14 @@ export function GlobalModelConfig() {
             </CardTitle>
           </CardHeader>
           <CardContent className="px-2 pb-2">
+            {/* Table header */}
+            <div className="flex items-center px-3 py-2 text-xs font-medium text-muted-foreground border-b border-border">
+              <div className="w-[180px] shrink-0">模型名称</div>
+              <div className="flex-1 min-w-0">描述</div>
+              <div className="w-[140px] shrink-0">最后调用时间</div>
+              <div className="w-[120px] shrink-0">模型可用客户</div>
+              <div className="w-[110px] shrink-0 text-right">客户默认可用</div>
+            </div>
             <div className="divide-y divide-border">
               {typeModels.map(model => (
                 <div key={model.id} className="flex items-center justify-between px-3 py-3 hover:bg-muted/30 rounded-lg transition-colors">
