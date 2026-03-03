@@ -20,6 +20,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { CustomerDetail as CustomerDetailType } from '@/types/admin';
 import { getCustomerDetail } from '@/data/adminMockData';
 import { cn } from '@/lib/utils';
@@ -124,6 +125,9 @@ const globalEnabledModels = [
 // 默认开启的模型ID
 const defaultEnabledModelIds = ['kimi-25', 'glm-47', 'glm-5'];
 
+// 客户已开通的模型ID（模拟数据：用户自行在控制台开通的模型）
+const customerSelfEnabledModelIds = ['gpt4-turbo', 'gpt4o', 'claude35-sonnet', 'claude3-haiku', 'gemini-pro', 'deepseek-v3', 'kimi-25', 'glm-47', 'glm-5'];
+
 // 20个模型列表（用于使用统计）
 const availableModels = [
   'GPT-4 Turbo', 'GPT-4o', 'GPT-4o Mini', 'Claude 3.5 Sonnet', 'Claude 3 Opus',
@@ -220,6 +224,9 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
   const [modelConfigDialogOpen, setModelConfigDialogOpen] = useState(false);
   const [modelConfigSearch, setModelConfigSearch] = useState('');
   const [modelConfigTypeFilter, setModelConfigTypeFilter] = useState<string>('all');
+
+  // 关闭已开通模型可见性的二次确认
+  const [confirmDisableModel, setConfirmDisableModel] = useState<{ id: string; name: string } | null>(null);
 
   const handlePresetChange = (preset: TimeRangePreset) => {
     setTimeRangePreset(preset);
@@ -660,31 +667,72 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                         {typeLabel}
                         <Badge variant="secondary" className="text-xs font-normal">{models.length}</Badge>
                       </div>
-                      {models.map(model => (
-                        <div key={model.id} className="flex items-center justify-between px-2 py-2.5 hover:bg-muted/30 rounded-lg transition-colors">
-                          <div className="flex items-center gap-3">
-                            <span className="text-sm font-medium text-foreground">{model.name}</span>
-                            {defaultEnabledModelIds.includes(model.id) && (
-                              <Badge variant="outline" className="text-[10px] border-emerald-300 text-emerald-600 bg-emerald-50">默认</Badge>
-                            )}
+                      {models.map(model => {
+                        const isEnabled = customerSelfEnabledModelIds.includes(model.id);
+                        const isDefault = defaultEnabledModelIds.includes(model.id);
+                        const isVisible = isDefault || (customerModelConfig[model.id] || false);
+                        return (
+                          <div key={model.id} className="flex items-center justify-between px-2 py-2.5 hover:bg-muted/30 rounded-lg transition-colors">
+                            <div className="flex items-center gap-3">
+                              <span className="text-sm font-medium text-foreground">{model.name}</span>
+                              {isDefault && (
+                                <Badge variant="outline" className="text-[10px] border-emerald-300 text-emerald-600 bg-emerald-50">默认</Badge>
+                              )}
+                              {isEnabled ? (
+                                <Badge variant="outline" className="text-[10px] border-blue-300 text-blue-600 bg-blue-50">已开通</Badge>
+                              ) : (
+                                <Badge variant="outline" className="text-[10px] border-muted-foreground/30 text-muted-foreground">未开通</Badge>
+                              )}
+                            </div>
+                            <Switch
+                              checked={isVisible}
+                              disabled={isDefault}
+                              onCheckedChange={(checked) => {
+                                if (!isDefault) {
+                                  if (!checked && isEnabled) {
+                                    // 关闭已开通模型的可见性，需要二次确认
+                                    setConfirmDisableModel({ id: model.id, name: model.name });
+                                  } else {
+                                    setCustomerModelConfig(prev => ({ ...prev, [model.id]: checked }));
+                                  }
+                                }
+                              }}
+                            />
                           </div>
-                          <Switch
-                            checked={defaultEnabledModelIds.includes(model.id) || (customerModelConfig[model.id] || false)}
-                            disabled={defaultEnabledModelIds.includes(model.id)}
-                            onCheckedChange={(checked) => {
-                              if (!defaultEnabledModelIds.includes(model.id)) {
-                                setCustomerModelConfig(prev => ({ ...prev, [model.id]: checked }));
-                              }
-                            }}
-                          />
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   ));
                 })()}
               </div>
             </DialogContent>
           </Dialog>
+
+          {/* 关闭已开通模型可见性的二次确认 */}
+          <AlertDialog open={!!confirmDisableModel} onOpenChange={(open) => { if (!open) setConfirmDisableModel(null); }}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>确认关闭模型可见性</AlertDialogTitle>
+                <AlertDialogDescription>
+                  模型 <span className="font-semibold text-foreground">{confirmDisableModel?.name}</span> 当前处于已开通状态。关闭可见性后，该用户将无法继续使用此模型。是否确认关闭？
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>取消</AlertDialogCancel>
+                <AlertDialogAction
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  onClick={() => {
+                    if (confirmDisableModel) {
+                      setCustomerModelConfig(prev => ({ ...prev, [confirmDisableModel.id]: false }));
+                      setConfirmDisableModel(null);
+                    }
+                  }}
+                >
+                  确认关闭
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </TabsContent>
 
         <TabsContent value="usage" className="space-y-6">
