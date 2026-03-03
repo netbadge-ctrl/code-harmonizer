@@ -216,7 +216,7 @@ export function GlobalModelConfig() {
                           setModels(prev => prev.map(m => m.id === model.id ? { ...m, defaultForCustomer: !!checked } : m));
                         }}
                       />
-                      <span className="text-xs text-muted-foreground">客户默认开通</span>
+                      <span className="text-xs text-muted-foreground">客户默认可用</span>
                     </label>
                   </div>
                 </div>
