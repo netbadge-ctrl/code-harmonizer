@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Search, Cpu, Eye, Users, ChevronRight, Globe, ToggleLeft, Clock } from 'lucide-react';
+import { Search, Cpu, Eye, Users, ChevronRight, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { mockCustomers } from '@/data/adminMockData';
 
@@ -64,16 +64,22 @@ export function GlobalModelConfig() {
   const [selectedModel, setSelectedModel] = useState<GlobalModel | null>(null);
   const [customerDialogOpen, setCustomerDialogOpen] = useState(false);
 
-  const handleToggleModel = (modelId: string) => {
-    setModels(prev => prev.map(m => m.id === modelId ? { ...m, enabled: !m.enabled } : m));
-  };
-
-  const handleEnableAll = () => {
-    setModels(prev => prev.map(m => ({ ...m, enabled: true })));
-  };
-
-  const handleDisableAll = () => {
-    setModels(prev => prev.map(m => ({ ...m, enabled: false })));
+  const handleToggleCustomerForModel = (modelId: string, customerId: string, enabled: boolean) => {
+    setModels(prev => prev.map(m => {
+      if (m.id !== modelId) return m;
+      const newIds = enabled
+        ? [...m.enabledCustomerIds, customerId]
+        : m.enabledCustomerIds.filter(id => id !== customerId);
+      return { ...m, enabledCustomerIds: newIds };
+    }));
+    // Also update selectedModel if it's the current one
+    setSelectedModel(prev => {
+      if (!prev || prev.id !== modelId) return prev;
+      const newIds = enabled
+        ? [...prev.enabledCustomerIds, customerId]
+        : prev.enabledCustomerIds.filter(id => id !== customerId);
+      return { ...prev, enabledCustomerIds: newIds };
+    });
   };
 
   const filteredModels = models.filter(m => {
@@ -190,38 +196,26 @@ export function GlobalModelConfig() {
 
                     {/* Customer count */}
                     <button
-                      onClick={() => model.enabledCustomerIds.length > 0 && openCustomerDialog(model)}
-                      className={cn(
-                        "flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs transition-colors shrink-0",
-                        model.enabledCustomerIds.length > 0
-                          ? "text-primary hover:bg-primary/10 cursor-pointer"
-                          : "text-muted-foreground cursor-default"
-                      )}
+                      onClick={() => openCustomerDialog(model)}
+                      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs transition-colors text-primary hover:bg-primary/10 cursor-pointer shrink-0"
                     >
                       <Users className="w-3.5 h-3.5" />
                       <span className="font-medium">{model.enabledCustomerIds.length}</span>
                       <span className="text-muted-foreground">客户</span>
-                      {model.enabledCustomerIds.length > 0 && (
-                        <ChevronRight className="w-3 h-3 text-muted-foreground" />
-                      )}
+                      <ChevronRight className="w-3 h-3 text-muted-foreground" />
                     </button>
                   </div>
 
-                  {/* Toggle */}
+                  {/* Default for customer checkbox */}
                   <div className="flex items-center gap-3 ml-4">
-                    <Switch
-                      checked={model.enabled}
-                      onCheckedChange={() => handleToggleModel(model.id)}
-                    />
                     <label className="flex items-center gap-1.5 cursor-pointer select-none">
                       <Checkbox
                         checked={model.defaultForCustomer}
                         onCheckedChange={(checked) => {
                           setModels(prev => prev.map(m => m.id === model.id ? { ...m, defaultForCustomer: !!checked } : m));
                         }}
-                        disabled={!model.enabled}
                       />
-                      <span className={cn("text-xs", model.enabled ? "text-muted-foreground" : "text-muted-foreground/50")}>客户默认开通</span>
+                      <span className="text-xs text-muted-foreground">客户默认开通</span>
                     </label>
                   </div>
                 </div>
@@ -246,8 +240,8 @@ export function GlobalModelConfig() {
             <DialogTitle className="flex items-center gap-2 text-base">
               <Cpu className="w-4 h-4" />
               {selectedModel?.name}
-              <span className="text-muted-foreground font-normal">— 已开通客户</span>
-              <Badge variant="secondary" className="ml-1">{selectedModel?.enabledCustomerIds.length}</Badge>
+              <span className="text-muted-foreground font-normal">— 客户开通管理</span>
+              <Badge variant="secondary" className="ml-1">{selectedModel?.enabledCustomerIds.length} 已开通</Badge>
             </DialogTitle>
           </DialogHeader>
           <div className="mt-2">
@@ -259,39 +253,43 @@ export function GlobalModelConfig() {
                   <TableHead>订阅方案</TableHead>
                   <TableHead>订阅状态</TableHead>
                   <TableHead>最后调用时间</TableHead>
-                  <TableHead className="text-right">活跃用户</TableHead>
-                 </TableRow>
-               </TableHeader>
-               <TableBody>
-                 {selectedModel?.enabledCustomerIds.map(cid => {
-                   const customer = getCustomerInfo(cid);
-                   if (!customer) return null;
-                   const lastCalled = selectedModel.customerLastCalled[cid];
-                   return (
-                     <TableRow key={cid}>
-                       <TableCell className="font-medium">{customer.companyName}</TableCell>
-                       <TableCell>
-                         <code className="text-xs bg-muted px-1.5 py-0.5 rounded">{customer.customerCode}</code>
-                       </TableCell>
-                       <TableCell>
-                         <Badge variant={customer.subscription.plan === 'professional' ? 'default' : 'secondary'} className="text-xs">
-                           {customer.subscription.plan === 'professional' ? '专业版' : '基础版'}
-                         </Badge>
-                       </TableCell>
-                       <TableCell>
-                         <Badge variant="outline" className={cn("text-xs",
-                           customer.subscription.status === 'active' && 'border-emerald-300 text-emerald-600 bg-emerald-50',
-                           customer.subscription.status === 'trial' && 'border-amber-300 text-amber-600 bg-amber-50',
-                           customer.subscription.status === 'expired' && 'border-red-300 text-red-600 bg-red-50',
-                         )}>
-                           {customer.subscription.status === 'active' ? '正常' : customer.subscription.status === 'trial' ? '试用' : '已过期'}
-                         </Badge>
-                       </TableCell>
-                       <TableCell>
-                         <span className="text-xs text-muted-foreground">{lastCalled || '暂无调用'}</span>
-                       </TableCell>
-                       <TableCell className="text-right">{customer.usage.activeUsers}</TableCell>
-                     </TableRow>
+                  <TableHead className="text-right">开通状态</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {mockCustomers.map(customer => {
+                  const isEnabled = selectedModel?.enabledCustomerIds.includes(customer.id) ?? false;
+                  const lastCalled = selectedModel?.customerLastCalled[customer.id];
+                  return (
+                    <TableRow key={customer.id}>
+                      <TableCell className="font-medium">{customer.companyName}</TableCell>
+                      <TableCell>
+                        <code className="text-xs bg-muted px-1.5 py-0.5 rounded">{customer.customerCode}</code>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={customer.subscription.plan === 'professional' ? 'default' : 'secondary'} className="text-xs">
+                          {customer.subscription.plan === 'professional' ? '专业版' : '基础版'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className={cn("text-xs",
+                          customer.subscription.status === 'active' && 'border-emerald-300 text-emerald-600 bg-emerald-50',
+                          customer.subscription.status === 'trial' && 'border-amber-300 text-amber-600 bg-amber-50',
+                          customer.subscription.status === 'expired' && 'border-red-300 text-red-600 bg-red-50',
+                        )}>
+                          {customer.subscription.status === 'active' ? '正常' : customer.subscription.status === 'trial' ? '试用' : '已过期'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-xs text-muted-foreground">{lastCalled || '暂无调用'}</span>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Switch
+                          checked={isEnabled}
+                          onCheckedChange={(checked) => selectedModel && handleToggleCustomerForModel(selectedModel.id, customer.id, checked)}
+                        />
+                      </TableCell>
+                    </TableRow>
                   );
                 })}
               </TableBody>
