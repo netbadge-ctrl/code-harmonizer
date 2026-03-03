@@ -14,7 +14,7 @@ const viewConfig: Record<AdminView, { title: string; description: string }> = {
   customerDetail: { title: '客户详情', description: '查看客户详细信息' },
   analytics: { title: '数据看板', description: '查看平台整体使用情况' },
   creditRatio: { title: '积分倍率', description: '配置不同模型的积分消耗倍率' },
-  settings: { title: '模型可用性配置', description: '配置每个模型开放可用的客户及所有路账户默认可用的模型。可用不代表默认开通' },
+  settings: { title: '模型可见性配置', description: '配置每个模型开放可见的客户及所有路账户默认可见的模型。可见不代表默认开通' },
 };
 
 export function USS() {
