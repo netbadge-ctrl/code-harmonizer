@@ -28,12 +28,12 @@ interface GlobalModel {
 }
 const allGlobalModels: GlobalModel[] = [
   // 文本模型
-  { id: 'gpt4-turbo', name: 'GPT-4 Turbo', provider: 'OpenAI', type: 'text', typeLabel: '文本模型', description: '最强文本生成能力，支持128K上下文', contextLimit: '128K', enabled: true, enabledCustomerIds: ['cust_001', 'cust_005'], customerSelfEnabledIds: ['cust_001'], lastCalledAt: '2026-03-02 14:32', customerLastCalled: { 'cust_001': '2026-03-02 14:32', 'cust_005': '2026-03-01 09:15' }, defaultForCustomer: false },
+  { id: 'gpt4-turbo', name: 'GPT-4 Turbo', provider: 'OpenAI', type: 'text', typeLabel: '文本模型', description: '最强文本生成能力，支持128K上下文', contextLimit: '128K', enabled: true, enabledCustomerIds: ['cust_001', 'cust_005'], customerSelfEnabledIds: ['cust_001', 'cust_005'], lastCalledAt: '2026-03-02 14:32', customerLastCalled: { 'cust_001': '2026-03-02 14:32', 'cust_005': '2026-03-01 09:15' }, defaultForCustomer: false },
   { id: 'gpt4o', name: 'GPT-4o', provider: 'OpenAI', type: 'text', typeLabel: '文本模型', description: '高性能多模态模型，速度与能力平衡', contextLimit: '128K', enabled: true, enabledCustomerIds: ['cust_001', 'cust_002', 'cust_004', 'cust_005', 'cust_006'], customerSelfEnabledIds: ['cust_001', 'cust_002', 'cust_005'], lastCalledAt: '2026-03-02 15:10', customerLastCalled: { 'cust_001': '2026-03-02 15:10', 'cust_002': '2026-03-02 11:45', 'cust_004': '2026-02-28 16:20', 'cust_005': '2026-03-01 20:30', 'cust_006': '2026-02-27 08:50' }, defaultForCustomer: false },
   { id: 'gpt4o-mini', name: 'GPT-4o Mini', provider: 'OpenAI', type: 'text', typeLabel: '文本模型', description: '轻量高效模型，适合日常任务', contextLimit: '128K', enabled: true, enabledCustomerIds: ['cust_001', 'cust_002', 'cust_003', 'cust_004', 'cust_005'], customerSelfEnabledIds: ['cust_001', 'cust_002', 'cust_003', 'cust_004'], lastCalledAt: '2026-03-02 16:05', customerLastCalled: { 'cust_001': '2026-03-02 16:05', 'cust_002': '2026-03-02 10:30', 'cust_003': '2026-02-25 14:10', 'cust_004': '2026-03-01 09:00', 'cust_005': '2026-03-02 12:45' }, defaultForCustomer: false },
   { id: 'claude35-sonnet', name: 'Claude 3.5 Sonnet', provider: 'Anthropic', type: 'text', typeLabel: '文本模型', description: '强大的推理和编程能力', contextLimit: '200K', enabled: true, enabledCustomerIds: ['cust_001', 'cust_002', 'cust_005', 'cust_006'], customerSelfEnabledIds: ['cust_001', 'cust_005'], lastCalledAt: '2026-03-02 13:20', customerLastCalled: { 'cust_001': '2026-03-02 13:20', 'cust_002': '2026-03-01 17:40', 'cust_005': '2026-02-28 22:10', 'cust_006': '2026-02-26 11:30' }, defaultForCustomer: false },
   { id: 'claude3-opus', name: 'Claude 3 Opus', provider: 'Anthropic', type: 'text', typeLabel: '文本模型', description: '最强推理能力，复杂任务首选', contextLimit: '200K', enabled: true, enabledCustomerIds: ['cust_001', 'cust_005'], customerSelfEnabledIds: ['cust_001'], lastCalledAt: '2026-02-28 19:50', customerLastCalled: { 'cust_001': '2026-02-28 19:50', 'cust_005': '2026-02-27 15:30' }, defaultForCustomer: false },
-  { id: 'claude3-haiku', name: 'Claude 3 Haiku', provider: 'Anthropic', type: 'text', typeLabel: '文本模型', description: '极速响应，轻量任务优选', contextLimit: '200K', enabled: true, enabledCustomerIds: ['cust_005'], customerSelfEnabledIds: [], lastCalledAt: '2026-03-01 08:15', customerLastCalled: { 'cust_005': '2026-03-01 08:15' }, defaultForCustomer: false },
+  { id: 'claude3-haiku', name: 'Claude 3 Haiku', provider: 'Anthropic', type: 'text', typeLabel: '文本模型', description: '极速响应，轻量任务优选', contextLimit: '200K', enabled: true, enabledCustomerIds: ['cust_005'], customerSelfEnabledIds: ['cust_002', 'cust_005'], lastCalledAt: '2026-03-01 08:15', customerLastCalled: { 'cust_005': '2026-03-01 08:15' }, defaultForCustomer: false },
   { id: 'gemini-pro', name: 'Gemini Pro', provider: 'Google', type: 'text', typeLabel: '文本模型', description: '多模态理解与生成能力', contextLimit: '1M', enabled: true, enabledCustomerIds: ['cust_001', 'cust_005'], customerSelfEnabledIds: ['cust_001'], lastCalledAt: '2026-03-02 10:00', customerLastCalled: { 'cust_001': '2026-03-02 10:00', 'cust_005': '2026-02-28 14:20' }, defaultForCustomer: false },
   { id: 'ernie4', name: 'ERNIE-4.0', provider: '百度', type: 'text', typeLabel: '文本模型', description: '文心一言，中文理解能力出众', contextLimit: '128K', enabled: true, enabledCustomerIds: ['cust_001', 'cust_002', 'cust_003', 'cust_005', 'cust_006'], customerSelfEnabledIds: ['cust_001', 'cust_002', 'cust_003'], lastCalledAt: '2026-03-02 15:55', customerLastCalled: { 'cust_001': '2026-03-02 15:55', 'cust_002': '2026-03-02 09:30', 'cust_003': '2026-02-24 16:40', 'cust_005': '2026-03-01 18:20', 'cust_006': '2026-02-25 10:10' }, defaultForCustomer: false },
   { id: 'qwen-max', name: 'Qwen-Max', provider: '阿里巴巴', type: 'text', typeLabel: '文本模型', description: '通义千问旗舰模型', contextLimit: '128K', enabled: true, enabledCustomerIds: ['cust_001', 'cust_002', 'cust_005', 'cust_006'], customerSelfEnabledIds: ['cust_001', 'cust_002'], lastCalledAt: '2026-03-02 14:10', customerLastCalled: { 'cust_001': '2026-03-02 14:10', 'cust_002': '2026-03-01 20:15', 'cust_005': '2026-02-28 11:30', 'cust_006': '2026-02-27 09:45' }, defaultForCustomer: false },
@@ -42,9 +42,9 @@ const allGlobalModels: GlobalModel[] = [
   { id: 'kimi-k2', name: 'Kimi K2', provider: 'Moonshot', type: 'text', typeLabel: '文本模型', description: '长文本理解与生成，支持200K上下文', contextLimit: '200K', enabled: true, enabledCustomerIds: ['cust_001', 'cust_002', 'cust_005'], customerSelfEnabledIds: ['cust_001', 'cust_002'], lastCalledAt: '2026-03-02 09:40', customerLastCalled: { 'cust_001': '2026-03-02 09:40', 'cust_002': '2026-03-01 14:55', 'cust_005': '2026-02-27 21:10' }, defaultForCustomer: true },
   // 视觉理解模型
   { id: 'gpt4-vision', name: 'GPT-4 Vision', provider: 'OpenAI', type: 'vision', typeLabel: '视觉理解', description: '图像理解与分析能力', contextLimit: '128K', enabled: true, enabledCustomerIds: ['cust_001', 'cust_005'], customerSelfEnabledIds: ['cust_001'], lastCalledAt: '2026-03-01 16:45', customerLastCalled: { 'cust_001': '2026-03-01 16:45', 'cust_005': '2026-02-28 10:30' }, defaultForCustomer: false },
-  { id: 'qwen-vl-max', name: 'Qwen-VL-Max', provider: '阿里巴巴', type: 'vision', typeLabel: '视觉理解', description: '通义千问视觉语言模型', contextLimit: '32K', enabled: false, enabledCustomerIds: [], customerSelfEnabledIds: [], lastCalledAt: null, customerLastCalled: {}, defaultForCustomer: false },
+  { id: 'qwen-vl-max', name: 'Qwen-VL-Max', provider: '阿里巴巴', type: 'vision', typeLabel: '视觉理解', description: '通义千问视觉语言模型', contextLimit: '32K', enabled: false, enabledCustomerIds: [], customerSelfEnabledIds: ['cust_001', 'cust_003'], lastCalledAt: null, customerLastCalled: {}, defaultForCustomer: false },
   { id: 'gemini-vision', name: 'Gemini Pro Vision', provider: 'Google', type: 'vision', typeLabel: '视觉理解', description: '高精度图像识别与理解', contextLimit: '1M', enabled: true, enabledCustomerIds: ['cust_001'], customerSelfEnabledIds: [], lastCalledAt: '2026-02-27 13:20', customerLastCalled: { 'cust_001': '2026-02-27 13:20' }, defaultForCustomer: false },
-  { id: 'claude3-vision', name: 'Claude 3 Vision', provider: 'Anthropic', type: 'vision', typeLabel: '视觉理解', description: '多图理解与跨图推理', contextLimit: '200K', enabled: false, enabledCustomerIds: [], customerSelfEnabledIds: [], lastCalledAt: null, customerLastCalled: {}, defaultForCustomer: false },
+  { id: 'claude3-vision', name: 'Claude 3 Vision', provider: 'Anthropic', type: 'vision', typeLabel: '视觉理解', description: '多图理解与跨图推理', contextLimit: '200K', enabled: false, enabledCustomerIds: [], customerSelfEnabledIds: ['cust_005'], lastCalledAt: null, customerLastCalled: {}, defaultForCustomer: false },
 ];
 
 const typeIcons: Record<string, React.ReactNode> = {
@@ -308,14 +308,10 @@ export function GlobalModelConfig() {
                         </div>
                       </TableCell>
                       <TableCell className="text-center">
-                        {isAvailable ? (
-                          isSelfEnabled ? (
-                            <Badge variant="outline" className="text-[10px] border-emerald-300 text-emerald-600 bg-emerald-50">已开通</Badge>
-                          ) : (
-                            <Badge variant="outline" className="text-[10px] border-muted-foreground/30 text-muted-foreground">未开通</Badge>
-                          )
+                        {isSelfEnabled ? (
+                          <Badge variant="outline" className="text-[10px] border-emerald-300 text-emerald-600 bg-emerald-50">已开通</Badge>
                         ) : (
-                          <span className="text-xs text-muted-foreground">—</span>
+                          <Badge variant="outline" className="text-[10px] border-muted-foreground/30 text-muted-foreground">未开通</Badge>
                         )}
                       </TableCell>
                     </TableRow>
