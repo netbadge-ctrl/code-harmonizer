@@ -209,7 +209,16 @@ export function GlobalModelConfig() {
                       <Checkbox
                         checked={model.defaultForCustomer}
                         onCheckedChange={(checked) => {
-                          setModels(prev => prev.map(m => m.id === model.id ? { ...m, defaultForCustomer: !!checked } : m));
+                          setModels(prev => prev.map(m => {
+                            if (m.id !== model.id) return m;
+                            if (!checked && m.defaultForCustomer) {
+                              // Unchecking: preserve all customers as individually available
+                              const allCustomerIds = mockCustomers.map(c => c.id);
+                              const mergedIds = Array.from(new Set([...m.enabledCustomerIds, ...allCustomerIds]));
+                              return { ...m, defaultForCustomer: false, enabledCustomerIds: mergedIds };
+                            }
+                            return { ...m, defaultForCustomer: !!checked };
+                          }));
                         }}
                       />
                       <span className="text-xs text-muted-foreground">客户默认可用</span>
