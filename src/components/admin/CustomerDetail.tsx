@@ -100,7 +100,7 @@ const errorTypes = [
   { code: '401', name: '认证失败', description: 'Unauthorized' },
 ];
 
-// 全局可用模型列表（从模型配置中获取已启用的模型）
+// 全局可见模型列表（从模型配置中获取已启用的模型）
 const globalEnabledModels = [
   { id: 'gpt4-turbo', name: 'GPT-4 Turbo', type: 'text' as const, typeLabel: '文本模型' },
   { id: 'gpt4o', name: 'GPT-4o', type: 'text' as const, typeLabel: '文本模型' },
@@ -209,7 +209,7 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
   const [userCurrentPage, setUserCurrentPage] = useState(1);
   const usersPerPage = 10;
 
-  // 可用模型配置状态
+  // 可见模型配置状态
   const [customerModelConfig, setCustomerModelConfig] = useState<Record<string, boolean>>(() => {
     const config: Record<string, boolean> = {};
     globalEnabledModels.forEach(m => {
@@ -585,9 +585,9 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                   </div>
                   <Switch defaultChecked />
                 </div>
-                {/* 可用模型 */}
+                {/* 可见模型 */}
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">可用模型</span>
+                  <span className="text-sm text-muted-foreground">可见模型</span>
                   <div className="flex items-center gap-2">
                     <span className="text-sm">
                       {Object.values(customerModelConfig).filter(Boolean).length} / {globalEnabledModels.length} 个
@@ -606,13 +606,13 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
             </Card>
           </div>
 
-          {/* 可用模型配置弹窗 */}
+          {/* 可见模型配置弹窗 */}
           <Dialog open={modelConfigDialogOpen} onOpenChange={setModelConfigDialogOpen}>
             <DialogContent className="max-w-3xl max-h-[80vh] overflow-hidden flex flex-col">
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2 text-base">
                   <Cpu className="w-4 h-4" />
-                  可用模型配置
+                  可见模型配置
                   <span className="text-muted-foreground font-normal">— {customer.companyName}</span>
                   <Badge variant="secondary" className="ml-1">
                     {Object.values(customerModelConfig).filter(Boolean).length}/{globalEnabledModels.length}
