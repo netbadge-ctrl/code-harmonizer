@@ -157,7 +157,7 @@ export function GlobalModelConfig() {
             <div className="w-[80px] shrink-0">类型</div>
             <div className="flex-1 min-w-0">描述</div>
             <div className="w-[140px] shrink-0">最后调用时间</div>
-            <div className="w-[120px] shrink-0">模型可用客户</div>
+            <div className="w-[120px] shrink-0">模型可用用户</div>
             <div className="w-[110px] shrink-0 text-right">客户默认可用</div>
           </div>
           <div className="divide-y divide-border">
@@ -194,7 +194,7 @@ export function GlobalModelConfig() {
                   >
                     <Users className="w-3.5 h-3.5" />
                     <span className="font-medium">{model.defaultForCustomer ? mockCustomers.length : model.enabledCustomerIds.length}</span>
-                    <span className="text-muted-foreground">客户</span>
+                    <span className="text-muted-foreground">用户</span>
                     <ChevronRight className="w-3 h-3 text-muted-foreground" />
                   </button>
                 </div>
