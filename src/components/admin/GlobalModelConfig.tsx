@@ -117,7 +117,7 @@ export function GlobalModelConfig() {
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-muted-foreground">配置每个模型开放可用的客户及所有路账户默认可用的模型。可用不代表默认开通</p>
+      <p className="text-sm text-muted-foreground">配置每个模型开放可见的客户及所有路账户默认可见的模型。可见不代表默认开通</p>
 
       {/* Toolbar */}
       <Card className="enterprise-card">
@@ -157,8 +157,8 @@ export function GlobalModelConfig() {
             <div className="w-[80px] shrink-0">类型</div>
             <div className="flex-1 min-w-0">描述</div>
             <div className="w-[140px] shrink-0">最后调用时间</div>
-            <div className="w-[120px] shrink-0">模型可用用户</div>
-            <div className="w-[110px] shrink-0 text-right">客户默认可用</div>
+            <div className="w-[120px] shrink-0">模型可见用户</div>
+            <div className="w-[110px] shrink-0 text-right">客户默认可见</div>
           </div>
           <div className="divide-y divide-border">
             {filteredModels.map(model => (
@@ -216,7 +216,7 @@ export function GlobalModelConfig() {
                         }));
                       }}
                     />
-                    <span className="text-xs text-muted-foreground">客户默认可用</span>
+                    <span className="text-xs text-muted-foreground">客户默认可见</span>
                   </label>
                 </div>
               </div>
@@ -244,7 +244,7 @@ export function GlobalModelConfig() {
             </DialogTitle>
             <div className="flex gap-4 mt-1">
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                <Badge variant="outline" className="text-[10px] border-primary/30 text-primary">可用</Badge>
+                <Badge variant="outline" className="text-[10px] border-primary/30 text-primary">可见</Badge>
                 <span>USS配置允许使用</span>
               </div>
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -262,7 +262,7 @@ export function GlobalModelConfig() {
                   <TableHead>订阅方案</TableHead>
                   <TableHead>订阅状态</TableHead>
                   <TableHead>最后调用时间</TableHead>
-                  <TableHead className="text-center">可用状态</TableHead>
+                  <TableHead className="text-center">可见状态</TableHead>
                   <TableHead className="text-center">开通状态</TableHead>
                 </TableRow>
               </TableHeader>
