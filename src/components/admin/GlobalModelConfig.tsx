@@ -148,88 +148,78 @@ export function GlobalModelConfig() {
         </CardContent>
       </Card>
 
-      {/* Model Groups */}
-      {Object.entries(groupedModels).map(([typeLabel, typeModels]) => (
-        <Card key={typeLabel} className="enterprise-card">
-          <CardHeader className="pb-2 pt-4 px-5">
-            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-              {typeIcons[typeModels[0].type]}
-              {typeLabel}
-              <Badge variant="secondary" className="text-xs font-normal">{typeModels.length}</Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="px-2 pb-2">
-            {/* Table header */}
-            <div className="flex items-center px-3 py-2 text-xs font-medium text-muted-foreground border-b border-border">
-              <div className="w-[180px] shrink-0">模型名称</div>
-              <div className="flex-1 min-w-0">描述</div>
-              <div className="w-[140px] shrink-0">最后调用时间</div>
-              <div className="w-[120px] shrink-0">模型可用客户</div>
-              <div className="w-[110px] shrink-0 text-right">客户默认可用</div>
-            </div>
-            <div className="divide-y divide-border">
-              {typeModels.map(model => (
-                <div key={model.id} className="flex items-center justify-between px-3 py-3 hover:bg-muted/30 rounded-lg transition-colors">
-                  <div className="flex items-center gap-4 flex-1 min-w-0">
-                    <div className="w-[180px] shrink-0">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium text-sm text-foreground">{model.name}</span>
-                        {model.contextLimit !== '-' && (
-                          <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                            {model.contextLimit}
-                          </span>
-                        )}
-                      </div>
+      {/* Model List */}
+      <Card className="enterprise-card">
+        <CardContent className="px-2 pb-2 pt-2">
+          {/* Table header */}
+          <div className="flex items-center px-3 py-2 text-xs font-medium text-muted-foreground border-b border-border">
+            <div className="w-[180px] shrink-0">模型名称</div>
+            <div className="flex-1 min-w-0">描述</div>
+            <div className="w-[140px] shrink-0">最后调用时间</div>
+            <div className="w-[120px] shrink-0">模型可用客户</div>
+            <div className="w-[110px] shrink-0 text-right">客户默认可用</div>
+          </div>
+          <div className="divide-y divide-border">
+            {filteredModels.map(model => (
+              <div key={model.id} className="flex items-center justify-between px-3 py-3 hover:bg-muted/30 rounded-lg transition-colors">
+                <div className="flex items-center gap-4 flex-1 min-w-0">
+                  <div className="w-[180px] shrink-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-sm text-foreground">{model.name}</span>
+                      {model.contextLimit !== '-' && (
+                        <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                          {model.contextLimit}
+                        </span>
+                      )}
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs text-muted-foreground truncate">{model.description}</p>
-                    </div>
-
-                    {/* Last called */}
-                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground shrink-0 w-[140px]">
-                      <Clock className="w-3.5 h-3.5" />
-                      <span>{model.lastCalledAt || '暂无调用'}</span>
-                    </div>
-
-                    {/* Customer count */}
-                    <button
-                      onClick={() => openCustomerDialog(model)}
-                      className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs transition-colors text-primary hover:bg-primary/10 cursor-pointer shrink-0"
-                    >
-                      <Users className="w-3.5 h-3.5" />
-                      <span className="font-medium">{model.defaultForCustomer ? mockCustomers.length : model.enabledCustomerIds.length}</span>
-                      <span className="text-muted-foreground">客户</span>
-                      <ChevronRight className="w-3 h-3 text-muted-foreground" />
-                    </button>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-muted-foreground truncate">{model.description}</p>
                   </div>
 
-                  {/* Default for customer checkbox */}
-                  <div className="flex items-center gap-3 ml-4">
-                    <label className="flex items-center gap-1.5 cursor-pointer select-none">
-                      <Checkbox
-                        checked={model.defaultForCustomer}
-                        onCheckedChange={(checked) => {
-                          setModels(prev => prev.map(m => {
-                            if (m.id !== model.id) return m;
-                            if (!checked && m.defaultForCustomer) {
-                              // Unchecking: preserve all customers as individually available
-                              const allCustomerIds = mockCustomers.map(c => c.id);
-                              const mergedIds = Array.from(new Set([...m.enabledCustomerIds, ...allCustomerIds]));
-                              return { ...m, defaultForCustomer: false, enabledCustomerIds: mergedIds };
-                            }
-                            return { ...m, defaultForCustomer: !!checked };
-                          }));
-                        }}
-                      />
-                      <span className="text-xs text-muted-foreground">客户默认可用</span>
-                    </label>
+                  {/* Last called */}
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground shrink-0 w-[140px]">
+                    <Clock className="w-3.5 h-3.5" />
+                    <span>{model.lastCalledAt || '暂无调用'}</span>
                   </div>
+
+                  {/* Customer count */}
+                  <button
+                    onClick={() => openCustomerDialog(model)}
+                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs transition-colors text-primary hover:bg-primary/10 cursor-pointer shrink-0"
+                  >
+                    <Users className="w-3.5 h-3.5" />
+                    <span className="font-medium">{model.defaultForCustomer ? mockCustomers.length : model.enabledCustomerIds.length}</span>
+                    <span className="text-muted-foreground">客户</span>
+                    <ChevronRight className="w-3 h-3 text-muted-foreground" />
+                  </button>
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      ))}
+
+                {/* Default for customer checkbox */}
+                <div className="flex items-center gap-3 ml-4">
+                  <label className="flex items-center gap-1.5 cursor-pointer select-none">
+                    <Checkbox
+                      checked={model.defaultForCustomer}
+                      onCheckedChange={(checked) => {
+                        setModels(prev => prev.map(m => {
+                          if (m.id !== model.id) return m;
+                          if (!checked && m.defaultForCustomer) {
+                            const allCustomerIds = mockCustomers.map(c => c.id);
+                            const mergedIds = Array.from(new Set([...m.enabledCustomerIds, ...allCustomerIds]));
+                            return { ...m, defaultForCustomer: false, enabledCustomerIds: mergedIds };
+                          }
+                          return { ...m, defaultForCustomer: !!checked };
+                        }));
+                      }}
+                    />
+                    <span className="text-xs text-muted-foreground">客户默认可用</span>
+                  </label>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
 
       {filteredModels.length === 0 && (
         <Card className="enterprise-card">
