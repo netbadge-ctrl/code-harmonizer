@@ -20,12 +20,9 @@ export function Header({ title, description }: HeaderProps) {
   return (
     <header className="sticky top-0 z-40 bg-card border-b border-border">
       <div className="flex items-center justify-between h-12 px-6">
-        {/* Left - Title & Description */}
-        <div className="flex items-center gap-3">
+        {/* Left - Title */}
+        <div className="flex items-center gap-2">
           <h1 className="text-base font-medium text-foreground">{title}</h1>
-          {description && (
-            <span className="text-xs text-muted-foreground">{description}</span>
-          )}
         </div>
 
         {/* Right - Actions */}
