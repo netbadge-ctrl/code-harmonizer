@@ -200,7 +200,7 @@ export function GlobalModelConfig() {
                       className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs transition-colors text-primary hover:bg-primary/10 cursor-pointer shrink-0"
                     >
                       <Users className="w-3.5 h-3.5" />
-                      <span className="font-medium">{model.enabledCustomerIds.length}</span>
+                      <span className="font-medium">{model.defaultForCustomer ? mockCustomers.length : model.enabledCustomerIds.length}</span>
                       <span className="text-muted-foreground">客户</span>
                       <ChevronRight className="w-3 h-3 text-muted-foreground" />
                     </button>
@@ -258,7 +258,8 @@ export function GlobalModelConfig() {
               </TableHeader>
               <TableBody>
                 {mockCustomers.map(customer => {
-                  const isEnabled = selectedModel?.enabledCustomerIds.includes(customer.id) ?? false;
+                  const isDefault = selectedModel?.defaultForCustomer ?? false;
+                  const isEnabled = isDefault || (selectedModel?.enabledCustomerIds.includes(customer.id) ?? false);
                   const lastCalled = selectedModel?.customerLastCalled[customer.id];
                   return (
                     <TableRow key={customer.id}>
@@ -283,9 +284,13 @@ export function GlobalModelConfig() {
                       <TableCell>
                         <span className="text-xs text-muted-foreground">{lastCalled || '暂无调用'}</span>
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="text-right flex items-center justify-end gap-2">
+                        {isDefault && (
+                          <Badge variant="secondary" className="text-[10px]">默认</Badge>
+                        )}
                         <Switch
                           checked={isEnabled}
+                          disabled={isDefault}
                           onCheckedChange={(checked) => selectedModel && handleToggleCustomerForModel(selectedModel.id, customer.id, checked)}
                         />
                       </TableCell>
