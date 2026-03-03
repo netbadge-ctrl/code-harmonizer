@@ -669,9 +669,12 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                             )}
                           </div>
                           <Switch
-                            checked={customerModelConfig[model.id] || false}
+                            checked={defaultEnabledModelIds.includes(model.id) || (customerModelConfig[model.id] || false)}
+                            disabled={defaultEnabledModelIds.includes(model.id)}
                             onCheckedChange={(checked) => {
-                              setCustomerModelConfig(prev => ({ ...prev, [model.id]: checked }));
+                              if (!defaultEnabledModelIds.includes(model.id)) {
+                                setCustomerModelConfig(prev => ({ ...prev, [model.id]: checked }));
+                              }
                             }}
                           />
                         </div>
