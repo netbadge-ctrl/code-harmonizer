@@ -154,6 +154,7 @@ export function GlobalModelConfig() {
           {/* Table header */}
           <div className="flex items-center px-3 py-2 text-xs font-medium text-muted-foreground border-b border-border">
             <div className="w-[180px] shrink-0">模型名称</div>
+            <div className="w-[80px] shrink-0">类型</div>
             <div className="flex-1 min-w-0">描述</div>
             <div className="w-[140px] shrink-0">最后调用时间</div>
             <div className="w-[120px] shrink-0">模型可用客户</div>
@@ -172,6 +173,9 @@ export function GlobalModelConfig() {
                         </span>
                       )}
                     </div>
+                  </div>
+                  <div className="w-[80px] shrink-0">
+                    <Badge variant="secondary" className="text-[10px] font-normal">{model.typeLabel}</Badge>
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-xs text-muted-foreground truncate">{model.description}</p>
