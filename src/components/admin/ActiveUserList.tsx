@@ -93,6 +93,7 @@ interface CallDetail {
   outputTokens: number;
   totalTokens: number;
   latency: number;
+  ttft: number;
   statusCode: number;
   status: string;
   requestId: string;
@@ -148,6 +149,7 @@ function generateUserCallDetails(userId: string, _timeRange: TimeRange): CallDet
       outputTokens,
       totalTokens: inputTokens + outputTokens,
       latency: +(Math.random() * 3 + 0.5).toFixed(2),
+      ttft: +(Math.random() * 1.5 + 0.1).toFixed(3),
       statusCode: selectedStatus.code,
       status: selectedStatus.status,
       requestId: `req-${Math.random().toString(36).substring(2, 10)}`,
@@ -726,11 +728,28 @@ export function ActiveUserList({ topUsers }: ActiveUserListProps) {
                 </div>
                 <div>
                   <div className="text-xs text-muted-foreground">Request ID</div>
-                  <div className="text-sm font-mono mt-0.5">{selectedCall.requestId}</div>
+                  <div className="text-sm font-mono mt-0.5 flex items-center gap-1.5">
+                    <span className="truncate">{selectedCall.requestId}</span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-5 w-5 shrink-0 text-muted-foreground hover:text-foreground"
+                      onClick={() => {
+                        navigator.clipboard.writeText(selectedCall.requestId);
+                        toast.success('Request ID 已复制');
+                      }}
+                    >
+                      <Copy className="w-3 h-3" />
+                    </Button>
+                  </div>
                 </div>
                 <div>
                   <div className="text-xs text-muted-foreground">响应耗时</div>
                   <div className="text-sm font-medium mt-0.5">{selectedCall.latency}s</div>
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground">TTFT</div>
+                  <div className="text-sm font-medium mt-0.5">{(selectedCall.ttft * 1000).toFixed(0)}ms</div>
                 </div>
               </div>
 
