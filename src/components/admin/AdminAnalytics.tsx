@@ -631,6 +631,15 @@ export function AdminAnalytics() {
         </div>
       </div>
 
+      {/* Tabs */}
+      <Tabs defaultValue="overview" className="w-full">
+        <TabsList>
+          <TabsTrigger value="overview">业务概览</TabsTrigger>
+          <TabsTrigger value="modelMetrics">模型指标</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview" className="space-y-6 mt-4">
+
       {/* 概览统计卡片 */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
         <Card className="enterprise-card">
