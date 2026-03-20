@@ -149,6 +149,7 @@ function generateUserCallDetails(userId: string, _timeRange: TimeRange): CallDet
       outputTokens,
       totalTokens: inputTokens + outputTokens,
       latency: +(Math.random() * 3 + 0.5).toFixed(2),
+      ttft: +(Math.random() * 1.5 + 0.1).toFixed(3),
       statusCode: selectedStatus.code,
       status: selectedStatus.status,
       requestId: `req-${Math.random().toString(36).substring(2, 10)}`,
