@@ -731,231 +731,46 @@ export function AdminAnalytics() {
         </CardContent>
       </Card>
 
-
-      {/* 错误分析区域 */}
+      {/* 按错误代码统计 */}
       <Card className="enterprise-card">
         <CardHeader>
           <CardTitle className="text-base">按错误代码统计</CardTitle>
         </CardHeader>
         <CardContent>
-        <CardHeader>
-          <CardTitle className="text-base">
-            模型性能指标
-            {selectedCustomer && ` - ${selectedCustomer.companyName}`}
-            {modelFilter !== 'all' && ` - ${modelFilter}`}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead 
-                  className="cursor-pointer hover:bg-muted/50 transition-colors"
-                  onClick={() => handleSort('model')}
-                >
-                  <div className="flex items-center gap-1">
-                    模型
-                    {sortColumn === 'model' ? (
-                      sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
-                    ) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
-                  </div>
-                </TableHead>
-                <TableHead 
-                  className="cursor-pointer hover:bg-muted/50 transition-colors"
-                  onClick={() => handleSort('tokens')}
-                >
-                  <div className="flex items-center gap-1">
-                    Token消耗（入/出）
-                    {sortColumn === 'tokens' ? (
-                      sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
-                    ) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
-                  </div>
-                </TableHead>
-                <TableHead 
-                  className="text-right cursor-pointer hover:bg-muted/50 transition-colors"
-                  onClick={() => handleSort('peakTPM')}
-                >
-                  <div className="flex items-center justify-end gap-1">
-                    峰值每分钟Token数
-                    {sortColumn === 'peakTPM' ? (
-                      sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
-                    ) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
-                  </div>
-                </TableHead>
-                <TableHead 
-                  className="text-right cursor-pointer hover:bg-muted/50 transition-colors"
-                  onClick={() => handleSort('avgTPMDaily')}
-                >
-                  <div className="flex items-center justify-end gap-1">
-                    每分钟均Token数
-                    {sortColumn === 'avgTPMDaily' ? (
-                      sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
-                    ) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
-                  </div>
-                </TableHead>
-                <TableHead 
-                  className="text-right cursor-pointer hover:bg-muted/50 transition-colors"
-                  onClick={() => handleSort('avgTPMBusiness')}
-                >
-                  <div className="flex items-center justify-end gap-1">
-                    工作时段每分钟均Token数
-                    {sortColumn === 'avgTPMBusiness' ? (
-                      sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
-                    ) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
-                  </div>
-                </TableHead>
-                <TableHead 
-                  className="text-right cursor-pointer hover:bg-muted/50 transition-colors"
-                  onClick={() => handleSort('ttftAvg')}
-                >
-                  <div className="flex items-center justify-end gap-1">
-                    首Token平均时延
-                    {sortColumn === 'ttftAvg' ? (
-                      sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
-                    ) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
-                  </div>
-                </TableHead>
-                <TableHead 
-                  className="text-right cursor-pointer hover:bg-muted/50 transition-colors"
-                  onClick={() => handleSort('ttftP98')}
-                >
-                  <div className="flex items-center justify-end gap-1">
-                    首Token P98时延
-                    {sortColumn === 'ttftP98' ? (
-                      sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
-                    ) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
-                  </div>
-                </TableHead>
-                <TableHead 
-                  className="text-right cursor-pointer hover:bg-muted/50 transition-colors"
-                  onClick={() => handleSort('tpotAvg')}
-                >
-                  <div className="flex items-center justify-end gap-1">
-                    Token生成速度
-                    {sortColumn === 'tpotAvg' ? (
-                      sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
-                    ) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
-                  </div>
-                </TableHead>
-                <TableHead 
-                  className="text-right cursor-pointer hover:bg-muted/50 transition-colors"
-                  onClick={() => handleSort('requests')}
-                >
-                  <div className="flex items-center justify-end gap-1">
-                    请求数 (成功/总)
-                    {sortColumn === 'requests' ? (
-                      sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
-                    ) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
-                  </div>
-                </TableHead>
-                <TableHead 
-                  className="text-right cursor-pointer hover:bg-muted/50 transition-colors"
-                  onClick={() => handleSort('errorCount')}
-                >
-                  <div className="flex items-center justify-end gap-1">
-                    错误数
-                    {sortColumn === 'errorCount' ? (
-                      sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
-                    ) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
-                  </div>
-                </TableHead>
+                <TableHead>错误代码</TableHead>
+                <TableHead>错误类型</TableHead>
+                <TableHead className="text-right">次数</TableHead>
+                <TableHead className="text-right">占比</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {modelUsageData.map((item) => (
-                <TableRow key={item.model}>
-                  <TableCell className="font-medium">{item.model}</TableCell>
-                  <TableCell className="font-medium">
-                    {formatTokens(item.tokens)}
-                    <span className="text-muted-foreground text-xs ml-1">
-                      ({formatTokens(item.inputTokens)}/{formatTokens(item.outputTokens)})
+              {errorByType.map((item) => (
+                <TableRow key={item.code}>
+                  <TableCell>
+                    <span className={cn(
+                      "px-2 py-0.5 rounded text-xs font-mono font-medium",
+                      item.code === '429' && "bg-yellow-500/10 text-yellow-600",
+                      item.code === '500' && "bg-destructive/10 text-destructive",
+                      item.code === '503' && "bg-orange-500/10 text-orange-600",
+                      item.code === '504' && "bg-purple-500/10 text-purple-600",
+                      item.code === '400' && "bg-blue-500/10 text-blue-600",
+                      item.code === '401' && "bg-red-500/10 text-red-600",
+                    )}>
+                      {item.code}
                     </span>
                   </TableCell>
-                  <TableCell className="text-right">{formatTokens(item.peakTPM)}</TableCell>
-                  <TableCell className="text-right">{formatTokens(item.avgTPMDaily)}</TableCell>
-                  <TableCell className="text-right">{formatTokens(item.avgTPMBusiness)}</TableCell>
-                  <TableCell className="text-right">{item.ttftAvg} 秒</TableCell>
-                  <TableCell className="text-right">{item.ttftP98} 秒</TableCell>
-                  <TableCell className="text-right">{item.tpotAvg} t/s</TableCell>
-                  <TableCell className="text-right">{item.successfulRequests.toLocaleString()}/{item.requests.toLocaleString()}</TableCell>
-                  <TableCell className="text-right text-destructive">{item.errorCount}</TableCell>
+                  <TableCell>{item.name}</TableCell>
+                  <TableCell className="text-right font-medium">{item.count}</TableCell>
+                  <TableCell className="text-right text-muted-foreground">{item.percentage}%</TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         </CardContent>
       </Card>
-
-      {/* 错误分析区域 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* 按错误代码统计 */}
-        <Card className="enterprise-card">
-          <CardHeader>
-            <CardTitle className="text-base">按错误代码统计</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>错误代码</TableHead>
-                  <TableHead>错误类型</TableHead>
-                  <TableHead className="text-right">次数</TableHead>
-                  <TableHead className="text-right">占比</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {errorByType.map((item) => (
-                  <TableRow key={item.code}>
-                    <TableCell>
-                      <span className={cn(
-                        "px-2 py-0.5 rounded text-xs font-mono font-medium",
-                        item.code === '429' && "bg-yellow-500/10 text-yellow-600",
-                        item.code === '500' && "bg-destructive/10 text-destructive",
-                        item.code === '503' && "bg-orange-500/10 text-orange-600",
-                        item.code === '504' && "bg-purple-500/10 text-purple-600",
-                        item.code === '400' && "bg-blue-500/10 text-blue-600",
-                        item.code === '401' && "bg-red-500/10 text-red-600",
-                      )}>
-                        {item.code}
-                      </span>
-                    </TableCell>
-                    <TableCell>{item.name}</TableCell>
-                    <TableCell className="text-right font-medium">{item.count}</TableCell>
-                    <TableCell className="text-right text-muted-foreground">{item.percentage}%</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-
-        {/* 按模型错误分布 */}
-        <Card className="enterprise-card">
-          <CardHeader>
-            <CardTitle className="text-base">按模型错误分布</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>模型</TableHead>
-                  <TableHead className="text-right">错误数</TableHead>
-                  <TableHead className="text-right">成功率</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {modelUsageData.slice(0, 7).map((item) => (
-                  <TableRow key={item.model}>
-                    <TableCell className="font-medium">{item.model}</TableCell>
-                    <TableCell className="text-right text-destructive font-medium">{item.errorCount}</TableCell>
-                    <TableCell className="text-right">{item.successRate}%</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      </div>
 
       {/* 错误趋势图 */}
       <Card className="enterprise-card">
@@ -1115,6 +930,161 @@ export function AdminAnalytics() {
         </CardContent>
       </Card>
 
+        </TabsContent>
+
+        <TabsContent value="modelMetrics" className="space-y-6 mt-4">
+      {/* 模型性能指标 */}
+      <Card className="enterprise-card">
+        <CardHeader>
+          <CardTitle className="text-base">
+            模型性能指标
+            {selectedCustomer && ` - ${selectedCustomer.companyName}`}
+            {modelFilter !== 'all' && ` - ${modelFilter}`}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead 
+                  className="cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={() => handleSort('model')}
+                >
+                  <div className="flex items-center gap-1">
+                    模型
+                    {sortColumn === 'model' ? (
+                      sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+                    ) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
+                  </div>
+                </TableHead>
+                <TableHead 
+                  className="cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={() => handleSort('tokens')}
+                >
+                  <div className="flex items-center gap-1">
+                    Token消耗（入/出）
+                    {sortColumn === 'tokens' ? (
+                      sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+                    ) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
+                  </div>
+                </TableHead>
+                <TableHead 
+                  className="text-right cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={() => handleSort('peakTPM')}
+                >
+                  <div className="flex items-center justify-end gap-1">
+                    峰值每分钟Token数
+                    {sortColumn === 'peakTPM' ? (
+                      sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+                    ) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
+                  </div>
+                </TableHead>
+                <TableHead 
+                  className="text-right cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={() => handleSort('avgTPMDaily')}
+                >
+                  <div className="flex items-center justify-end gap-1">
+                    每分钟均Token数
+                    {sortColumn === 'avgTPMDaily' ? (
+                      sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+                    ) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
+                  </div>
+                </TableHead>
+                <TableHead 
+                  className="text-right cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={() => handleSort('avgTPMBusiness')}
+                >
+                  <div className="flex items-center justify-end gap-1">
+                    工作时段每分钟均Token数
+                    {sortColumn === 'avgTPMBusiness' ? (
+                      sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+                    ) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
+                  </div>
+                </TableHead>
+                <TableHead 
+                  className="text-right cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={() => handleSort('ttftAvg')}
+                >
+                  <div className="flex items-center justify-end gap-1">
+                    首Token平均时延
+                    {sortColumn === 'ttftAvg' ? (
+                      sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+                    ) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
+                  </div>
+                </TableHead>
+                <TableHead 
+                  className="text-right cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={() => handleSort('ttftP98')}
+                >
+                  <div className="flex items-center justify-end gap-1">
+                    首Token P98时延
+                    {sortColumn === 'ttftP98' ? (
+                      sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+                    ) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
+                  </div>
+                </TableHead>
+                <TableHead 
+                  className="text-right cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={() => handleSort('tpotAvg')}
+                >
+                  <div className="flex items-center justify-end gap-1">
+                    Token生成速度
+                    {sortColumn === 'tpotAvg' ? (
+                      sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+                    ) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
+                  </div>
+                </TableHead>
+                <TableHead 
+                  className="text-right cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={() => handleSort('requests')}
+                >
+                  <div className="flex items-center justify-end gap-1">
+                    请求数 (成功/总)
+                    {sortColumn === 'requests' ? (
+                      sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+                    ) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
+                  </div>
+                </TableHead>
+                <TableHead 
+                  className="text-right cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={() => handleSort('errorCount')}
+                >
+                  <div className="flex items-center justify-end gap-1">
+                    错误数
+                    {sortColumn === 'errorCount' ? (
+                      sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+                    ) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
+                  </div>
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {modelUsageData.map((item) => (
+                <TableRow key={item.model}>
+                  <TableCell className="font-medium">{item.model}</TableCell>
+                  <TableCell className="font-medium">
+                    {formatTokens(item.tokens)}
+                    <span className="text-muted-foreground text-xs ml-1">
+                      ({formatTokens(item.inputTokens)}/{formatTokens(item.outputTokens)})
+                    </span>
+                  </TableCell>
+                  <TableCell className="text-right">{formatTokens(item.peakTPM)}</TableCell>
+                  <TableCell className="text-right">{formatTokens(item.avgTPMDaily)}</TableCell>
+                  <TableCell className="text-right">{formatTokens(item.avgTPMBusiness)}</TableCell>
+                  <TableCell className="text-right">{item.ttftAvg} 秒</TableCell>
+                  <TableCell className="text-right">{item.ttftP98} 秒</TableCell>
+                  <TableCell className="text-right">{item.tpotAvg} t/s</TableCell>
+                  <TableCell className="text-right">{item.successfulRequests.toLocaleString()}/{item.requests.toLocaleString()}</TableCell>
+                  <TableCell className="text-right text-destructive">{item.errorCount}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+        </TabsContent>
+      </Tabs>
+
       {/* 错误详情弹窗 */}
       <Dialog open={errorDetailDialogOpen} onOpenChange={setErrorDetailDialogOpen}>
         <DialogContent className="max-w-2xl">
@@ -1123,7 +1093,6 @@ export function AdminAnalytics() {
           </DialogHeader>
           {selectedError && (
             <div className="space-y-4">
-              {/* 基本信息 */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <p className="text-xs text-muted-foreground">模型</p>
@@ -1160,8 +1129,6 @@ export function AdminAnalytics() {
                   <p className="font-medium">{selectedError.retryAfter}</p>
                 </div>
               </div>
-
-              {/* 请求信息 */}
               <div className="border-t pt-4">
                 <h4 className="text-sm font-medium mb-3">请求信息</h4>
                 <div className="grid grid-cols-2 gap-4">
@@ -1193,8 +1160,6 @@ export function AdminAnalytics() {
                   </div>
                 </div>
               </div>
-
-              {/* 错误信息 */}
               <div className="border-t pt-4">
                 <h4 className="text-sm font-medium mb-3">错误信息</h4>
                 <div className="bg-destructive/5 border border-destructive/20 rounded-lg p-4">
