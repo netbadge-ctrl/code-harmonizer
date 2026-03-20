@@ -1,10 +1,12 @@
 import React, { useState, useMemo } from 'react';
-import { Search, Users, Zap, Activity, TrendingUp, FileText, BarChart3, Calendar, ChevronDown, ChevronRight, Monitor } from 'lucide-react';
+import { Search, Users, Zap, Activity, TrendingUp, FileText, BarChart3, Calendar, Monitor, Copy, Database } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { toast } from 'sonner';
 import {
   Pagination,
   PaginationContent,
@@ -208,7 +210,8 @@ export function ActiveUserList({ topUsers }: ActiveUserListProps) {
   const [callPage, setCallPage] = useState(1);
   const [callModelFilter, setCallModelFilter] = useState<string>('all');
   const [callStatusFilter, setCallStatusFilter] = useState<string>('all');
-  const [expandedCallId, setExpandedCallId] = useState<string | null>(null);
+  const [selectedCall, setSelectedCall] = useState<CallDetail | null>(null);
+  const [callSheetOpen, setCallSheetOpen] = useState(false);
   const pageSize = 10;
   const callPageSize = 10;
 
@@ -229,7 +232,8 @@ export function ActiveUserList({ topUsers }: ActiveUserListProps) {
     setCallPage(1);
     setCallModelFilter('all');
     setCallStatusFilter('all');
-    setExpandedCallId(null);
+    setSelectedCall(null);
+    setCallSheetOpen(false);
     setDetailTimeRange(listTimeRange);
     setDetailDialogOpen(true);
   };
@@ -588,7 +592,6 @@ export function ActiveUserList({ topUsers }: ActiveUserListProps) {
                       <table className="data-table">
                         <thead>
                           <tr>
-                            <th className="w-8"></th>
                             <th>时间</th>
                             <th>模型</th>
                             <th>客户端</th>
@@ -597,78 +600,47 @@ export function ActiveUserList({ topUsers }: ActiveUserListProps) {
                             <th>总 Token</th>
                             <th>耗时</th>
                             <th>状态码</th>
+                            <th>操作</th>
                           </tr>
                         </thead>
                         <tbody>
                           {filteredCallDetails
                             .slice((callPage - 1) * callPageSize, callPage * callPageSize)
                             .map((call) => (
-                            <React.Fragment key={call.id}>
-                              <tr
-                                className="cursor-pointer"
-                                onClick={() => setExpandedCallId(expandedCallId === call.id ? null : call.id)}
-                              >
-                                <td className="w-8 pr-0">
-                                  {expandedCallId === call.id
-                                    ? <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
-                                    : <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
-                                  }
-                                </td>
-                                <td className="text-muted-foreground whitespace-nowrap">
-                                  {formatDateTime(call.timestamp)}
-                                </td>
-                                <td className="font-medium">{call.model}</td>
-                                <td>
-                                  <div className="flex items-center gap-1.5">
-                                    <Monitor className="w-3.5 h-3.5 text-muted-foreground" />
-                                    <span className="text-sm">{call.client}</span>
-                                  </div>
-                                </td>
-                                <td>{call.inputTokens.toLocaleString()}</td>
-                                <td>{call.outputTokens.toLocaleString()}</td>
-                                <td>{call.totalTokens.toLocaleString()}</td>
-                                <td>{call.latency}s</td>
-                                <td>
-                                  <Badge variant="outline" className={cn("text-xs", getStatusCodeColor(call.statusCode))}>
-                                    {call.statusCode}
-                                  </Badge>
-                                </td>
-                              </tr>
-                              {expandedCallId === call.id && (
-                                <tr>
-                                  <td colSpan={9} className="!p-0">
-                                    <div className="bg-muted/30 border-t border-b p-4 space-y-3">
-                                      <div className="grid grid-cols-3 gap-4 text-sm">
-                                        <div>
-                                          <span className="text-muted-foreground text-xs">Request ID</span>
-                                          <p className="font-mono text-xs mt-0.5">{call.requestId}</p>
-                                        </div>
-                                        <div>
-                                          <span className="text-muted-foreground text-xs">客户端</span>
-                                          <p className="text-xs mt-0.5">{call.client}</p>
-                                        </div>
-                                        <div>
-                                          <span className="text-muted-foreground text-xs">响应耗时</span>
-                                          <p className="text-xs mt-0.5">{call.latency}s</p>
-                                        </div>
-                                      </div>
-                                      <div>
-                                        <span className="text-muted-foreground text-xs">请求内容</span>
-                                        <div className="mt-1 p-2 bg-background rounded border text-xs font-mono whitespace-pre-wrap max-h-24 overflow-y-auto">
-                                          {call.prompt}
-                                        </div>
-                                      </div>
-                                      <div>
-                                        <span className="text-muted-foreground text-xs">响应内容</span>
-                                        <div className="mt-1 p-2 bg-background rounded border text-xs font-mono whitespace-pre-wrap max-h-24 overflow-y-auto">
-                                          {call.response}
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </td>
-                                </tr>
-                              )}
-                            </React.Fragment>
+                            <tr key={call.id}>
+                              <td className="text-muted-foreground whitespace-nowrap">
+                                {formatDateTime(call.timestamp)}
+                              </td>
+                              <td className="font-medium">{call.model}</td>
+                              <td>
+                                <div className="flex items-center gap-1.5">
+                                  <Monitor className="w-3.5 h-3.5 text-muted-foreground" />
+                                  <span className="text-sm">{call.client}</span>
+                                </div>
+                              </td>
+                              <td>{call.inputTokens.toLocaleString()}</td>
+                              <td>{call.outputTokens.toLocaleString()}</td>
+                              <td>{call.totalTokens.toLocaleString()}</td>
+                              <td>{call.latency}s</td>
+                              <td>
+                                <Badge variant="outline" className={cn("text-xs", getStatusCodeColor(call.statusCode))}>
+                                  {call.statusCode}
+                                </Badge>
+                              </td>
+                              <td>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-7 text-xs text-primary"
+                                  onClick={() => {
+                                    setSelectedCall(call);
+                                    setCallSheetOpen(true);
+                                  }}
+                                >
+                                  查看详情
+                                </Button>
+                              </td>
+                            </tr>
                           ))}
                         </tbody>
                       </table>
@@ -715,6 +687,123 @@ export function ActiveUserList({ topUsers }: ActiveUserListProps) {
           )}
         </DialogContent>
       </Dialog>
+      {/* 调用详情侧边面板 */}
+      <Sheet open={callSheetOpen} onOpenChange={setCallSheetOpen}>
+        <SheetContent className="w-[520px] sm:max-w-[520px] overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle className="flex items-center gap-2">
+              <Database className="w-5 h-5 text-primary" />
+              调用详情
+            </SheetTitle>
+          </SheetHeader>
+
+          {selectedCall && (
+            <div className="space-y-5 mt-6">
+              {/* 基本信息 */}
+              <div className="grid grid-cols-2 gap-3 p-3 bg-muted/30 rounded-lg border">
+                <div>
+                  <div className="text-xs text-muted-foreground">调用时间</div>
+                  <div className="text-sm font-medium mt-0.5">{new Date(selectedCall.timestamp).toLocaleString('zh-CN')}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground">模型</div>
+                  <div className="text-sm font-medium mt-0.5">{selectedCall.model}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground">客户端</div>
+                  <div className="text-sm font-medium mt-0.5 flex items-center gap-1.5">
+                    <Monitor className="w-3.5 h-3.5 text-muted-foreground" />
+                    {selectedCall.client}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground">状态码</div>
+                  <div className="mt-0.5">
+                    <Badge variant="outline" className={cn("text-xs", getStatusCodeColor(selectedCall.statusCode))}>
+                      {selectedCall.statusCode}
+                    </Badge>
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground">Request ID</div>
+                  <div className="text-sm font-mono mt-0.5">{selectedCall.requestId}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground">响应耗时</div>
+                  <div className="text-sm font-medium mt-0.5">{selectedCall.latency}s</div>
+                </div>
+              </div>
+
+              {/* Token 统计 */}
+              <div className="grid grid-cols-3 gap-3">
+                <div className="p-3 bg-muted/30 rounded-lg border text-center">
+                  <div className="text-xs text-muted-foreground">输入 Token</div>
+                  <div className="text-base font-bold mt-1">{selectedCall.inputTokens.toLocaleString()}</div>
+                </div>
+                <div className="p-3 bg-muted/30 rounded-lg border text-center">
+                  <div className="text-xs text-muted-foreground">输出 Token</div>
+                  <div className="text-base font-bold mt-1">{selectedCall.outputTokens.toLocaleString()}</div>
+                </div>
+                <div className="p-3 bg-muted/30 rounded-lg border text-center">
+                  <div className="text-xs text-muted-foreground">总 Token</div>
+                  <div className="text-base font-bold mt-1">{selectedCall.totalTokens.toLocaleString()}</div>
+                </div>
+              </div>
+
+              {/* 请求内容 */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-1.5">
+                    <Database className="w-4 h-4 text-primary" />
+                    <span className="text-sm font-medium">请求内容</span>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-xs text-muted-foreground hover:text-foreground"
+                    onClick={() => {
+                      navigator.clipboard.writeText(selectedCall.prompt);
+                      toast.success('请求内容已复制');
+                    }}
+                  >
+                    <Copy className="w-3 h-3 mr-1" />
+                    复制
+                  </Button>
+                </div>
+                <div className="bg-slate-900 text-slate-100 rounded-lg p-4 font-mono text-xs whitespace-pre-wrap max-h-[300px] overflow-y-auto">
+                  {selectedCall.prompt}
+                </div>
+              </div>
+
+              {/* 响应内容 */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-1.5">
+                    <Zap className="w-4 h-4 text-primary" />
+                    <span className="text-sm font-medium">响应内容</span>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-xs text-muted-foreground hover:text-foreground"
+                    onClick={() => {
+                      navigator.clipboard.writeText(selectedCall.response);
+                      toast.success('响应内容已复制');
+                    }}
+                    disabled={!selectedCall.response}
+                  >
+                    <Copy className="w-3 h-3 mr-1" />
+                    复制
+                  </Button>
+                </div>
+                <div className="bg-slate-900 text-slate-100 rounded-lg p-4 font-mono text-xs whitespace-pre-wrap max-h-[300px] overflow-y-auto">
+                  {selectedCall.response || <span className="text-slate-500">无响应内容</span>}
+                </div>
+              </div>
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
