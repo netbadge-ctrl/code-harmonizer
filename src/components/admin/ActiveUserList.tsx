@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Search, Users, Zap, Activity, ArrowLeft, Clock, TrendingUp, FileText, BarChart3 } from 'lucide-react';
+import { Search, Users, Zap, Activity, TrendingUp, FileText, BarChart3, Calendar } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -14,13 +14,12 @@ import {
   PaginationPrevious,
 } from '@/components/ui/pagination';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import {
   LineChart,
@@ -45,6 +44,16 @@ interface ActiveUserListProps {
   topUsers: TopUser[];
 }
 
+type TimeRange = '1h' | '6h' | '24h' | '7d' | '30d';
+
+const TIME_RANGE_OPTIONS: { value: TimeRange; label: string }[] = [
+  { value: '1h', label: '近 1 小时' },
+  { value: '6h', label: '近 6 小时' },
+  { value: '24h', label: '近 24 小时' },
+  { value: '7d', label: '近 7 天' },
+  { value: '30d', label: '近 30 天' },
+];
+
 function formatTokens(tokens: number): string {
   if (tokens >= 1000000000) return (tokens / 1000000000).toFixed(1) + 'B';
   if (tokens >= 1000000) return (tokens / 1000000).toFixed(1) + 'M';
@@ -61,8 +70,18 @@ function formatDateTime(dateString: string): string {
   });
 }
 
+function getTimeRangeDays(range: TimeRange): number {
+  switch (range) {
+    case '1h': return 1 / 24;
+    case '6h': return 0.25;
+    case '24h': return 1;
+    case '7d': return 7;
+    case '30d': return 30;
+  }
+}
+
 // 生成用户调用明细模拟数据
-function generateUserCallDetails(userId: string) {
+function generateUserCallDetails(userId: string, _timeRange: TimeRange) {
   const models = ['GPT-4 Turbo', 'GPT-4o', 'Claude 3.5 Sonnet', 'DeepSeek V3', 'Kimi K2', 'GLM-4'];
   return Array.from({ length: 20 }, (_, i) => {
     const date = new Date();
@@ -86,16 +105,17 @@ function generateUserCallDetails(userId: string) {
 }
 
 // 生成用户核心数据统计
-function generateUserStats(user: TopUser) {
-  const avgDailyTokens = Math.floor(user.tokens / 7);
-  const avgDailyRequests = Math.floor(user.requests / 7);
+function generateUserStats(user: TopUser, timeRange: TimeRange) {
+  const days = Math.max(getTimeRangeDays(timeRange), 1);
+  const avgDailyTokens = Math.floor(user.tokens / days);
+  const avgDailyRequests = Math.floor(user.requests / days);
   const successRate = +(98 + Math.random() * 1.8).toFixed(1);
   const avgLatency = +(Math.random() * 1.5 + 0.8).toFixed(2);
-  
-  // 7天趋势
-  const trend = Array.from({ length: 7 }, (_, i) => {
+
+  const trendDays = timeRange === '30d' ? 30 : timeRange === '7d' ? 7 : timeRange === '24h' ? 7 : 7;
+  const trend = Array.from({ length: trendDays }, (_, i) => {
     const date = new Date();
-    date.setDate(date.getDate() - (6 - i));
+    date.setDate(date.getDate() - (trendDays - 1 - i));
     return {
       date: date.toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit' }),
       tokens: Math.floor(avgDailyTokens * (0.6 + Math.random() * 0.8)),
@@ -103,12 +123,10 @@ function generateUserStats(user: TopUser) {
     };
   });
 
-  // 模型使用分布
   const models = ['GPT-4 Turbo', 'GPT-4o', 'Claude 3.5 Sonnet', 'DeepSeek V3', 'Kimi K2'];
-  const totalParts = models.length;
   let remaining = user.tokens;
   const modelDistribution = models.map((model, i) => {
-    const portion = i < totalParts - 1
+    const portion = i < models.length - 1
       ? Math.floor(remaining * (0.15 + Math.random() * 0.25))
       : remaining;
     remaining -= portion;
@@ -118,12 +136,18 @@ function generateUserStats(user: TopUser) {
   return { avgDailyTokens, avgDailyRequests, successRate, avgLatency, trend, modelDistribution };
 }
 
+function getTimeRangeLabel(range: TimeRange): string {
+  return TIME_RANGE_OPTIONS.find(o => o.value === range)?.label ?? '';
+}
+
 export function ActiveUserList({ topUsers }: ActiveUserListProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [listTimeRange, setListTimeRange] = useState<TimeRange>('7d');
   const [selectedUser, setSelectedUser] = useState<TopUser | null>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [detailTab, setDetailTab] = useState<'stats' | 'calls'>('stats');
+  const [detailTimeRange, setDetailTimeRange] = useState<TimeRange>('7d');
   const [callPage, setCallPage] = useState(1);
   const pageSize = 10;
   const callPageSize = 10;
@@ -139,7 +163,6 @@ export function ActiveUserList({ topUsers }: ActiveUserListProps) {
   const totalPages = Math.ceil(filteredUsers.length / pageSize);
   const paginatedUsers = filteredUsers.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
-  // 汇总统计
   const summary = useMemo(() => ({
     totalUsers: topUsers.length,
     totalTokens: topUsers.reduce((s, u) => s + u.tokens, 0),
@@ -151,20 +174,20 @@ export function ActiveUserList({ topUsers }: ActiveUserListProps) {
     setSelectedUser(user);
     setDetailTab('stats');
     setCallPage(1);
+    setDetailTimeRange(listTimeRange); // 默认继承列表的时间筛选
     setDetailDialogOpen(true);
   };
 
   const userCallDetails = useMemo(
-    () => selectedUser ? generateUserCallDetails(selectedUser.id) : [],
-    [selectedUser]
+    () => selectedUser ? generateUserCallDetails(selectedUser.id, detailTimeRange) : [],
+    [selectedUser, detailTimeRange]
   );
 
   const userStats = useMemo(
-    () => selectedUser ? generateUserStats(selectedUser) : null,
-    [selectedUser]
+    () => selectedUser ? generateUserStats(selectedUser, detailTimeRange) : null,
+    [selectedUser, detailTimeRange]
   );
 
-  // Reset page when search changes
   React.useEffect(() => { setCurrentPage(1); }, [searchQuery]);
 
   return (
@@ -213,15 +236,28 @@ export function ActiveUserList({ topUsers }: ActiveUserListProps) {
       <Card className="enterprise-card">
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-base">活跃用户排行</CardTitle>
-            <div className="relative w-64">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="搜索用户名或邮箱..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 h-8 text-sm"
-              />
+            <CardTitle className="text-base">活跃用户</CardTitle>
+            <div className="flex items-center gap-3">
+              <Select value={listTimeRange} onValueChange={(v) => setListTimeRange(v as TimeRange)}>
+                <SelectTrigger className="w-36 h-8 text-sm">
+                  <Calendar className="w-3.5 h-3.5 mr-1.5 text-muted-foreground" />
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {TIME_RANGE_OPTIONS.map(opt => (
+                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <div className="relative w-64">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="搜索用户名或邮箱..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9 h-8 text-sm"
+                />
+              </div>
             </div>
           </div>
         </CardHeader>
@@ -325,11 +361,24 @@ export function ActiveUserList({ topUsers }: ActiveUserListProps) {
       <Dialog open={detailDialogOpen} onOpenChange={setDetailDialogOpen}>
         <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Users className="w-5 h-5" />
-              {selectedUser?.name}
-              <span className="text-sm font-normal text-muted-foreground">({selectedUser?.email})</span>
-            </DialogTitle>
+            <div className="flex items-center justify-between pr-6">
+              <DialogTitle className="flex items-center gap-2">
+                <Users className="w-5 h-5" />
+                {selectedUser?.name}
+                <span className="text-sm font-normal text-muted-foreground">({selectedUser?.email})</span>
+              </DialogTitle>
+              <Select value={detailTimeRange} onValueChange={(v) => setDetailTimeRange(v as TimeRange)}>
+                <SelectTrigger className="w-36 h-8 text-sm">
+                  <Calendar className="w-3.5 h-3.5 mr-1.5 text-muted-foreground" />
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {TIME_RANGE_OPTIONS.map(opt => (
+                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </DialogHeader>
 
           {selectedUser && userStats && (
@@ -395,7 +444,7 @@ export function ActiveUserList({ topUsers }: ActiveUserListProps) {
                   {/* Token 消耗趋势 */}
                   <Card className="enterprise-card">
                     <CardHeader className="pb-2">
-                      <CardTitle className="text-sm">近7天 Token 消耗趋势</CardTitle>
+                      <CardTitle className="text-sm">{getTimeRangeLabel(detailTimeRange)} Token 消耗趋势</CardTitle>
                     </CardHeader>
                     <CardContent>
                       <div className="h-48">
