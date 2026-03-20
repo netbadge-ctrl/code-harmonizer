@@ -592,7 +592,6 @@ export function ActiveUserList({ topUsers }: ActiveUserListProps) {
                       <table className="data-table">
                         <thead>
                           <tr>
-                            <th className="w-8"></th>
                             <th>时间</th>
                             <th>模型</th>
                             <th>客户端</th>
@@ -601,78 +600,47 @@ export function ActiveUserList({ topUsers }: ActiveUserListProps) {
                             <th>总 Token</th>
                             <th>耗时</th>
                             <th>状态码</th>
+                            <th>操作</th>
                           </tr>
                         </thead>
                         <tbody>
                           {filteredCallDetails
                             .slice((callPage - 1) * callPageSize, callPage * callPageSize)
                             .map((call) => (
-                            <React.Fragment key={call.id}>
-                              <tr
-                                className="cursor-pointer"
-                                onClick={() => setExpandedCallId(expandedCallId === call.id ? null : call.id)}
-                              >
-                                <td className="w-8 pr-0">
-                                  {expandedCallId === call.id
-                                    ? <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
-                                    : <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
-                                  }
-                                </td>
-                                <td className="text-muted-foreground whitespace-nowrap">
-                                  {formatDateTime(call.timestamp)}
-                                </td>
-                                <td className="font-medium">{call.model}</td>
-                                <td>
-                                  <div className="flex items-center gap-1.5">
-                                    <Monitor className="w-3.5 h-3.5 text-muted-foreground" />
-                                    <span className="text-sm">{call.client}</span>
-                                  </div>
-                                </td>
-                                <td>{call.inputTokens.toLocaleString()}</td>
-                                <td>{call.outputTokens.toLocaleString()}</td>
-                                <td>{call.totalTokens.toLocaleString()}</td>
-                                <td>{call.latency}s</td>
-                                <td>
-                                  <Badge variant="outline" className={cn("text-xs", getStatusCodeColor(call.statusCode))}>
-                                    {call.statusCode}
-                                  </Badge>
-                                </td>
-                              </tr>
-                              {expandedCallId === call.id && (
-                                <tr>
-                                  <td colSpan={9} className="!p-0">
-                                    <div className="bg-muted/30 border-t border-b p-4 space-y-3">
-                                      <div className="grid grid-cols-3 gap-4 text-sm">
-                                        <div>
-                                          <span className="text-muted-foreground text-xs">Request ID</span>
-                                          <p className="font-mono text-xs mt-0.5">{call.requestId}</p>
-                                        </div>
-                                        <div>
-                                          <span className="text-muted-foreground text-xs">客户端</span>
-                                          <p className="text-xs mt-0.5">{call.client}</p>
-                                        </div>
-                                        <div>
-                                          <span className="text-muted-foreground text-xs">响应耗时</span>
-                                          <p className="text-xs mt-0.5">{call.latency}s</p>
-                                        </div>
-                                      </div>
-                                      <div>
-                                        <span className="text-muted-foreground text-xs">请求内容</span>
-                                        <div className="mt-1 p-2 bg-background rounded border text-xs font-mono whitespace-pre-wrap max-h-24 overflow-y-auto">
-                                          {call.prompt}
-                                        </div>
-                                      </div>
-                                      <div>
-                                        <span className="text-muted-foreground text-xs">响应内容</span>
-                                        <div className="mt-1 p-2 bg-background rounded border text-xs font-mono whitespace-pre-wrap max-h-24 overflow-y-auto">
-                                          {call.response}
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </td>
-                                </tr>
-                              )}
-                            </React.Fragment>
+                            <tr key={call.id}>
+                              <td className="text-muted-foreground whitespace-nowrap">
+                                {formatDateTime(call.timestamp)}
+                              </td>
+                              <td className="font-medium">{call.model}</td>
+                              <td>
+                                <div className="flex items-center gap-1.5">
+                                  <Monitor className="w-3.5 h-3.5 text-muted-foreground" />
+                                  <span className="text-sm">{call.client}</span>
+                                </div>
+                              </td>
+                              <td>{call.inputTokens.toLocaleString()}</td>
+                              <td>{call.outputTokens.toLocaleString()}</td>
+                              <td>{call.totalTokens.toLocaleString()}</td>
+                              <td>{call.latency}s</td>
+                              <td>
+                                <Badge variant="outline" className={cn("text-xs", getStatusCodeColor(call.statusCode))}>
+                                  {call.statusCode}
+                                </Badge>
+                              </td>
+                              <td>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-7 text-xs text-primary"
+                                  onClick={() => {
+                                    setSelectedCall(call);
+                                    setCallSheetOpen(true);
+                                  }}
+                                >
+                                  查看详情
+                                </Button>
+                              </td>
+                            </tr>
                           ))}
                         </tbody>
                       </table>
