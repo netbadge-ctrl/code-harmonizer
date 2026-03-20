@@ -211,8 +211,6 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
   const [selectedError, setSelectedError] = useState<any | null>(null);
   const [errorDetailDialogOpen, setErrorDetailDialogOpen] = useState(false);
   
-  const [userCurrentPage, setUserCurrentPage] = useState(1);
-  const usersPerPage = 10;
 
   // 可见模型配置状态
   const [customerModelConfig, setCustomerModelConfig] = useState<Record<string, boolean>>(() => {
