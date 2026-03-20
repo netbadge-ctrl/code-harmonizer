@@ -732,8 +732,12 @@ export function AdminAnalytics() {
       </Card>
 
 
-      {/* 模型性能指标 */}
+      {/* 错误分析区域 */}
       <Card className="enterprise-card">
+        <CardHeader>
+          <CardTitle className="text-base">按错误代码统计</CardTitle>
+        </CardHeader>
+        <CardContent>
         <CardHeader>
           <CardTitle className="text-base">
             模型性能指标
