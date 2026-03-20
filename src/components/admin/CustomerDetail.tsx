@@ -919,109 +919,6 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
             </Card>
           </div>
 
-          {/* Token 消耗趋势 - 全宽 */}
-          <Card className="enterprise-card">
-            <CardHeader>
-              <CardTitle className="text-base">Token 消耗趋势</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <ComposedChart data={dailyTrendData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis dataKey="date" tick={{ fontSize: 12 }} />
-                    <YAxis 
-                      yAxisId="tokens"
-                      orientation="left"
-                      tick={{ fontSize: 12 }}
-                      tickFormatter={(value) => formatTokens(value)}
-                    />
-                    <YAxis 
-                      yAxisId="requests"
-                      orientation="right"
-                      tick={{ fontSize: 12 }}
-                    />
-                    <Tooltip 
-                      formatter={(value: number, name: string) => {
-                        if (name === 'tokens') return [formatTokens(value), 'Token 消耗'];
-                        return [value.toLocaleString(), '请求数'];
-                      }}
-                    />
-                    <Bar 
-                      yAxisId="tokens"
-                      dataKey="tokens" 
-                      fill="hsl(213, 94%, 50%)"
-                      opacity={0.8}
-                      name="tokens"
-                    />
-                    <Line 
-                      yAxisId="requests"
-                      type="monotone" 
-                      dataKey="requests" 
-                      stroke="hsl(142, 76%, 36%)" 
-                      strokeWidth={2}
-                      dot={false}
-                      name="requests"
-                    />
-                  </ComposedChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="flex items-center justify-center gap-4 mt-2 text-xs">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded" style={{ backgroundColor: 'hsl(213, 94%, 50%)' }} />
-                  <span>Token (柱)</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-0.5" style={{ backgroundColor: 'hsl(142, 76%, 36%)' }} />
-                  <span>请求数 (线)</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* 千Token平均时长趋势 - 全宽 */}
-          <Card className="enterprise-card">
-            <CardHeader>
-              <CardTitle className="text-base">千Token平均时长趋势 (分钟级)</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={latencyPerKTokenMinute}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis dataKey="time" tick={{ fontSize: 12 }} />
-                    <YAxis tick={{ fontSize: 12 }} unit="s" />
-                    <Tooltip formatter={(value: number) => `${value}s`} />
-                    <Line 
-                      type="monotone" 
-                      dataKey="inputLatency" 
-                      stroke="hsl(213, 94%, 50%)" 
-                      strokeWidth={2}
-                      name="输入时长"
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="outputLatency" 
-                      stroke="hsl(142, 76%, 36%)" 
-                      strokeWidth={2}
-                      name="输出时长"
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="flex items-center justify-center gap-4 mt-2 text-xs">
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-0.5" style={{ backgroundColor: 'hsl(213, 94%, 50%)' }} />
-                  <span>输入时长</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-0.5" style={{ backgroundColor: 'hsl(142, 76%, 36%)' }} />
-                  <span>输出时长</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
           {/* 模型性能指标表格 - 支持排序 */}
           <Card className="enterprise-card">
             <CardHeader>
@@ -1165,6 +1062,109 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                   ))}
                 </TableBody>
               </Table>
+            </CardContent>
+          </Card>
+
+          {/* Token 消耗趋势 - 全宽 */}
+          <Card className="enterprise-card">
+            <CardHeader>
+              <CardTitle className="text-base">Token 消耗趋势</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <ComposedChart data={dailyTrendData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis dataKey="date" tick={{ fontSize: 12 }} />
+                    <YAxis 
+                      yAxisId="tokens"
+                      orientation="left"
+                      tick={{ fontSize: 12 }}
+                      tickFormatter={(value) => formatTokens(value)}
+                    />
+                    <YAxis 
+                      yAxisId="requests"
+                      orientation="right"
+                      tick={{ fontSize: 12 }}
+                    />
+                    <Tooltip 
+                      formatter={(value: number, name: string) => {
+                        if (name === 'tokens') return [formatTokens(value), 'Token 消耗'];
+                        return [value.toLocaleString(), '请求数'];
+                      }}
+                    />
+                    <Bar 
+                      yAxisId="tokens"
+                      dataKey="tokens" 
+                      fill="hsl(213, 94%, 50%)"
+                      opacity={0.8}
+                      name="tokens"
+                    />
+                    <Line 
+                      yAxisId="requests"
+                      type="monotone" 
+                      dataKey="requests" 
+                      stroke="hsl(142, 76%, 36%)" 
+                      strokeWidth={2}
+                      dot={false}
+                      name="requests"
+                    />
+                  </ComposedChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="flex items-center justify-center gap-4 mt-2 text-xs">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded" style={{ backgroundColor: 'hsl(213, 94%, 50%)' }} />
+                  <span>Token (柱)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-0.5" style={{ backgroundColor: 'hsl(142, 76%, 36%)' }} />
+                  <span>请求数 (线)</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* 千Token平均时长趋势 - 全宽 */}
+          <Card className="enterprise-card">
+            <CardHeader>
+              <CardTitle className="text-base">千Token平均时长趋势 (分钟级)</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={latencyPerKTokenMinute}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis dataKey="time" tick={{ fontSize: 12 }} />
+                    <YAxis tick={{ fontSize: 12 }} unit="s" />
+                    <Tooltip formatter={(value: number) => `${value}s`} />
+                    <Line 
+                      type="monotone" 
+                      dataKey="inputLatency" 
+                      stroke="hsl(213, 94%, 50%)" 
+                      strokeWidth={2}
+                      name="输入时长"
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="outputLatency" 
+                      stroke="hsl(142, 76%, 36%)" 
+                      strokeWidth={2}
+                      name="输出时长"
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="flex items-center justify-center gap-4 mt-2 text-xs">
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-0.5" style={{ backgroundColor: 'hsl(213, 94%, 50%)' }} />
+                  <span>输入时长</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-4 h-0.5" style={{ backgroundColor: 'hsl(142, 76%, 36%)' }} />
+                  <span>输出时长</span>
+                </div>
+              </div>
             </CardContent>
           </Card>
 
