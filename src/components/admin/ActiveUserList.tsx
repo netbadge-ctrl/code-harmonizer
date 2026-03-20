@@ -1,10 +1,12 @@
 import React, { useState, useMemo } from 'react';
-import { Search, Users, Zap, Activity, TrendingUp, FileText, BarChart3, Calendar, ChevronDown, ChevronRight, Monitor } from 'lucide-react';
+import { Search, Users, Zap, Activity, TrendingUp, FileText, BarChart3, Calendar, Monitor, Copy, Database } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { toast } from 'sonner';
 import {
   Pagination,
   PaginationContent,
