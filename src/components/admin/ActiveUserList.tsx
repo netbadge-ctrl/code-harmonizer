@@ -210,7 +210,8 @@ export function ActiveUserList({ topUsers }: ActiveUserListProps) {
   const [callPage, setCallPage] = useState(1);
   const [callModelFilter, setCallModelFilter] = useState<string>('all');
   const [callStatusFilter, setCallStatusFilter] = useState<string>('all');
-  const [expandedCallId, setExpandedCallId] = useState<string | null>(null);
+  const [selectedCall, setSelectedCall] = useState<CallDetail | null>(null);
+  const [callSheetOpen, setCallSheetOpen] = useState(false);
   const pageSize = 10;
   const callPageSize = 10;
 
