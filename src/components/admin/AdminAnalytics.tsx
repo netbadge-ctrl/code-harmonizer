@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Building2, CalendarIcon, Check, ChevronsUpDown, Eye, Copy, ChevronLeft, ChevronRight, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -630,6 +631,15 @@ export function AdminAnalytics() {
         </div>
       </div>
 
+      {/* Tabs */}
+      <Tabs defaultValue="overview" className="w-full">
+        <TabsList>
+          <TabsTrigger value="overview">业务概览</TabsTrigger>
+          <TabsTrigger value="modelMetrics">模型指标</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview" className="space-y-6 mt-4">
+
       {/* 概览统计卡片 */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
         <Card className="enterprise-card">
@@ -721,441 +731,46 @@ export function AdminAnalytics() {
         </CardContent>
       </Card>
 
-      {/* 模型调用趋势 - 全宽，仅全局视图显示 */}
-      {!selectedCustomerId && modelFilter === 'all' && (
-        <Card className="enterprise-card">
-          <CardHeader>
-            <CardTitle className="text-base">模型调用趋势</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <ComposedChart data={modelTrendData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="date" tick={{ fontSize: 12 }} />
-                  <YAxis 
-                    yAxisId="tokens"
-                    orientation="left"
-                    tick={{ fontSize: 12 }}
-                    tickFormatter={(value) => formatTokens(value)}
-                    label={{ value: 'Token', angle: -90, position: 'insideLeft', style: { fontSize: 11 } }}
-                  />
-                  <YAxis 
-                    yAxisId="requests"
-                    orientation="right"
-                    tick={{ fontSize: 12 }}
-                    label={{ value: '请求数', angle: 90, position: 'insideRight', style: { fontSize: 11 } }}
-                  />
-                  <Tooltip 
-                    formatter={(value: number, name: string) => {
-                      if (name.includes('_tokens')) {
-                        return [formatTokens(value), name.replace('_tokens', ' (Token)')];
-                      }
-                      return [value.toLocaleString(), name.replace('_requests', ' (请求数)')];
-                    }}
-                  />
-                  {/* Token 消耗线 - 实线 */}
-                  <Line 
-                    yAxisId="tokens"
-                    type="monotone" 
-                    dataKey="GPT-4 Turbo_tokens" 
-                    stroke="hsl(213, 94%, 50%)" 
-                    strokeWidth={2}
-                    dot={false}
-                    name="GPT-4 Turbo_tokens"
-                  />
-                  <Line 
-                    yAxisId="tokens"
-                    type="monotone" 
-                    dataKey="GPT-4o_tokens" 
-                    stroke="hsl(142, 76%, 36%)" 
-                    strokeWidth={2}
-                    dot={false}
-                    name="GPT-4o_tokens"
-                  />
-                  <Line 
-                    yAxisId="tokens"
-                    type="monotone" 
-                    dataKey="Claude 3.5 Sonnet_tokens" 
-                    stroke="hsl(38, 92%, 50%)" 
-                    strokeWidth={2}
-                    dot={false}
-                    name="Claude 3.5 Sonnet_tokens"
-                  />
-                  <Line 
-                    yAxisId="tokens"
-                    type="monotone" 
-                    dataKey="DeepSeek V3_tokens" 
-                    stroke="hsl(280, 65%, 60%)" 
-                    strokeWidth={2}
-                    dot={false}
-                    name="DeepSeek V3_tokens"
-                  />
-                  {/* 请求数线 - 虚线 */}
-                  <Line 
-                    yAxisId="requests"
-                    type="monotone" 
-                    dataKey="GPT-4 Turbo_requests" 
-                    stroke="hsl(213, 94%, 50%)" 
-                    strokeWidth={2}
-                    strokeDasharray="5 5"
-                    dot={false}
-                    name="GPT-4 Turbo_requests"
-                  />
-                  <Line 
-                    yAxisId="requests"
-                    type="monotone" 
-                    dataKey="GPT-4o_requests" 
-                    stroke="hsl(142, 76%, 36%)" 
-                    strokeWidth={2}
-                    strokeDasharray="5 5"
-                    dot={false}
-                    name="GPT-4o_requests"
-                  />
-                  <Line 
-                    yAxisId="requests"
-                    type="monotone" 
-                    dataKey="Claude 3.5 Sonnet_requests" 
-                    stroke="hsl(38, 92%, 50%)" 
-                    strokeWidth={2}
-                    strokeDasharray="5 5"
-                    dot={false}
-                    name="Claude 3.5 Sonnet_requests"
-                  />
-                  <Line 
-                    yAxisId="requests"
-                    type="monotone" 
-                    dataKey="DeepSeek V3_requests" 
-                    stroke="hsl(280, 65%, 60%)" 
-                    strokeWidth={2}
-                    strokeDasharray="5 5"
-                    dot={false}
-                    name="DeepSeek V3_requests"
-                  />
-                </ComposedChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="flex flex-wrap items-center justify-center gap-4 mt-3 text-xs">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(213, 94%, 50%)' }} />
-                <span>GPT-4 Turbo</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(142, 76%, 36%)' }} />
-                <span>GPT-4o</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(38, 92%, 50%)' }} />
-                <span>Claude 3.5 Sonnet</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'hsl(280, 65%, 60%)' }} />
-                <span>DeepSeek V3</span>
-              </div>
-              <div className="flex items-center gap-2 text-xs ml-4 border-l pl-4">
-                <div className="w-6 h-0.5 bg-foreground" />
-                <span>Token (实线)</span>
-              </div>
-              <div className="flex items-center gap-2 text-xs">
-                <div className="w-6 h-0.5 border-t-2 border-dashed border-foreground" />
-                <span>请求数 (虚线)</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* 千Token平均时长趋势 - 全宽 */}
+      {/* 按错误代码统计 */}
       <Card className="enterprise-card">
         <CardHeader>
-          <CardTitle className="text-base">千Token平均时长趋势 (分钟级)</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={latencyPerKTokenMinute}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis dataKey="time" tick={{ fontSize: 12 }} />
-                <YAxis tick={{ fontSize: 12 }} unit="s" />
-                <Tooltip formatter={(value: number) => `${value}s`} />
-                <Line 
-                  type="monotone" 
-                  dataKey="inputLatency" 
-                  stroke="hsl(213, 94%, 50%)" 
-                  strokeWidth={2}
-                  name="输入时长"
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="outputLatency" 
-                  stroke="hsl(142, 76%, 36%)" 
-                  strokeWidth={2}
-                  name="输出时长"
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* 客户 Token 消耗排名 - 全宽，仅全局视图显示 */}
-      {!selectedCustomerId && (
-        <Card className="enterprise-card">
-          <CardHeader>
-            <CardTitle className="text-base">客户消耗排名 (本月)</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-64">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={tokenRanking} layout="vertical">
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis 
-                    type="number"
-                    tick={{ fontSize: 12 }}
-                    tickFormatter={(value) => formatTokens(value)}
-                  />
-                  <YAxis 
-                    type="category"
-                    dataKey="name"
-                    tick={{ fontSize: 12 }}
-                    width={80}
-                  />
-                  <Tooltip 
-                    formatter={(value: number) => formatTokens(value)}
-                  />
-                  <Bar 
-                    dataKey="tokens" 
-                    fill="hsl(213, 94%, 50%)"
-                    radius={[0, 4, 4, 0]}
-                    name="Token 消耗"
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* 模型性能指标 */}
-      <Card className="enterprise-card">
-        <CardHeader>
-          <CardTitle className="text-base">
-            模型性能指标
-            {selectedCustomer && ` - ${selectedCustomer.companyName}`}
-            {modelFilter !== 'all' && ` - ${modelFilter}`}
-          </CardTitle>
+          <CardTitle className="text-base">按错误代码统计</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead 
-                  className="cursor-pointer hover:bg-muted/50 transition-colors"
-                  onClick={() => handleSort('model')}
-                >
-                  <div className="flex items-center gap-1">
-                    模型
-                    {sortColumn === 'model' ? (
-                      sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
-                    ) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
-                  </div>
-                </TableHead>
-                <TableHead 
-                  className="cursor-pointer hover:bg-muted/50 transition-colors"
-                  onClick={() => handleSort('tokens')}
-                >
-                  <div className="flex items-center gap-1">
-                    Token消耗（入/出）
-                    {sortColumn === 'tokens' ? (
-                      sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
-                    ) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
-                  </div>
-                </TableHead>
-                <TableHead 
-                  className="text-right cursor-pointer hover:bg-muted/50 transition-colors"
-                  onClick={() => handleSort('peakTPM')}
-                >
-                  <div className="flex items-center justify-end gap-1">
-                    峰值每分钟Token数
-                    {sortColumn === 'peakTPM' ? (
-                      sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
-                    ) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
-                  </div>
-                </TableHead>
-                <TableHead 
-                  className="text-right cursor-pointer hover:bg-muted/50 transition-colors"
-                  onClick={() => handleSort('avgTPMDaily')}
-                >
-                  <div className="flex items-center justify-end gap-1">
-                    每分钟均Token数
-                    {sortColumn === 'avgTPMDaily' ? (
-                      sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
-                    ) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
-                  </div>
-                </TableHead>
-                <TableHead 
-                  className="text-right cursor-pointer hover:bg-muted/50 transition-colors"
-                  onClick={() => handleSort('avgTPMBusiness')}
-                >
-                  <div className="flex items-center justify-end gap-1">
-                    工作时段每分钟均Token数
-                    {sortColumn === 'avgTPMBusiness' ? (
-                      sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
-                    ) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
-                  </div>
-                </TableHead>
-                <TableHead 
-                  className="text-right cursor-pointer hover:bg-muted/50 transition-colors"
-                  onClick={() => handleSort('ttftAvg')}
-                >
-                  <div className="flex items-center justify-end gap-1">
-                    首Token平均时延
-                    {sortColumn === 'ttftAvg' ? (
-                      sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
-                    ) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
-                  </div>
-                </TableHead>
-                <TableHead 
-                  className="text-right cursor-pointer hover:bg-muted/50 transition-colors"
-                  onClick={() => handleSort('ttftP98')}
-                >
-                  <div className="flex items-center justify-end gap-1">
-                    首Token P98时延
-                    {sortColumn === 'ttftP98' ? (
-                      sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
-                    ) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
-                  </div>
-                </TableHead>
-                <TableHead 
-                  className="text-right cursor-pointer hover:bg-muted/50 transition-colors"
-                  onClick={() => handleSort('tpotAvg')}
-                >
-                  <div className="flex items-center justify-end gap-1">
-                    Token生成速度
-                    {sortColumn === 'tpotAvg' ? (
-                      sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
-                    ) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
-                  </div>
-                </TableHead>
-                <TableHead 
-                  className="text-right cursor-pointer hover:bg-muted/50 transition-colors"
-                  onClick={() => handleSort('requests')}
-                >
-                  <div className="flex items-center justify-end gap-1">
-                    请求数 (成功/总)
-                    {sortColumn === 'requests' ? (
-                      sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
-                    ) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
-                  </div>
-                </TableHead>
-                <TableHead 
-                  className="text-right cursor-pointer hover:bg-muted/50 transition-colors"
-                  onClick={() => handleSort('errorCount')}
-                >
-                  <div className="flex items-center justify-end gap-1">
-                    错误数
-                    {sortColumn === 'errorCount' ? (
-                      sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
-                    ) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
-                  </div>
-                </TableHead>
+                <TableHead>错误代码</TableHead>
+                <TableHead>错误类型</TableHead>
+                <TableHead className="text-right">次数</TableHead>
+                <TableHead className="text-right">占比</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {modelUsageData.map((item) => (
-                <TableRow key={item.model}>
-                  <TableCell className="font-medium">{item.model}</TableCell>
-                  <TableCell className="font-medium">
-                    {formatTokens(item.tokens)}
-                    <span className="text-muted-foreground text-xs ml-1">
-                      ({formatTokens(item.inputTokens)}/{formatTokens(item.outputTokens)})
+              {errorByType.map((item) => (
+                <TableRow key={item.code}>
+                  <TableCell>
+                    <span className={cn(
+                      "px-2 py-0.5 rounded text-xs font-mono font-medium",
+                      item.code === '429' && "bg-yellow-500/10 text-yellow-600",
+                      item.code === '500' && "bg-destructive/10 text-destructive",
+                      item.code === '503' && "bg-orange-500/10 text-orange-600",
+                      item.code === '504' && "bg-purple-500/10 text-purple-600",
+                      item.code === '400' && "bg-blue-500/10 text-blue-600",
+                      item.code === '401' && "bg-red-500/10 text-red-600",
+                    )}>
+                      {item.code}
                     </span>
                   </TableCell>
-                  <TableCell className="text-right">{formatTokens(item.peakTPM)}</TableCell>
-                  <TableCell className="text-right">{formatTokens(item.avgTPMDaily)}</TableCell>
-                  <TableCell className="text-right">{formatTokens(item.avgTPMBusiness)}</TableCell>
-                  <TableCell className="text-right">{item.ttftAvg} 秒</TableCell>
-                  <TableCell className="text-right">{item.ttftP98} 秒</TableCell>
-                  <TableCell className="text-right">{item.tpotAvg} t/s</TableCell>
-                  <TableCell className="text-right">{item.successfulRequests.toLocaleString()}/{item.requests.toLocaleString()}</TableCell>
-                  <TableCell className="text-right text-destructive">{item.errorCount}</TableCell>
+                  <TableCell>{item.name}</TableCell>
+                  <TableCell className="text-right font-medium">{item.count}</TableCell>
+                  <TableCell className="text-right text-muted-foreground">{item.percentage}%</TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         </CardContent>
       </Card>
-
-      {/* 错误分析区域 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* 按错误代码统计 */}
-        <Card className="enterprise-card">
-          <CardHeader>
-            <CardTitle className="text-base">按错误代码统计</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>错误代码</TableHead>
-                  <TableHead>错误类型</TableHead>
-                  <TableHead className="text-right">次数</TableHead>
-                  <TableHead className="text-right">占比</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {errorByType.map((item) => (
-                  <TableRow key={item.code}>
-                    <TableCell>
-                      <span className={cn(
-                        "px-2 py-0.5 rounded text-xs font-mono font-medium",
-                        item.code === '429' && "bg-yellow-500/10 text-yellow-600",
-                        item.code === '500' && "bg-destructive/10 text-destructive",
-                        item.code === '503' && "bg-orange-500/10 text-orange-600",
-                        item.code === '504' && "bg-purple-500/10 text-purple-600",
-                        item.code === '400' && "bg-blue-500/10 text-blue-600",
-                        item.code === '401' && "bg-red-500/10 text-red-600",
-                      )}>
-                        {item.code}
-                      </span>
-                    </TableCell>
-                    <TableCell>{item.name}</TableCell>
-                    <TableCell className="text-right font-medium">{item.count}</TableCell>
-                    <TableCell className="text-right text-muted-foreground">{item.percentage}%</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-
-        {/* 按模型错误分布 */}
-        <Card className="enterprise-card">
-          <CardHeader>
-            <CardTitle className="text-base">按模型错误分布</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>模型</TableHead>
-                  <TableHead className="text-right">错误数</TableHead>
-                  <TableHead className="text-right">成功率</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {modelUsageData.slice(0, 7).map((item) => (
-                  <TableRow key={item.model}>
-                    <TableCell className="font-medium">{item.model}</TableCell>
-                    <TableCell className="text-right text-destructive font-medium">{item.errorCount}</TableCell>
-                    <TableCell className="text-right">{item.successRate}%</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      </div>
 
       {/* 错误趋势图 */}
       <Card className="enterprise-card">
@@ -1315,6 +930,161 @@ export function AdminAnalytics() {
         </CardContent>
       </Card>
 
+        </TabsContent>
+
+        <TabsContent value="modelMetrics" className="space-y-6 mt-4">
+      {/* 模型性能指标 */}
+      <Card className="enterprise-card">
+        <CardHeader>
+          <CardTitle className="text-base">
+            模型性能指标
+            {selectedCustomer && ` - ${selectedCustomer.companyName}`}
+            {modelFilter !== 'all' && ` - ${modelFilter}`}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead 
+                  className="cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={() => handleSort('model')}
+                >
+                  <div className="flex items-center gap-1">
+                    模型
+                    {sortColumn === 'model' ? (
+                      sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+                    ) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
+                  </div>
+                </TableHead>
+                <TableHead 
+                  className="cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={() => handleSort('tokens')}
+                >
+                  <div className="flex items-center gap-1">
+                    Token消耗（入/出）
+                    {sortColumn === 'tokens' ? (
+                      sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+                    ) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
+                  </div>
+                </TableHead>
+                <TableHead 
+                  className="text-right cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={() => handleSort('peakTPM')}
+                >
+                  <div className="flex items-center justify-end gap-1">
+                    峰值每分钟Token数
+                    {sortColumn === 'peakTPM' ? (
+                      sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+                    ) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
+                  </div>
+                </TableHead>
+                <TableHead 
+                  className="text-right cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={() => handleSort('avgTPMDaily')}
+                >
+                  <div className="flex items-center justify-end gap-1">
+                    每分钟均Token数
+                    {sortColumn === 'avgTPMDaily' ? (
+                      sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+                    ) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
+                  </div>
+                </TableHead>
+                <TableHead 
+                  className="text-right cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={() => handleSort('avgTPMBusiness')}
+                >
+                  <div className="flex items-center justify-end gap-1">
+                    工作时段每分钟均Token数
+                    {sortColumn === 'avgTPMBusiness' ? (
+                      sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+                    ) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
+                  </div>
+                </TableHead>
+                <TableHead 
+                  className="text-right cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={() => handleSort('ttftAvg')}
+                >
+                  <div className="flex items-center justify-end gap-1">
+                    首Token平均时延
+                    {sortColumn === 'ttftAvg' ? (
+                      sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+                    ) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
+                  </div>
+                </TableHead>
+                <TableHead 
+                  className="text-right cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={() => handleSort('ttftP98')}
+                >
+                  <div className="flex items-center justify-end gap-1">
+                    首Token P98时延
+                    {sortColumn === 'ttftP98' ? (
+                      sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+                    ) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
+                  </div>
+                </TableHead>
+                <TableHead 
+                  className="text-right cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={() => handleSort('tpotAvg')}
+                >
+                  <div className="flex items-center justify-end gap-1">
+                    Token生成速度
+                    {sortColumn === 'tpotAvg' ? (
+                      sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+                    ) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
+                  </div>
+                </TableHead>
+                <TableHead 
+                  className="text-right cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={() => handleSort('requests')}
+                >
+                  <div className="flex items-center justify-end gap-1">
+                    请求数 (成功/总)
+                    {sortColumn === 'requests' ? (
+                      sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+                    ) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
+                  </div>
+                </TableHead>
+                <TableHead 
+                  className="text-right cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={() => handleSort('errorCount')}
+                >
+                  <div className="flex items-center justify-end gap-1">
+                    错误数
+                    {sortColumn === 'errorCount' ? (
+                      sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+                    ) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
+                  </div>
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {modelUsageData.map((item) => (
+                <TableRow key={item.model}>
+                  <TableCell className="font-medium">{item.model}</TableCell>
+                  <TableCell className="font-medium">
+                    {formatTokens(item.tokens)}
+                    <span className="text-muted-foreground text-xs ml-1">
+                      ({formatTokens(item.inputTokens)}/{formatTokens(item.outputTokens)})
+                    </span>
+                  </TableCell>
+                  <TableCell className="text-right">{formatTokens(item.peakTPM)}</TableCell>
+                  <TableCell className="text-right">{formatTokens(item.avgTPMDaily)}</TableCell>
+                  <TableCell className="text-right">{formatTokens(item.avgTPMBusiness)}</TableCell>
+                  <TableCell className="text-right">{item.ttftAvg} 秒</TableCell>
+                  <TableCell className="text-right">{item.ttftP98} 秒</TableCell>
+                  <TableCell className="text-right">{item.tpotAvg} t/s</TableCell>
+                  <TableCell className="text-right">{item.successfulRequests.toLocaleString()}/{item.requests.toLocaleString()}</TableCell>
+                  <TableCell className="text-right text-destructive">{item.errorCount}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+        </TabsContent>
+      </Tabs>
+
       {/* 错误详情弹窗 */}
       <Dialog open={errorDetailDialogOpen} onOpenChange={setErrorDetailDialogOpen}>
         <DialogContent className="max-w-2xl">
@@ -1323,7 +1093,6 @@ export function AdminAnalytics() {
           </DialogHeader>
           {selectedError && (
             <div className="space-y-4">
-              {/* 基本信息 */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1">
                   <p className="text-xs text-muted-foreground">模型</p>
@@ -1360,8 +1129,6 @@ export function AdminAnalytics() {
                   <p className="font-medium">{selectedError.retryAfter}</p>
                 </div>
               </div>
-
-              {/* 请求信息 */}
               <div className="border-t pt-4">
                 <h4 className="text-sm font-medium mb-3">请求信息</h4>
                 <div className="grid grid-cols-2 gap-4">
@@ -1393,8 +1160,6 @@ export function AdminAnalytics() {
                   </div>
                 </div>
               </div>
-
-              {/* 错误信息 */}
               <div className="border-t pt-4">
                 <h4 className="text-sm font-medium mb-3">错误信息</h4>
                 <div className="bg-destructive/5 border border-destructive/20 rounded-lg p-4">
