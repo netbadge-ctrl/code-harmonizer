@@ -1041,7 +1041,7 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {modelUsageData.map((item) => (
+                  {modelUsageData.slice(0, 10).map((item) => (
                     <TableRow key={item.model}>
                       <TableCell className="font-medium">{item.model}</TableCell>
                       <TableCell className="font-medium">
