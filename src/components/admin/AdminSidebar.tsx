@@ -21,7 +21,7 @@ interface AdminSidebarProps {
 
 const menuItems = [
   { id: 'customers' as AdminView, label: '客户管理', icon: Building2 },
-  { id: 'analytics' as AdminView, label: '数据看板', icon: BarChart3 },
+  { id: 'analytics' as AdminView, label: '全局统计', icon: BarChart3 },
   { id: 'creditRatio' as AdminView, label: '积分倍率', icon: Coins },
   { id: 'settings' as AdminView, label: '模型可见性配置', icon: Settings },
 ];
