@@ -93,6 +93,7 @@ interface CallDetail {
   outputTokens: number;
   totalTokens: number;
   latency: number;
+  ttft: number;
   statusCode: number;
   status: string;
   requestId: string;
