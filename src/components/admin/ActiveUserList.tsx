@@ -687,6 +687,123 @@ export function ActiveUserList({ topUsers }: ActiveUserListProps) {
           )}
         </DialogContent>
       </Dialog>
+      {/* 调用详情侧边面板 */}
+      <Sheet open={callSheetOpen} onOpenChange={setCallSheetOpen}>
+        <SheetContent className="w-[520px] sm:max-w-[520px] overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle className="flex items-center gap-2">
+              <Database className="w-5 h-5 text-primary" />
+              调用详情
+            </SheetTitle>
+          </SheetHeader>
+
+          {selectedCall && (
+            <div className="space-y-5 mt-6">
+              {/* 基本信息 */}
+              <div className="grid grid-cols-2 gap-3 p-3 bg-muted/30 rounded-lg border">
+                <div>
+                  <div className="text-xs text-muted-foreground">调用时间</div>
+                  <div className="text-sm font-medium mt-0.5">{new Date(selectedCall.timestamp).toLocaleString('zh-CN')}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground">模型</div>
+                  <div className="text-sm font-medium mt-0.5">{selectedCall.model}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground">客户端</div>
+                  <div className="text-sm font-medium mt-0.5 flex items-center gap-1.5">
+                    <Monitor className="w-3.5 h-3.5 text-muted-foreground" />
+                    {selectedCall.client}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground">状态码</div>
+                  <div className="mt-0.5">
+                    <Badge variant="outline" className={cn("text-xs", getStatusCodeColor(selectedCall.statusCode))}>
+                      {selectedCall.statusCode}
+                    </Badge>
+                  </div>
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground">Request ID</div>
+                  <div className="text-sm font-mono mt-0.5">{selectedCall.requestId}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-muted-foreground">响应耗时</div>
+                  <div className="text-sm font-medium mt-0.5">{selectedCall.latency}s</div>
+                </div>
+              </div>
+
+              {/* Token 统计 */}
+              <div className="grid grid-cols-3 gap-3">
+                <div className="p-3 bg-muted/30 rounded-lg border text-center">
+                  <div className="text-xs text-muted-foreground">输入 Token</div>
+                  <div className="text-base font-bold mt-1">{selectedCall.inputTokens.toLocaleString()}</div>
+                </div>
+                <div className="p-3 bg-muted/30 rounded-lg border text-center">
+                  <div className="text-xs text-muted-foreground">输出 Token</div>
+                  <div className="text-base font-bold mt-1">{selectedCall.outputTokens.toLocaleString()}</div>
+                </div>
+                <div className="p-3 bg-muted/30 rounded-lg border text-center">
+                  <div className="text-xs text-muted-foreground">总 Token</div>
+                  <div className="text-base font-bold mt-1">{selectedCall.totalTokens.toLocaleString()}</div>
+                </div>
+              </div>
+
+              {/* 请求内容 */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-1.5">
+                    <Database className="w-4 h-4 text-primary" />
+                    <span className="text-sm font-medium">请求内容</span>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-xs text-muted-foreground hover:text-foreground"
+                    onClick={() => {
+                      navigator.clipboard.writeText(selectedCall.prompt);
+                      toast.success('请求内容已复制');
+                    }}
+                  >
+                    <Copy className="w-3 h-3 mr-1" />
+                    复制
+                  </Button>
+                </div>
+                <div className="bg-slate-900 text-slate-100 rounded-lg p-4 font-mono text-xs whitespace-pre-wrap max-h-[300px] overflow-y-auto">
+                  {selectedCall.prompt}
+                </div>
+              </div>
+
+              {/* 响应内容 */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-1.5">
+                    <Zap className="w-4 h-4 text-primary" />
+                    <span className="text-sm font-medium">响应内容</span>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-xs text-muted-foreground hover:text-foreground"
+                    onClick={() => {
+                      navigator.clipboard.writeText(selectedCall.response);
+                      toast.success('响应内容已复制');
+                    }}
+                    disabled={!selectedCall.response}
+                  >
+                    <Copy className="w-3 h-3 mr-1" />
+                    复制
+                  </Button>
+                </div>
+                <div className="bg-slate-900 text-slate-100 rounded-lg p-4 font-mono text-xs whitespace-pre-wrap max-h-[300px] overflow-y-auto">
+                  {selectedCall.response || <span className="text-slate-500">无响应内容</span>}
+                </div>
+              </div>
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
