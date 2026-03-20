@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Search, Users, Zap, Activity, TrendingUp, FileText, BarChart3, Calendar } from 'lucide-react';
+import { Search, Users, Zap, Activity, TrendingUp, FileText, BarChart3, Calendar, ChevronDown, ChevronRight, Monitor } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -54,6 +54,8 @@ const TIME_RANGE_OPTIONS: { value: TimeRange; label: string }[] = [
   { value: '30d', label: '近 30 天' },
 ];
 
+const CLIENT_TYPES = ['VS Code', 'JetBrains', 'Cursor', 'Web IDE', 'CLI'];
+
 function formatTokens(tokens: number): string {
   if (tokens >= 1000000000) return (tokens / 1000000000).toFixed(1) + 'B';
   if (tokens >= 1000000) return (tokens / 1000000).toFixed(1) + 'M';
@@ -80,26 +82,75 @@ function getTimeRangeDays(range: TimeRange): number {
   }
 }
 
+interface CallDetail {
+  id: string;
+  timestamp: string;
+  model: string;
+  client: string;
+  inputTokens: number;
+  outputTokens: number;
+  totalTokens: number;
+  latency: number;
+  statusCode: number;
+  status: string;
+  requestId: string;
+  prompt: string;
+  response: string;
+}
+
 // 生成用户调用明细模拟数据
-function generateUserCallDetails(userId: string, _timeRange: TimeRange) {
+function generateUserCallDetails(userId: string, _timeRange: TimeRange): CallDetail[] {
   const models = ['GPT-4 Turbo', 'GPT-4o', 'Claude 3.5 Sonnet', 'DeepSeek V3', 'Kimi K2', 'GLM-4'];
-  return Array.from({ length: 20 }, (_, i) => {
+  const statusCodes = [
+    { code: 200, status: 'success', weight: 85 },
+    { code: 201, status: 'success', weight: 5 },
+    { code: 400, status: 'error', weight: 2 },
+    { code: 429, status: 'error', weight: 3 },
+    { code: 500, status: 'error', weight: 3 },
+    { code: 503, status: 'error', weight: 2 },
+  ];
+  const prompts = [
+    '请帮我实现一个排序算法',
+    '解释这段代码的功能',
+    '优化这个数据库查询',
+    '生成单元测试用例',
+    '重构这个函数',
+    '修复这个 Bug',
+    '添加错误处理逻辑',
+    '实现一个缓存机制',
+  ];
+
+  return Array.from({ length: 50 }, (_, i) => {
     const date = new Date();
     date.setMinutes(date.getMinutes() - Math.floor(Math.random() * 1440));
     const model = models[Math.floor(Math.random() * models.length)];
+    const client = CLIENT_TYPES[Math.floor(Math.random() * CLIENT_TYPES.length)];
     const inputTokens = Math.floor(Math.random() * 3000) + 200;
     const outputTokens = Math.floor(Math.random() * 2000) + 100;
-    const status = Math.random() > 0.05 ? 'success' : 'error';
+    
+    // weighted random status
+    const rand = Math.random() * 100;
+    let cumWeight = 0;
+    let selectedStatus = statusCodes[0];
+    for (const s of statusCodes) {
+      cumWeight += s.weight;
+      if (rand <= cumWeight) { selectedStatus = s; break; }
+    }
+
     return {
       id: `call-${userId}-${i}`,
       timestamp: date.toISOString(),
       model,
+      client,
       inputTokens,
       outputTokens,
       totalTokens: inputTokens + outputTokens,
       latency: +(Math.random() * 3 + 0.5).toFixed(2),
-      status,
-      errorCode: status === 'error' ? ['429', '500', '503'][Math.floor(Math.random() * 3)] : null,
+      statusCode: selectedStatus.code,
+      status: selectedStatus.status,
+      requestId: `req-${Math.random().toString(36).substring(2, 10)}`,
+      prompt: prompts[Math.floor(Math.random() * prompts.length)],
+      response: '// 生成的代码示例\nfunction example() {\n  return "hello";\n}',
     };
   }).sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 }
@@ -112,7 +163,7 @@ function generateUserStats(user: TopUser, timeRange: TimeRange) {
   const successRate = +(98 + Math.random() * 1.8).toFixed(1);
   const avgLatency = +(Math.random() * 1.5 + 0.8).toFixed(2);
 
-  const trendDays = timeRange === '30d' ? 30 : timeRange === '7d' ? 7 : timeRange === '24h' ? 7 : 7;
+  const trendDays = timeRange === '30d' ? 30 : timeRange === '7d' ? 7 : 7;
   const trend = Array.from({ length: trendDays }, (_, i) => {
     const date = new Date();
     date.setDate(date.getDate() - (trendDays - 1 - i));
@@ -140,6 +191,12 @@ function getTimeRangeLabel(range: TimeRange): string {
   return TIME_RANGE_OPTIONS.find(o => o.value === range)?.label ?? '';
 }
 
+function getStatusCodeColor(code: number): string {
+  if (code >= 200 && code < 300) return 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20';
+  if (code >= 400 && code < 500) return 'bg-amber-500/10 text-amber-600 border-amber-500/20';
+  return 'bg-destructive/10 text-destructive border-destructive/20';
+}
+
 export function ActiveUserList({ topUsers }: ActiveUserListProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -149,6 +206,9 @@ export function ActiveUserList({ topUsers }: ActiveUserListProps) {
   const [detailTab, setDetailTab] = useState<'stats' | 'calls'>('stats');
   const [detailTimeRange, setDetailTimeRange] = useState<TimeRange>('7d');
   const [callPage, setCallPage] = useState(1);
+  const [callModelFilter, setCallModelFilter] = useState<string>('all');
+  const [callStatusFilter, setCallStatusFilter] = useState<string>('all');
+  const [expandedCallId, setExpandedCallId] = useState<string | null>(null);
   const pageSize = 10;
   const callPageSize = 10;
 
@@ -163,18 +223,14 @@ export function ActiveUserList({ topUsers }: ActiveUserListProps) {
   const totalPages = Math.ceil(filteredUsers.length / pageSize);
   const paginatedUsers = filteredUsers.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
-  const summary = useMemo(() => ({
-    totalUsers: topUsers.length,
-    totalTokens: topUsers.reduce((s, u) => s + u.tokens, 0),
-    totalRequests: topUsers.reduce((s, u) => s + u.requests, 0),
-    avgTokensPerUser: topUsers.length > 0 ? Math.floor(topUsers.reduce((s, u) => s + u.tokens, 0) / topUsers.length) : 0,
-  }), [topUsers]);
-
   const handleViewUser = (user: TopUser) => {
     setSelectedUser(user);
     setDetailTab('stats');
     setCallPage(1);
-    setDetailTimeRange(listTimeRange); // 默认继承列表的时间筛选
+    setCallModelFilter('all');
+    setCallStatusFilter('all');
+    setExpandedCallId(null);
+    setDetailTimeRange(listTimeRange);
     setDetailDialogOpen(true);
   };
 
@@ -183,55 +239,36 @@ export function ActiveUserList({ topUsers }: ActiveUserListProps) {
     [selectedUser, detailTimeRange]
   );
 
+  // 获取调用明细中的可用模型和状态码列表
+  const availableModels = useMemo(() => {
+    const models = new Set(userCallDetails.map(c => c.model));
+    return Array.from(models).sort();
+  }, [userCallDetails]);
+
+  const availableStatusCodes = useMemo(() => {
+    const codes = new Set(userCallDetails.map(c => String(c.statusCode)));
+    return Array.from(codes).sort();
+  }, [userCallDetails]);
+
+  // 筛选后的调用明细
+  const filteredCallDetails = useMemo(() => {
+    return userCallDetails.filter(call => {
+      if (callModelFilter !== 'all' && call.model !== callModelFilter) return false;
+      if (callStatusFilter !== 'all' && String(call.statusCode) !== callStatusFilter) return false;
+      return true;
+    });
+  }, [userCallDetails, callModelFilter, callStatusFilter]);
+
   const userStats = useMemo(
     () => selectedUser ? generateUserStats(selectedUser, detailTimeRange) : null,
     [selectedUser, detailTimeRange]
   );
 
   React.useEffect(() => { setCurrentPage(1); }, [searchQuery]);
+  React.useEffect(() => { setCallPage(1); }, [callModelFilter, callStatusFilter]);
 
   return (
     <div className="space-y-4">
-      {/* 汇总统计卡片 */}
-      <div className="grid grid-cols-4 gap-4">
-        <Card className="enterprise-card">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 text-muted-foreground mb-1">
-              <Users className="w-4 h-4" />
-              <span className="text-xs">活跃用户数</span>
-            </div>
-            <p className="text-2xl font-bold text-foreground">{summary.totalUsers}</p>
-          </CardContent>
-        </Card>
-        <Card className="enterprise-card">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 text-muted-foreground mb-1">
-              <Zap className="w-4 h-4" />
-              <span className="text-xs">总 Token 消耗</span>
-            </div>
-            <p className="text-2xl font-bold text-foreground">{formatTokens(summary.totalTokens)}</p>
-          </CardContent>
-        </Card>
-        <Card className="enterprise-card">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 text-muted-foreground mb-1">
-              <Activity className="w-4 h-4" />
-              <span className="text-xs">总请求次数</span>
-            </div>
-            <p className="text-2xl font-bold text-foreground">{summary.totalRequests.toLocaleString()}</p>
-          </CardContent>
-        </Card>
-        <Card className="enterprise-card">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 text-muted-foreground mb-1">
-              <TrendingUp className="w-4 h-4" />
-              <span className="text-xs">人均 Token 消耗</span>
-            </div>
-            <p className="text-2xl font-bold text-foreground">{formatTokens(summary.avgTokensPerUser)}</p>
-          </CardContent>
-        </Card>
-      </div>
-
       {/* 用户列表 */}
       <Card className="enterprise-card">
         <CardHeader className="pb-3">
@@ -323,8 +360,11 @@ export function ActiveUserList({ topUsers }: ActiveUserListProps) {
             </tbody>
           </table>
 
-          {totalPages > 1 && (
-            <div className="p-4 border-t">
+          <div className="p-4 border-t flex items-center justify-between">
+            <span className="text-sm text-muted-foreground">
+              共 {filteredUsers.length} 个用户
+            </span>
+            {totalPages > 1 && (
               <Pagination>
                 <PaginationContent>
                   <PaginationItem>
@@ -352,14 +392,14 @@ export function ActiveUserList({ topUsers }: ActiveUserListProps) {
                   </PaginationItem>
                 </PaginationContent>
               </Pagination>
-            </div>
-          )}
+            )}
+          </div>
         </CardContent>
       </Card>
 
       {/* 用户详情弹窗 */}
       <Dialog open={detailDialogOpen} onOpenChange={setDetailDialogOpen}>
-        <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
+        <DialogContent className="max-w-5xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <div className="flex items-center justify-between pr-6">
               <DialogTitle className="flex items-center gap-2">
@@ -514,51 +554,130 @@ export function ActiveUserList({ topUsers }: ActiveUserListProps) {
 
               {detailTab === 'calls' && (
                 <div className="space-y-3">
+                  {/* 筛选栏 */}
+                  <div className="flex items-center gap-3">
+                    <Select value={callModelFilter} onValueChange={setCallModelFilter}>
+                      <SelectTrigger className="w-44 h-8 text-sm">
+                        <SelectValue placeholder="全部模型" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">全部模型</SelectItem>
+                        {availableModels.map(m => (
+                          <SelectItem key={m} value={m}>{m}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Select value={callStatusFilter} onValueChange={setCallStatusFilter}>
+                      <SelectTrigger className="w-32 h-8 text-sm">
+                        <SelectValue placeholder="全部状态" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">全部状态</SelectItem>
+                        {availableStatusCodes.map(code => (
+                          <SelectItem key={code} value={code}>{code}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <span className="text-xs text-muted-foreground ml-auto">
+                      共 {filteredCallDetails.length} 条记录
+                    </span>
+                  </div>
+
                   <Card className="enterprise-card">
                     <CardContent className="p-0">
                       <table className="data-table">
                         <thead>
                           <tr>
+                            <th className="w-8"></th>
                             <th>时间</th>
                             <th>模型</th>
+                            <th>客户端</th>
                             <th>输入 Token</th>
                             <th>输出 Token</th>
                             <th>总 Token</th>
                             <th>耗时</th>
-                            <th>状态</th>
+                            <th>状态码</th>
                           </tr>
                         </thead>
                         <tbody>
-                          {userCallDetails
+                          {filteredCallDetails
                             .slice((callPage - 1) * callPageSize, callPage * callPageSize)
                             .map((call) => (
-                            <tr key={call.id}>
-                              <td className="text-muted-foreground whitespace-nowrap">
-                                {formatDateTime(call.timestamp)}
-                              </td>
-                              <td className="font-medium">{call.model}</td>
-                              <td>{call.inputTokens.toLocaleString()}</td>
-                              <td>{call.outputTokens.toLocaleString()}</td>
-                              <td>{call.totalTokens.toLocaleString()}</td>
-                              <td>{call.latency}s</td>
-                              <td>
-                                {call.status === 'success' ? (
-                                  <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 text-xs">
-                                    成功
+                            <React.Fragment key={call.id}>
+                              <tr
+                                className="cursor-pointer"
+                                onClick={() => setExpandedCallId(expandedCallId === call.id ? null : call.id)}
+                              >
+                                <td className="w-8 pr-0">
+                                  {expandedCallId === call.id
+                                    ? <ChevronDown className="w-3.5 h-3.5 text-muted-foreground" />
+                                    : <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
+                                  }
+                                </td>
+                                <td className="text-muted-foreground whitespace-nowrap">
+                                  {formatDateTime(call.timestamp)}
+                                </td>
+                                <td className="font-medium">{call.model}</td>
+                                <td>
+                                  <div className="flex items-center gap-1.5">
+                                    <Monitor className="w-3.5 h-3.5 text-muted-foreground" />
+                                    <span className="text-sm">{call.client}</span>
+                                  </div>
+                                </td>
+                                <td>{call.inputTokens.toLocaleString()}</td>
+                                <td>{call.outputTokens.toLocaleString()}</td>
+                                <td>{call.totalTokens.toLocaleString()}</td>
+                                <td>{call.latency}s</td>
+                                <td>
+                                  <Badge variant="outline" className={cn("text-xs", getStatusCodeColor(call.statusCode))}>
+                                    {call.statusCode}
                                   </Badge>
-                                ) : (
-                                  <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20 text-xs">
-                                    {call.errorCode}
-                                  </Badge>
-                                )}
-                              </td>
-                            </tr>
+                                </td>
+                              </tr>
+                              {expandedCallId === call.id && (
+                                <tr>
+                                  <td colSpan={9} className="!p-0">
+                                    <div className="bg-muted/30 border-t border-b p-4 space-y-3">
+                                      <div className="grid grid-cols-3 gap-4 text-sm">
+                                        <div>
+                                          <span className="text-muted-foreground text-xs">Request ID</span>
+                                          <p className="font-mono text-xs mt-0.5">{call.requestId}</p>
+                                        </div>
+                                        <div>
+                                          <span className="text-muted-foreground text-xs">客户端</span>
+                                          <p className="text-xs mt-0.5">{call.client}</p>
+                                        </div>
+                                        <div>
+                                          <span className="text-muted-foreground text-xs">响应耗时</span>
+                                          <p className="text-xs mt-0.5">{call.latency}s</p>
+                                        </div>
+                                      </div>
+                                      <div>
+                                        <span className="text-muted-foreground text-xs">请求内容</span>
+                                        <div className="mt-1 p-2 bg-background rounded border text-xs font-mono whitespace-pre-wrap max-h-24 overflow-y-auto">
+                                          {call.prompt}
+                                        </div>
+                                      </div>
+                                      <div>
+                                        <span className="text-muted-foreground text-xs">响应内容</span>
+                                        <div className="mt-1 p-2 bg-background rounded border text-xs font-mono whitespace-pre-wrap max-h-24 overflow-y-auto">
+                                          {call.response}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </td>
+                                </tr>
+                              )}
+                            </React.Fragment>
                           ))}
                         </tbody>
                       </table>
 
-                      {userCallDetails.length > callPageSize && (
-                        <div className="p-3 border-t">
+                      {filteredCallDetails.length > callPageSize && (
+                        <div className="p-3 border-t flex items-center justify-between">
+                          <span className="text-xs text-muted-foreground">
+                            第 {(callPage - 1) * callPageSize + 1}-{Math.min(callPage * callPageSize, filteredCallDetails.length)} 条
+                          </span>
                           <Pagination>
                             <PaginationContent>
                               <PaginationItem>
@@ -567,7 +686,7 @@ export function ActiveUserList({ topUsers }: ActiveUserListProps) {
                                   className={callPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
                                 />
                               </PaginationItem>
-                              {Array.from({ length: Math.ceil(userCallDetails.length / callPageSize) }, (_, i) => (
+                              {Array.from({ length: Math.min(Math.ceil(filteredCallDetails.length / callPageSize), 5) }, (_, i) => (
                                 <PaginationItem key={i}>
                                   <PaginationLink
                                     onClick={() => setCallPage(i + 1)}
@@ -580,8 +699,8 @@ export function ActiveUserList({ topUsers }: ActiveUserListProps) {
                               ))}
                               <PaginationItem>
                                 <PaginationNext
-                                  onClick={() => setCallPage(p => Math.min(Math.ceil(userCallDetails.length / callPageSize), p + 1))}
-                                  className={callPage === Math.ceil(userCallDetails.length / callPageSize) ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                                  onClick={() => setCallPage(p => Math.min(Math.ceil(filteredCallDetails.length / callPageSize), p + 1))}
+                                  className={callPage === Math.ceil(filteredCallDetails.length / callPageSize) ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
                                 />
                               </PaginationItem>
                             </PaginationContent>
