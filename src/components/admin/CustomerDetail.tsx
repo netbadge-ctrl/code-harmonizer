@@ -448,6 +448,17 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
     return { data, totalPages };
   }, [errorDetails, errorPage]);
 
+  if (!customer) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64">
+        <p className="text-muted-foreground">客户信息未找到</p>
+        <Button variant="outline" onClick={onBack} className="mt-4">
+          返回列表
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* 返回按钮和标题 */}
