@@ -1629,7 +1629,7 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
             </Card>
           </div>
         </TabsContent>
-      </Tabs>
+      </div>
 
       {/* 错误详情弹窗 */}
       <Dialog open={errorDetailDialogOpen} onOpenChange={setErrorDetailDialogOpen}>
