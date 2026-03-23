@@ -1375,7 +1375,7 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {modelUsageData.slice(0, 10).map((item) => (
+                  {metricsModelUsageData.map((item) => (
                     <TableRow key={item.model}>
                       <TableCell className="font-medium">{item.model}</TableCell>
                       <TableCell className="text-right">{item.ttftAvg} 秒</TableCell>
