@@ -315,6 +315,8 @@ export function ActiveUserList({ topUsers }: ActiveUserListProps) {
                 <th>邮箱</th>
                 <th>Token 消耗</th>
                 <th>请求次数</th>
+                <th>请求成功率</th>
+                <th>常用模型</th>
                 <th>最后活跃</th>
                 <th>操作</th>
               </tr>
