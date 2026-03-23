@@ -272,16 +272,7 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
     });
   };
 
-  if (!customer) {
-    return (
-      <div className="flex flex-col items-center justify-center h-64">
-        <p className="text-muted-foreground">客户信息未找到</p>
-        <Button variant="outline" onClick={onBack} className="mt-4">
-          返回列表
-        </Button>
-      </div>
-    );
-  }
+  // early return moved after hooks
 
   // 生成模型使用数据（包含完整指标）- 与AdminAnalytics一致
   const generateModelUsageData = () => {
@@ -432,7 +423,7 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
       totalOutputTokens,
       totalRequests,
       totalErrors,
-      activeUsers: customer.usage.activeUsers,
+      activeUsers: customer?.usage?.activeUsers ?? 0,
     };
   }, [modelUsageData, customer]);
 
@@ -456,6 +447,17 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
     const data = errorDetails.slice((errorPage - 1) * errorPageSize, errorPage * errorPageSize);
     return { data, totalPages };
   }, [errorDetails, errorPage]);
+
+  if (!customer) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64">
+        <p className="text-muted-foreground">客户信息未找到</p>
+        <Button variant="outline" onClick={onBack} className="mt-4">
+          返回列表
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
