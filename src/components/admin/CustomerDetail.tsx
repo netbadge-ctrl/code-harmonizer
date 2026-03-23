@@ -1067,8 +1067,12 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                           size="sm"
                           className="h-auto p-0 text-destructive hover:text-destructive hover:underline font-medium"
                           onClick={() => {
-                            setModelErrorTarget({ model: item.model, errorCount: item.errorCount });
-                            setModelErrorDialogOpen(true);
+                            setErrorModelFilter(item.model);
+                            setSelectedErrorCode(null);
+                            setErrorPage(1);
+                            setTimeout(() => {
+                              errorAnalysisRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                            }, 100);
                           }}
                         >
                           {item.errorCount}
