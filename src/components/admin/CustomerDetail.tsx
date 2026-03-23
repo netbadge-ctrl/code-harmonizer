@@ -516,7 +516,7 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
       </div>
 
       {/* 筛选栏 - 仅在使用统计tab显示，吸顶固定 */}
-      {activeTab === 'usage' && (
+      {(activeTab === 'usage' || activeTab === 'modelMetrics') && (
       <div className="sticky top-12 z-10 bg-background border-b -mx-6 px-6">
         <div className="flex items-center gap-4 overflow-x-auto py-2.5">
           {/* 时间范围 */}
