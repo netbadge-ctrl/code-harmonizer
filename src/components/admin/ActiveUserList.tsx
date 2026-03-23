@@ -368,7 +368,7 @@ export function ActiveUserList({ topUsers }: ActiveUserListProps) {
               })}
               {paginatedUsers.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="text-center text-muted-foreground py-8">
+                  <td colSpan={9} className="text-center text-muted-foreground py-8">
                     未找到匹配的用户
                   </td>
                 </tr>
