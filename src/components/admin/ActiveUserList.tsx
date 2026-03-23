@@ -439,37 +439,18 @@ export function ActiveUserList({ topUsers }: ActiveUserListProps) {
 
           {selectedUser && userStats && (
             <div className="space-y-4">
-              {/* Tab切换 */}
+              {/* Tab - only stats now */}
               <div className="flex gap-1 border-b">
                 <button
-                  className={cn(
-                    "px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors",
-                    detailTab === 'stats'
-                      ? "border-primary text-primary"
-                      : "border-transparent text-muted-foreground hover:text-foreground"
-                  )}
-                  onClick={() => setDetailTab('stats')}
+                  className="px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors border-primary text-primary"
                 >
                   <BarChart3 className="w-4 h-4 inline mr-1.5" />
                   数据统计
                 </button>
-                <button
-                  className={cn(
-                    "px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors",
-                    detailTab === 'calls'
-                      ? "border-primary text-primary"
-                      : "border-transparent text-muted-foreground hover:text-foreground"
-                  )}
-                  onClick={() => setDetailTab('calls')}
-                >
-                  <FileText className="w-4 h-4 inline mr-1.5" />
-                  调用明细
-                </button>
               </div>
 
-              {detailTab === 'stats' && (
-                <div className="space-y-4">
-                  {/* 核心指标 */}
+              <div className="space-y-4">
+                {/* 核心指标 */}
                   <div className="grid grid-cols-4 gap-3">
                     <Card className="enterprise-card">
                       <CardContent className="p-3">
