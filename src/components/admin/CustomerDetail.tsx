@@ -475,9 +475,9 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <Tabs defaultValue="usage" className="flex flex-col h-full">
       {/* 固定头部区域 */}
-      <div className="sticky top-0 z-10 bg-background border-b pb-0 -mx-6 px-6 pt-2">
+      <div className="sticky top-0 z-10 bg-background border-b -mx-6 px-6 pt-2 pb-0">
         {/* 返回按钮和标题 */}
         <div className="flex items-center gap-4 mb-3">
           <Button variant="ghost" size="sm" onClick={onBack} className="gap-2">
@@ -504,20 +504,17 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
         </div>
 
         {/* Tabs 标签 */}
-        <Tabs defaultValue="usage" className="space-y-0">
-          <TabsList>
-            <TabsTrigger value="usage">使用统计</TabsTrigger>
-            <TabsTrigger value="overview">配置信息</TabsTrigger>
-            <TabsTrigger value="users">活跃用户</TabsTrigger>
-            <TabsTrigger value="logs">操作日志</TabsTrigger>
-            <TabsTrigger value="cloud">云服务信息</TabsTrigger>
-          </TabsList>
-        </Tabs>
+        <TabsList>
+          <TabsTrigger value="usage">使用统计</TabsTrigger>
+          <TabsTrigger value="overview">配置信息</TabsTrigger>
+          <TabsTrigger value="users">活跃用户</TabsTrigger>
+          <TabsTrigger value="logs">操作日志</TabsTrigger>
+          <TabsTrigger value="cloud">云服务信息</TabsTrigger>
+        </TabsList>
       </div>
 
-      {/* 可滚动内容区域 */}
-      <div className="flex-1 overflow-y-auto pt-6">
-        <Tabs defaultValue="usage" className="space-y-4">
+      {/* 内容区域 */}
+      <div className="flex-1 pt-6 space-y-4">
 
         <TabsContent value="overview" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
