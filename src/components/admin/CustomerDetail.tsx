@@ -618,62 +618,106 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
           {/* 模型筛选 */}
           <div className="flex items-center gap-2 flex-nowrap">
             <span className="text-sm text-muted-foreground whitespace-nowrap">模型：</span>
-            <Popover open={modelPopoverOpen} onOpenChange={setModelPopoverOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  role="combobox"
-                  aria-expanded={modelPopoverOpen}
-                  className="w-[180px] justify-between"
-                >
-                  {modelFilter === 'all' ? '全部模型' : modelFilter}
-                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-[200px] p-0">
-                <Command>
-                  <CommandInput placeholder="搜索模型..." />
-                  <CommandList>
-                    <CommandEmpty>未找到模型</CommandEmpty>
-                    <CommandGroup>
-                      <CommandItem
-                        value="all"
-                        onSelect={() => {
-                          setModelFilter('all');
-                          setModelPopoverOpen(false);
-                        }}
-                      >
-                        <Check
-                          className={cn(
-                            "mr-2 h-4 w-4",
-                            modelFilter === 'all' ? "opacity-100" : "opacity-0"
-                          )}
-                        />
-                        全部模型
-                      </CommandItem>
-                      {availableModels.map((model) => (
+            {activeTab === 'modelMetrics' ? (
+              <Popover open={metricsModelPopoverOpen} onOpenChange={setMetricsModelPopoverOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={metricsModelPopoverOpen}
+                    className="w-[180px] justify-between"
+                  >
+                    {metricsModelFilter}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[200px] p-0">
+                  <Command>
+                    <CommandInput placeholder="搜索模型..." />
+                    <CommandList>
+                      <CommandEmpty>未找到模型</CommandEmpty>
+                      <CommandGroup>
+                        {availableModels.map((model) => (
+                          <CommandItem
+                            key={model}
+                            value={model}
+                            onSelect={() => {
+                              setMetricsModelFilter(model);
+                              setMetricsModelPopoverOpen(false);
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                metricsModelFilter === model ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            {model}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            ) : (
+              <Popover open={modelPopoverOpen} onOpenChange={setModelPopoverOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={modelPopoverOpen}
+                    className="w-[180px] justify-between"
+                  >
+                    {modelFilter === 'all' ? '全部模型' : modelFilter}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[200px] p-0">
+                  <Command>
+                    <CommandInput placeholder="搜索模型..." />
+                    <CommandList>
+                      <CommandEmpty>未找到模型</CommandEmpty>
+                      <CommandGroup>
                         <CommandItem
-                          key={model}
-                          value={model}
+                          value="all"
                           onSelect={() => {
-                            setModelFilter(model);
+                            setModelFilter('all');
                             setModelPopoverOpen(false);
                           }}
                         >
                           <Check
                             className={cn(
                               "mr-2 h-4 w-4",
-                              modelFilter === model ? "opacity-100" : "opacity-0"
+                              modelFilter === 'all' ? "opacity-100" : "opacity-0"
                             )}
                           />
-                          {model}
+                          全部模型
                         </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
+                        {availableModels.map((model) => (
+                          <CommandItem
+                            key={model}
+                            value={model}
+                            onSelect={() => {
+                              setModelFilter(model);
+                              setModelPopoverOpen(false);
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                modelFilter === model ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            {model}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            )}
           </div>
         </div>
       </div>
