@@ -210,6 +210,10 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
   // 错误详情弹窗
   const [selectedError, setSelectedError] = useState<any | null>(null);
   const [errorDetailDialogOpen, setErrorDetailDialogOpen] = useState(false);
+
+  // 模型错误代码分布弹窗
+  const [modelErrorDialogOpen, setModelErrorDialogOpen] = useState(false);
+  const [modelErrorTarget, setModelErrorTarget] = useState<{ model: string; errorCount: number } | null>(null);
   
 
   // 可见模型配置状态
@@ -1056,7 +1060,19 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                       <TableCell className="text-right">{item.ttftP98} 秒</TableCell>
                       <TableCell className="text-right">{item.tpotAvg} t/s</TableCell>
                       <TableCell className="text-right">{item.successfulRequests.toLocaleString()}/{item.requests.toLocaleString()}</TableCell>
-                      <TableCell className="text-right text-destructive">{item.errorCount}</TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-auto p-0 text-destructive hover:text-destructive hover:underline font-medium"
+                          onClick={() => {
+                            setModelErrorTarget({ model: item.model, errorCount: item.errorCount });
+                            setModelErrorDialogOpen(true);
+                          }}
+                        >
+                          {item.errorCount}
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -1167,151 +1183,137 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
             </CardContent>
           </Card>
 
-          {/* 错误分析区域 */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* 按错误代码统计 */}
-            <Card className="enterprise-card">
-              <CardHeader>
-                <CardTitle className="text-base">按错误代码统计</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>错误代码</TableHead>
-                      <TableHead>错误类型</TableHead>
-                      <TableHead className="text-right">次数</TableHead>
-                      <TableHead className="text-right">占比</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {errorByType.map((item) => (
-                      <TableRow key={item.code}>
-                        <TableCell>
-                          <span className={cn(
-                            "px-2 py-0.5 rounded text-xs font-mono font-medium",
-                            item.code === '429' && "bg-yellow-500/10 text-yellow-600",
-                            item.code === '500' && "bg-destructive/10 text-destructive",
-                            item.code === '503' && "bg-orange-500/10 text-orange-600",
-                            item.code === '504' && "bg-purple-500/10 text-purple-600",
-                            item.code === '400' && "bg-blue-500/10 text-blue-600",
-                            item.code === '401' && "bg-red-500/10 text-red-600",
-                          )}>
-                            {item.code}
-                          </span>
-                        </TableCell>
-                        <TableCell>{item.name}</TableCell>
-                        <TableCell className="text-right font-medium">{item.count}</TableCell>
-                        <TableCell className="text-right text-muted-foreground">{item.percentage}%</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-
-            {/* 按模型错误分布 */}
-            <Card className="enterprise-card">
-              <CardHeader>
-                <CardTitle className="text-base">按模型错误分布</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>模型</TableHead>
-                      <TableHead className="text-right">错误数</TableHead>
-                      <TableHead className="text-right">成功率</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {modelUsageData.slice(0, 7).map((item) => (
-                      <TableRow key={item.model}>
-                        <TableCell className="font-medium">{item.model}</TableCell>
-                        <TableCell className="text-right text-destructive font-medium">{item.errorCount}</TableCell>
-                        <TableCell className="text-right">{item.successRate}%</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* 错误趋势图 */}
+          {/* 错误分析区域 - 统计与趋势整合 */}
           <Card className="enterprise-card">
             <CardHeader>
-              <CardTitle className="text-base">错误趋势 (每小时)</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <ComposedChart data={errorTrendData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis dataKey="hour" tick={{ fontSize: 10 }} />
-                    <YAxis tick={{ fontSize: 12 }} />
-                    <Tooltip 
-                      content={({ active, payload, label }) => {
-                        if (active && payload && payload.length) {
-                          const total = payload.reduce((sum, entry) => {
-                            if (entry.dataKey !== 'trendLine') {
-                              return sum + (Number(entry.value) || 0);
-                            }
-                            return sum;
-                          }, 0);
-                          return (
-                            <div className="bg-background border rounded-lg p-3 shadow-lg">
-                              <p className="font-medium mb-2">{label}</p>
-                              {payload.filter(p => p.dataKey !== 'trendLine').map((entry: any) => (
-                                <div key={entry.dataKey} className="flex items-center gap-2 text-sm">
-                                  <div className="w-3 h-3 rounded" style={{ backgroundColor: entry.color }} />
-                                  <span>{entry.dataKey} {errorTypes.find(e => e.code === entry.dataKey)?.name}：{entry.value}</span>
-                                </div>
-                              ))}
-                              <div className="border-t mt-2 pt-2 font-medium text-sm">
-                                总错误数：{total}
-                              </div>
-                            </div>
-                          );
-                        }
-                        return null;
-                      }}
-                    />
-                    <Bar dataKey="429" stackId="errors" fill={ERROR_COLORS['429']} name="429" />
-                    <Bar dataKey="500" stackId="errors" fill={ERROR_COLORS['500']} name="500" />
-                    <Bar dataKey="503" stackId="errors" fill={ERROR_COLORS['503']} name="503" />
-                    <Bar dataKey="504" stackId="errors" fill={ERROR_COLORS['504']} name="504" />
-                    <Bar dataKey="400" stackId="errors" fill={ERROR_COLORS['400']} name="400" />
-                    <Bar dataKey="401" stackId="errors" fill={ERROR_COLORS['401']} name="401" />
-                    {selectedErrorCode && (
-                      <Line 
-                        type="monotone" 
-                        dataKey={selectedErrorCode}
-                        stroke="hsl(var(--foreground))"
-                        strokeWidth={2}
-                        dot={false}
-                        name={`${selectedErrorCode} 趋势`}
-                      />
-                    )}
-                  </ComposedChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="flex flex-wrap gap-3 mt-3 justify-center text-xs">
-                {errorTypes.map((et) => (
-                  <div 
-                    key={et.code}
-                    className={cn(
-                      "flex items-center gap-1 cursor-pointer px-2 py-1 rounded transition-colors",
-                      selectedErrorCode === et.code ? "bg-muted ring-1 ring-foreground" : "hover:bg-muted/50"
-                    )}
-                    onClick={() => setSelectedErrorCode(
-                      selectedErrorCode === et.code ? null : et.code
-                    )}
-                  >
-                    <div className="w-3 h-3 rounded" style={{ backgroundColor: ERROR_COLORS[et.code] }} />
-                    <span>{et.code}</span>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base">错误统计与趋势</CardTitle>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground">按错误代码查看：</span>
+                  <div className="flex flex-wrap gap-1">
+                    <Button
+                      variant={selectedErrorCode === null ? 'default' : 'outline'}
+                      size="sm"
+                      className="h-6 px-2 text-xs"
+                      onClick={() => setSelectedErrorCode(null)}
+                    >
+                      全部
+                    </Button>
+                    {errorTypes.map((et) => (
+                      <Button
+                        key={et.code}
+                        variant={selectedErrorCode === et.code ? 'default' : 'outline'}
+                        size="sm"
+                        className="h-6 px-2 text-xs gap-1"
+                        onClick={() => setSelectedErrorCode(
+                          selectedErrorCode === et.code ? null : et.code
+                        )}
+                      >
+                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: ERROR_COLORS[et.code] }} />
+                        {et.code}
+                      </Button>
+                    ))}
                   </div>
-                ))}
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* 错误代码统计表 */}
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>错误代码</TableHead>
+                    <TableHead>错误类型</TableHead>
+                    <TableHead className="text-right">次数</TableHead>
+                    <TableHead className="text-right">占比</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {(selectedErrorCode
+                    ? errorByType.filter(e => e.code === selectedErrorCode)
+                    : errorByType
+                  ).map((item) => (
+                    <TableRow key={item.code}>
+                      <TableCell>
+                        <span className={cn(
+                          "px-2 py-0.5 rounded text-xs font-mono font-medium",
+                          item.code === '429' && "bg-yellow-500/10 text-yellow-600",
+                          item.code === '500' && "bg-destructive/10 text-destructive",
+                          item.code === '503' && "bg-orange-500/10 text-orange-600",
+                          item.code === '504' && "bg-purple-500/10 text-purple-600",
+                          item.code === '400' && "bg-blue-500/10 text-blue-600",
+                          item.code === '401' && "bg-red-500/10 text-red-600",
+                        )}>
+                          {item.code}
+                        </span>
+                      </TableCell>
+                      <TableCell>{item.name}</TableCell>
+                      <TableCell className="text-right font-medium">{item.count}</TableCell>
+                      <TableCell className="text-right text-muted-foreground">{item.percentage}%</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+
+              {/* 错误趋势图 */}
+              <div>
+                <h4 className="text-sm font-medium mb-3">错误趋势 (每小时)</h4>
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <ComposedChart data={errorTrendData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                      <XAxis dataKey="hour" tick={{ fontSize: 10 }} />
+                      <YAxis tick={{ fontSize: 12 }} />
+                      <Tooltip 
+                        content={({ active, payload, label }) => {
+                          if (active && payload && payload.length) {
+                            const total = payload.reduce((sum, entry) => {
+                              if (entry.dataKey !== 'trendLine') {
+                                return sum + (Number(entry.value) || 0);
+                              }
+                              return sum;
+                            }, 0);
+                            return (
+                              <div className="bg-background border rounded-lg p-3 shadow-lg">
+                                <p className="font-medium mb-2">{label}</p>
+                                {payload.filter(p => p.dataKey !== 'trendLine').map((entry: any) => (
+                                  <div key={entry.dataKey} className="flex items-center gap-2 text-sm">
+                                    <div className="w-3 h-3 rounded" style={{ backgroundColor: entry.color }} />
+                                    <span>{entry.dataKey} {errorTypes.find(e => e.code === entry.dataKey)?.name}：{entry.value}</span>
+                                  </div>
+                                ))}
+                                <div className="border-t mt-2 pt-2 font-medium text-sm">
+                                  总错误数：{total}
+                                </div>
+                              </div>
+                            );
+                          }
+                          return null;
+                        }}
+                      />
+                      {selectedErrorCode ? (
+                        <Bar dataKey={selectedErrorCode} fill={ERROR_COLORS[selectedErrorCode]} name={selectedErrorCode} />
+                      ) : (
+                        <>
+                          <Bar dataKey="429" stackId="errors" fill={ERROR_COLORS['429']} name="429" />
+                          <Bar dataKey="500" stackId="errors" fill={ERROR_COLORS['500']} name="500" />
+                          <Bar dataKey="503" stackId="errors" fill={ERROR_COLORS['503']} name="503" />
+                          <Bar dataKey="504" stackId="errors" fill={ERROR_COLORS['504']} name="504" />
+                          <Bar dataKey="400" stackId="errors" fill={ERROR_COLORS['400']} name="400" />
+                          <Bar dataKey="401" stackId="errors" fill={ERROR_COLORS['401']} name="401" />
+                        </>
+                      )}
+                    </ComposedChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="flex flex-wrap gap-3 mt-3 justify-center text-xs">
+                  {(selectedErrorCode ? errorTypes.filter(e => e.code === selectedErrorCode) : errorTypes).map((et) => (
+                    <div key={et.code} className="flex items-center gap-1">
+                      <div className="w-3 h-3 rounded" style={{ backgroundColor: ERROR_COLORS[et.code] }} />
+                      <span>{et.code} {et.name}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -1648,6 +1650,74 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* 模型错误代码分布弹窗 */}
+      <Dialog open={modelErrorDialogOpen} onOpenChange={setModelErrorDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-destructive" />
+              {modelErrorTarget?.model} — 错误代码分布
+            </DialogTitle>
+          </DialogHeader>
+          {modelErrorTarget && (() => {
+            const totalErrors = modelErrorTarget.errorCount;
+            const errorDistribution = errorTypes.map(et => {
+              const count = Math.max(0, Math.floor(totalErrors * (Math.random() * 0.4 + 0.02)));
+              return { ...et, count };
+            });
+            // Normalize to match total
+            const rawTotal = errorDistribution.reduce((s, e) => s + e.count, 0);
+            if (rawTotal > 0) {
+              const scale = totalErrors / rawTotal;
+              errorDistribution.forEach(e => { e.count = Math.round(e.count * scale); });
+            }
+            const adjustedTotal = errorDistribution.reduce((s, e) => s + e.count, 0);
+
+            return (
+              <div className="space-y-3">
+                <div className="text-sm text-muted-foreground">
+                  总错误数：<span className="font-medium text-foreground">{totalErrors}</span>
+                </div>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>错误代码</TableHead>
+                      <TableHead>错误类型</TableHead>
+                      <TableHead className="text-right">次数</TableHead>
+                      <TableHead className="text-right">占比</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {errorDistribution.filter(e => e.count > 0).sort((a, b) => b.count - a.count).map((item) => (
+                      <TableRow key={item.code}>
+                        <TableCell>
+                          <span className={cn(
+                            "px-2 py-0.5 rounded text-xs font-mono font-medium",
+                            item.code === '429' && "bg-yellow-500/10 text-yellow-600",
+                            item.code === '500' && "bg-destructive/10 text-destructive",
+                            item.code === '503' && "bg-orange-500/10 text-orange-600",
+                            item.code === '504' && "bg-purple-500/10 text-purple-600",
+                            item.code === '400' && "bg-blue-500/10 text-blue-600",
+                            item.code === '401' && "bg-red-500/10 text-red-600",
+                          )}>
+                            {item.code}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-sm">{item.name}</TableCell>
+                        <TableCell className="text-right font-medium">{item.count}</TableCell>
+                        <TableCell className="text-right text-muted-foreground">
+                          {adjustedTotal > 0 ? ((item.count / adjustedTotal) * 100).toFixed(1) : 0}%
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            );
+          })()}
         </DialogContent>
       </Dialog>
     </div>
