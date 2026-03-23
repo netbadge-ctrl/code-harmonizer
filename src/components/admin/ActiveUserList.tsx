@@ -48,15 +48,14 @@ interface ActiveUserListProps {
   topUsers: TopUser[];
 }
 
-type TimeRange = '1h' | '6h' | '24h' | '7d' | '30d';
+type TimeRange = '15m' | '4h' | '24h' | '7d';
 type DetailTimeRange = '15m' | '4h' | '24h' | '7d';
 
 const TIME_RANGE_OPTIONS: { value: TimeRange; label: string }[] = [
-  { value: '1h', label: '近 1 小时' },
-  { value: '6h', label: '近 6 小时' },
-  { value: '24h', label: '近 24 小时' },
+  { value: '15m', label: '最近 15 分钟' },
+  { value: '4h', label: '最近 4 小时' },
+  { value: '24h', label: '最近 24 小时' },
   { value: '7d', label: '近 7 天' },
-  { value: '30d', label: '近 30 天' },
 ];
 
 const DETAIL_TIME_RANGE_OPTIONS: { value: DetailTimeRange; label: string }[] = [
