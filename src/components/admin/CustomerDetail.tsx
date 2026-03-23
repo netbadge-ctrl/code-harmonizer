@@ -1435,6 +1435,7 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
 
         <TabsContent value="users" className="space-y-4">
           <ActiveUserList topUsers={customer.topUsers} />
