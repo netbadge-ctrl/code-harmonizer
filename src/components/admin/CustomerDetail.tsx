@@ -1391,6 +1391,89 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
               </Table>
             </CardContent>
           </Card>
+
+          {/* 趋势图 - 2x2 网格 */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* TPM 趋势 */}
+            <Card className="enterprise-card">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm">TPM 趋势</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-48">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={modelMetricsTrendData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                      <XAxis dataKey="time" tick={{ fontSize: 11 }} />
+                      <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => formatTokens(v)} />
+                      <Tooltip formatter={(value: number) => [formatTokens(value), 'TPM']} />
+                      <Line type="monotone" dataKey="tpm" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* TTFT 趋势 */}
+            <Card className="enterprise-card">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm">TTFT 趋势</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-48">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={modelMetricsTrendData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                      <XAxis dataKey="time" tick={{ fontSize: 11 }} />
+                      <YAxis tick={{ fontSize: 11 }} unit=" 秒" />
+                      <Tooltip formatter={(value: number) => [`${value} 秒`, 'TTFT']} />
+                      <Line type="monotone" dataKey="ttft" stroke="hsl(142, 76%, 36%)" strokeWidth={2} dot={false} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* TTFT<20s 趋势 */}
+            <Card className="enterprise-card">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm">TTFT&lt;20s 趋势</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-48">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={modelMetricsTrendData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                      <XAxis dataKey="time" tick={{ fontSize: 11 }} />
+                      <YAxis tick={{ fontSize: 11 }} unit="%" domain={[75, 100]} />
+                      <Tooltip formatter={(value: number) => [`${value}%`, 'TTFT<20s']} />
+                      <Line type="monotone" dataKey="ttftUnder20s" stroke="hsl(38, 92%, 50%)" strokeWidth={2} dot={false} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Token生成速度 趋势 */}
+            <Card className="enterprise-card">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm">Token生成速度 趋势</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-48">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={modelMetricsTrendData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                      <XAxis dataKey="time" tick={{ fontSize: 11 }} />
+                      <YAxis tick={{ fontSize: 11 }} unit=" t/s" />
+                      <Tooltip formatter={(value: number) => [`${value} tokens/s`, 'Token生成速度']} />
+                      <Line type="monotone" dataKey="tokenSpeed" stroke="hsl(270, 50%, 60%)" strokeWidth={2} dot={false} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
 
         <TabsContent value="users" className="space-y-4">
