@@ -172,7 +172,7 @@ function generateUserCallDetails(userId: string, _timeRange: TimeRange | DetailT
 }
 
 // 生成用户核心数据统计
-function generateUserStats(user: TopUser, timeRange: TimeRange) {
+function generateUserStats(user: TopUser, timeRange: TimeRange | DetailTimeRange) {
   const days = Math.max(getTimeRangeDays(timeRange), 1);
   const avgDailyTokens = Math.floor(user.tokens / days);
   const avgDailyRequests = Math.floor(user.requests / days);
