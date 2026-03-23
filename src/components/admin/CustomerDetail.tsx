@@ -477,7 +477,7 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
   return (
     <Tabs defaultValue="usage" className="flex flex-col h-full">
       {/* 固定头部区域 */}
-      <div className="sticky top-0 z-10 bg-background border-b -mx-6 px-6 pt-2 pb-0">
+      <div className="sticky top-12 z-10 bg-background border-b -mx-6 px-6 pt-2 pb-0">
         {/* 返回按钮和标题 */}
         <div className="flex items-center gap-4 mb-3">
           <Button variant="ghost" size="sm" onClick={onBack} className="gap-2">
