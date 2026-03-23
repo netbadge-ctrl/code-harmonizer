@@ -440,12 +440,24 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
     })).sort((a, b) => b.count - a.count);
   }, [errorDetails]);
 
+  // 过滤错误明细（按模型+错误代码）
+  const filteredErrorDetails = useMemo(() => {
+    let data = errorDetails;
+    if (errorModelFilter) {
+      data = data.filter(e => e.model === errorModelFilter);
+    }
+    if (selectedErrorCode) {
+      data = data.filter(e => e.errorCode === selectedErrorCode);
+    }
+    return data;
+  }, [errorDetails, errorModelFilter, selectedErrorCode]);
+
   // 分页错误明细
   const paginatedErrorDetails = useMemo(() => {
-    const totalPages = Math.ceil(errorDetails.length / errorPageSize);
-    const data = errorDetails.slice((errorPage - 1) * errorPageSize, errorPage * errorPageSize);
+    const totalPages = Math.ceil(filteredErrorDetails.length / errorPageSize);
+    const data = filteredErrorDetails.slice((errorPage - 1) * errorPageSize, errorPage * errorPageSize);
     return { data, totalPages };
-  }, [errorDetails, errorPage]);
+  }, [filteredErrorDetails, errorPage]);
 
   if (!customer) {
     return (
