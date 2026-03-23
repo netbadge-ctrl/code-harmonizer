@@ -198,6 +198,10 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
   const [modelFilter, setModelFilter] = useState<string>('all');
   const [modelPopoverOpen, setModelPopoverOpen] = useState(false);
   
+  // 模型指标tab - 模型筛选（必须选择具体模型）
+  const [metricsModelFilter, setMetricsModelFilter] = useState<string>(availableModels[0]);
+  const [metricsModelPopoverOpen, setMetricsModelPopoverOpen] = useState(false);
+  
   // 模型性能指标排序状态
   const [sortColumn, setSortColumn] = useState<string>('tokens');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
@@ -404,9 +408,32 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
     });
   }, [modelFilter, sortColumn, sortDirection]);
 
+  // 模型指标tab的数据（按metricsModelFilter筛选）
+  const metricsModelUsageData = useMemo(() => {
+    return generateModelUsageData().filter(m => m.model === metricsModelFilter);
+  }, [metricsModelFilter]);
+
   const dailyTrendData = useMemo(() => generateDailyTrendData(), []);
   const errorTrendData = useMemo(() => generateErrorTrendData(), []);
   const errorDetails = useMemo(() => generateErrorDetails(modelFilter), [modelFilter]);
+
+  // 模型指标趋势数据（按选中模型生成）
+  const modelMetricsTrendData = useMemo(() => {
+    return Array.from({ length: 24 }, (_, i) => {
+      const isBusinessHour = i >= 9 && i <= 21;
+      const baseTpm = isBusinessHour ? 80000 + Math.random() * 60000 : 20000 + Math.random() * 30000;
+      const baseTtft = isBusinessHour ? 0.3 + Math.random() * 0.3 : 0.2 + Math.random() * 0.2;
+      const baseTtftUnder20s = 0.82 + Math.random() * 0.15;
+      const baseTokenSpeed = 25 + Math.random() * 20;
+      return {
+        time: `${String(i).padStart(2, '0')}:00`,
+        tpm: Math.floor(baseTpm),
+        ttft: +baseTtft.toFixed(2),
+        ttftUnder20s: +(Math.min(baseTtftUnder20s, 1) * 100).toFixed(1),
+        tokenSpeed: +baseTokenSpeed.toFixed(1),
+      };
+    });
+  }, [metricsModelFilter]);
 
   // 汇总统计
   const stats = useMemo(() => {
@@ -596,62 +623,106 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
           {/* 模型筛选 */}
           <div className="flex items-center gap-2 flex-nowrap">
             <span className="text-sm text-muted-foreground whitespace-nowrap">模型：</span>
-            <Popover open={modelPopoverOpen} onOpenChange={setModelPopoverOpen}>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  role="combobox"
-                  aria-expanded={modelPopoverOpen}
-                  className="w-[180px] justify-between"
-                >
-                  {modelFilter === 'all' ? '全部模型' : modelFilter}
-                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-[200px] p-0">
-                <Command>
-                  <CommandInput placeholder="搜索模型..." />
-                  <CommandList>
-                    <CommandEmpty>未找到模型</CommandEmpty>
-                    <CommandGroup>
-                      <CommandItem
-                        value="all"
-                        onSelect={() => {
-                          setModelFilter('all');
-                          setModelPopoverOpen(false);
-                        }}
-                      >
-                        <Check
-                          className={cn(
-                            "mr-2 h-4 w-4",
-                            modelFilter === 'all' ? "opacity-100" : "opacity-0"
-                          )}
-                        />
-                        全部模型
-                      </CommandItem>
-                      {availableModels.map((model) => (
+            {activeTab === 'modelMetrics' ? (
+              <Popover open={metricsModelPopoverOpen} onOpenChange={setMetricsModelPopoverOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={metricsModelPopoverOpen}
+                    className="w-[180px] justify-between"
+                  >
+                    {metricsModelFilter}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[200px] p-0">
+                  <Command>
+                    <CommandInput placeholder="搜索模型..." />
+                    <CommandList>
+                      <CommandEmpty>未找到模型</CommandEmpty>
+                      <CommandGroup>
+                        {availableModels.map((model) => (
+                          <CommandItem
+                            key={model}
+                            value={model}
+                            onSelect={() => {
+                              setMetricsModelFilter(model);
+                              setMetricsModelPopoverOpen(false);
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                metricsModelFilter === model ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            {model}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            ) : (
+              <Popover open={modelPopoverOpen} onOpenChange={setModelPopoverOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={modelPopoverOpen}
+                    className="w-[180px] justify-between"
+                  >
+                    {modelFilter === 'all' ? '全部模型' : modelFilter}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[200px] p-0">
+                  <Command>
+                    <CommandInput placeholder="搜索模型..." />
+                    <CommandList>
+                      <CommandEmpty>未找到模型</CommandEmpty>
+                      <CommandGroup>
                         <CommandItem
-                          key={model}
-                          value={model}
+                          value="all"
                           onSelect={() => {
-                            setModelFilter(model);
+                            setModelFilter('all');
                             setModelPopoverOpen(false);
                           }}
                         >
                           <Check
                             className={cn(
                               "mr-2 h-4 w-4",
-                              modelFilter === model ? "opacity-100" : "opacity-0"
+                              modelFilter === 'all' ? "opacity-100" : "opacity-0"
                             )}
                           />
-                          {model}
+                          全部模型
                         </CommandItem>
-                      ))}
-                    </CommandGroup>
-                  </CommandList>
-                </Command>
-              </PopoverContent>
-            </Popover>
+                        {availableModels.map((model) => (
+                          <CommandItem
+                            key={model}
+                            value={model}
+                            onSelect={() => {
+                              setModelFilter(model);
+                              setModelPopoverOpen(false);
+                            }}
+                          >
+                            <Check
+                              className={cn(
+                                "mr-2 h-4 w-4",
+                                modelFilter === model ? "opacity-100" : "opacity-0"
+                              )}
+                            />
+                            {model}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+            )}
           </div>
         </div>
       </div>
@@ -1304,7 +1375,7 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {modelUsageData.slice(0, 10).map((item) => (
+                  {metricsModelUsageData.map((item) => (
                     <TableRow key={item.model}>
                       <TableCell className="font-medium">{item.model}</TableCell>
                       <TableCell className="text-right">{item.ttftAvg} 秒</TableCell>
@@ -1325,6 +1396,89 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
               </Table>
             </CardContent>
           </Card>
+
+          {/* 趋势图 - 2x2 网格 */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* TPM 趋势 */}
+            <Card className="enterprise-card">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm">TPM 趋势</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-48">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={modelMetricsTrendData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                      <XAxis dataKey="time" tick={{ fontSize: 11 }} />
+                      <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => formatTokens(v)} />
+                      <Tooltip formatter={(value: number) => [formatTokens(value), 'TPM']} />
+                      <Line type="monotone" dataKey="tpm" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* TTFT 趋势 */}
+            <Card className="enterprise-card">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm">TTFT 趋势</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-48">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={modelMetricsTrendData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                      <XAxis dataKey="time" tick={{ fontSize: 11 }} />
+                      <YAxis tick={{ fontSize: 11 }} unit=" 秒" />
+                      <Tooltip formatter={(value: number) => [`${value} 秒`, 'TTFT']} />
+                      <Line type="monotone" dataKey="ttft" stroke="hsl(142, 76%, 36%)" strokeWidth={2} dot={false} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* TTFT<20s 趋势 */}
+            <Card className="enterprise-card">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm">TTFT&lt;20s 趋势</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-48">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={modelMetricsTrendData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                      <XAxis dataKey="time" tick={{ fontSize: 11 }} />
+                      <YAxis tick={{ fontSize: 11 }} unit="%" domain={[75, 100]} />
+                      <Tooltip formatter={(value: number) => [`${value}%`, 'TTFT<20s']} />
+                      <Line type="monotone" dataKey="ttftUnder20s" stroke="hsl(38, 92%, 50%)" strokeWidth={2} dot={false} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Token生成速度 趋势 */}
+            <Card className="enterprise-card">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm">Token生成速度 趋势</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-48">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={modelMetricsTrendData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                      <XAxis dataKey="time" tick={{ fontSize: 11 }} />
+                      <YAxis tick={{ fontSize: 11 }} unit=" t/s" />
+                      <Tooltip formatter={(value: number) => [`${value} tokens/s`, 'Token生成速度']} />
+                      <Line type="monotone" dataKey="tokenSpeed" stroke="hsl(270, 50%, 60%)" strokeWidth={2} dot={false} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
 
         <TabsContent value="users" className="space-y-4">
