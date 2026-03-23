@@ -186,7 +186,7 @@ const latencyPerKTokenMinute = [
 export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
   const customer = getCustomerDetail(customerId);
   const { toast } = useToast();
-  
+  const errorAnalysisRef = useRef<HTMLDivElement>(null);
   // 时间范围筛选
   const [timeRangePreset, setTimeRangePreset] = useState<TimeRangePreset>('7days');
   const [dateRange, setDateRange] = useState<{ from: Date; to: Date }>({
