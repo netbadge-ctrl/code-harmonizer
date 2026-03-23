@@ -423,7 +423,7 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
       totalOutputTokens,
       totalRequests,
       totalErrors,
-      activeUsers: customer.usage.activeUsers,
+      activeUsers: customer?.usage?.activeUsers ?? 0,
     };
   }, [modelUsageData, customer]);
 
