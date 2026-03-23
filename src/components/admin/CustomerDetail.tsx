@@ -426,10 +426,14 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
     };
   }, [modelUsageData, customer]);
 
-  // 错误类型统计
+  // 错误类型统计（响应模型筛选和错误代码筛选）
   const errorByType = useMemo(() => {
+    let filteredData = errorDetails;
+    if (errorModelFilter) {
+      filteredData = filteredData.filter(e => e.model === errorModelFilter);
+    }
     const errorCounts: Record<string, number> = {};
-    errorDetails.forEach(e => {
+    filteredData.forEach(e => {
       errorCounts[e.errorCode] = (errorCounts[e.errorCode] || 0) + 1;
     });
     const total = Object.values(errorCounts).reduce((sum, c) => sum + c, 0);
@@ -438,7 +442,7 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
       count: errorCounts[et.code] || 0,
       percentage: total > 0 ? parseFloat(((errorCounts[et.code] || 0) / total * 100).toFixed(1)) : 0,
     })).sort((a, b) => b.count - a.count);
-  }, [errorDetails]);
+  }, [errorDetails, errorModelFilter]);
 
   // 过滤错误明细（按模型+错误代码）
   const filteredErrorDetails = useMemo(() => {
