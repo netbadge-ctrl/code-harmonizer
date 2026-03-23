@@ -198,6 +198,10 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
   const [modelFilter, setModelFilter] = useState<string>('all');
   const [modelPopoverOpen, setModelPopoverOpen] = useState(false);
   
+  // 模型指标tab - 模型筛选（必须选择具体模型）
+  const [metricsModelFilter, setMetricsModelFilter] = useState<string>(availableModels[0]);
+  const [metricsModelPopoverOpen, setMetricsModelPopoverOpen] = useState(false);
+  
   // 模型性能指标排序状态
   const [sortColumn, setSortColumn] = useState<string>('tokens');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
