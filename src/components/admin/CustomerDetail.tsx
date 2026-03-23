@@ -213,7 +213,7 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
 
   // 错误分析 - 模型筛选（从模型性能表点击错误数时设置）
   const [errorModelFilter, setErrorModelFilter] = useState<string | null>(null);
-  
+  const [activeTab, setActiveTab] = useState('usage');
 
   // 可见模型配置状态
   const [customerModelConfig, setCustomerModelConfig] = useState<Record<string, boolean>>(() => {
@@ -475,7 +475,7 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
   }
 
   return (
-    <Tabs defaultValue="usage" className="flex flex-col h-full">
+    <Tabs defaultValue="usage" value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full">
       {/* 非固定头部 - 随页面滚动 */}
       <div className="bg-background border-b -mx-6 px-6 pt-2 pb-0">
         {/* 返回按钮和标题 */}
@@ -513,7 +513,8 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
         </TabsList>
       </div>
 
-      {/* 筛选栏 - 吸顶固定 */}
+      {/* 筛选栏 - 仅在使用统计tab显示，吸顶固定 */}
+      {activeTab === 'usage' && (
       <div className="sticky top-12 z-10 bg-background border-b -mx-6 px-6">
         <div className="flex items-center gap-4 overflow-x-auto py-2.5">
           {/* 时间范围 */}
@@ -652,6 +653,7 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
           </div>
         </div>
       </div>
+      )}
 
       {/* 内容区域 */}
       <div className="flex-1 pt-6 space-y-4">
