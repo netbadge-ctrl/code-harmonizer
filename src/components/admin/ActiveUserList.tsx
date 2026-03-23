@@ -248,7 +248,7 @@ export function ActiveUserList({ topUsers }: ActiveUserListProps) {
     setCallStatusFilter('all');
     setSelectedCall(null);
     setCallSheetOpen(false);
-    setDetailTimeRange(listTimeRange);
+    setDetailTimeRange('7d');
     setDetailDialogOpen(true);
   };
 
