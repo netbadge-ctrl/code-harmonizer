@@ -84,9 +84,11 @@ function formatDateTime(dateString: string): string {
   });
 }
 
-function getTimeRangeDays(range: TimeRange): number {
+function getTimeRangeDays(range: TimeRange | DetailTimeRange): number {
   switch (range) {
+    case '15m': return 15 / 1440;
     case '1h': return 1 / 24;
+    case '4h': return 4 / 24;
     case '6h': return 0.25;
     case '24h': return 1;
     case '7d': return 7;
