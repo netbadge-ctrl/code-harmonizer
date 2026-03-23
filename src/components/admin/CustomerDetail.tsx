@@ -412,6 +412,24 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
   const errorTrendData = useMemo(() => generateErrorTrendData(), []);
   const errorDetails = useMemo(() => generateErrorDetails(modelFilter), [modelFilter]);
 
+  // 模型指标趋势数据（按选中模型生成）
+  const modelMetricsTrendData = useMemo(() => {
+    return Array.from({ length: 24 }, (_, i) => {
+      const isBusinessHour = i >= 9 && i <= 21;
+      const baseTpm = isBusinessHour ? 80000 + Math.random() * 60000 : 20000 + Math.random() * 30000;
+      const baseTtft = isBusinessHour ? 0.3 + Math.random() * 0.3 : 0.2 + Math.random() * 0.2;
+      const baseTtftUnder20s = 0.82 + Math.random() * 0.15;
+      const baseTokenSpeed = 25 + Math.random() * 20;
+      return {
+        time: `${String(i).padStart(2, '0')}:00`,
+        tpm: Math.floor(baseTpm),
+        ttft: +baseTtft.toFixed(2),
+        ttftUnder20s: +(Math.min(baseTtftUnder20s, 1) * 100).toFixed(1),
+        tokenSpeed: +baseTokenSpeed.toFixed(1),
+      };
+    });
+  }, [metricsModelFilter]);
+
   // 汇总统计
   const stats = useMemo(() => {
     const data = modelUsageData;
