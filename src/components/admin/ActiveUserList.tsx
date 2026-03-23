@@ -114,7 +114,7 @@ interface CallDetail {
 }
 
 // 生成用户调用明细模拟数据
-function generateUserCallDetails(userId: string, _timeRange: TimeRange): CallDetail[] {
+function generateUserCallDetails(userId: string, _timeRange: TimeRange | DetailTimeRange): CallDetail[] {
   const models = ['GPT-4 Turbo', 'GPT-4o', 'Claude 3.5 Sonnet', 'DeepSeek V3', 'Kimi K2', 'GLM-4'];
   const statusCodes = [
     { code: 200, status: 'success', weight: 85 },
