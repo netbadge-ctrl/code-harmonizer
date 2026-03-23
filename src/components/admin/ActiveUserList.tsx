@@ -49,6 +49,7 @@ interface ActiveUserListProps {
 }
 
 type TimeRange = '1h' | '6h' | '24h' | '7d' | '30d';
+type DetailTimeRange = '15m' | '4h' | '24h' | '7d';
 
 const TIME_RANGE_OPTIONS: { value: TimeRange; label: string }[] = [
   { value: '1h', label: '近 1 小时' },
@@ -56,6 +57,13 @@ const TIME_RANGE_OPTIONS: { value: TimeRange; label: string }[] = [
   { value: '24h', label: '近 24 小时' },
   { value: '7d', label: '近 7 天' },
   { value: '30d', label: '近 30 天' },
+];
+
+const DETAIL_TIME_RANGE_OPTIONS: { value: DetailTimeRange; label: string }[] = [
+  { value: '15m', label: '最近 15 分钟' },
+  { value: '4h', label: '最近 4 小时' },
+  { value: '24h', label: '最近 24 小时' },
+  { value: '7d', label: '最近 7 天' },
 ];
 
 const CLIENT_TYPES = ['VS Code', 'JetBrains', 'Cursor', 'Web IDE', 'CLI'];
@@ -76,9 +84,11 @@ function formatDateTime(dateString: string): string {
   });
 }
 
-function getTimeRangeDays(range: TimeRange): number {
+function getTimeRangeDays(range: TimeRange | DetailTimeRange): number {
   switch (range) {
+    case '15m': return 15 / 1440;
     case '1h': return 1 / 24;
+    case '4h': return 4 / 24;
     case '6h': return 0.25;
     case '24h': return 1;
     case '7d': return 7;
@@ -104,7 +114,7 @@ interface CallDetail {
 }
 
 // 生成用户调用明细模拟数据
-function generateUserCallDetails(userId: string, _timeRange: TimeRange): CallDetail[] {
+function generateUserCallDetails(userId: string, _timeRange: TimeRange | DetailTimeRange): CallDetail[] {
   const models = ['GPT-4 Turbo', 'GPT-4o', 'Claude 3.5 Sonnet', 'DeepSeek V3', 'Kimi K2', 'GLM-4'];
   const statusCodes = [
     { code: 200, status: 'success', weight: 85 },
@@ -162,7 +172,7 @@ function generateUserCallDetails(userId: string, _timeRange: TimeRange): CallDet
 }
 
 // 生成用户核心数据统计
-function generateUserStats(user: TopUser, timeRange: TimeRange) {
+function generateUserStats(user: TopUser, timeRange: TimeRange | DetailTimeRange) {
   const days = Math.max(getTimeRangeDays(timeRange), 1);
   const avgDailyTokens = Math.floor(user.tokens / days);
   const avgDailyRequests = Math.floor(user.requests / days);
@@ -193,8 +203,8 @@ function generateUserStats(user: TopUser, timeRange: TimeRange) {
   return { avgDailyTokens, avgDailyRequests, successRate, avgLatency, trend, modelDistribution };
 }
 
-function getTimeRangeLabel(range: TimeRange): string {
-  return TIME_RANGE_OPTIONS.find(o => o.value === range)?.label ?? '';
+function getTimeRangeLabel(range: TimeRange | DetailTimeRange): string {
+  return [...TIME_RANGE_OPTIONS, ...DETAIL_TIME_RANGE_OPTIONS].find(o => o.value === range)?.label ?? '';
 }
 
 function getStatusCodeColor(code: number): string {
@@ -210,7 +220,7 @@ export function ActiveUserList({ topUsers }: ActiveUserListProps) {
   const [selectedUser, setSelectedUser] = useState<TopUser | null>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [detailTab, setDetailTab] = useState<'stats' | 'calls'>('stats');
-  const [detailTimeRange, setDetailTimeRange] = useState<TimeRange>('7d');
+  const [detailTimeRange, setDetailTimeRange] = useState<DetailTimeRange>('7d');
   const [callPage, setCallPage] = useState(1);
   const [callModelFilter, setCallModelFilter] = useState<string>('all');
   const [callStatusFilter, setCallStatusFilter] = useState<string>('all');
@@ -238,7 +248,7 @@ export function ActiveUserList({ topUsers }: ActiveUserListProps) {
     setCallStatusFilter('all');
     setSelectedCall(null);
     setCallSheetOpen(false);
-    setDetailTimeRange(listTimeRange);
+    setDetailTimeRange('7d');
     setDetailDialogOpen(true);
   };
 
@@ -423,13 +433,13 @@ export function ActiveUserList({ topUsers }: ActiveUserListProps) {
                 {selectedUser?.name}
                 <span className="text-sm font-normal text-muted-foreground">({selectedUser?.email})</span>
               </DialogTitle>
-              <Select value={detailTimeRange} onValueChange={(v) => setDetailTimeRange(v as TimeRange)}>
-                <SelectTrigger className="w-36 h-8 text-sm">
+              <Select value={detailTimeRange} onValueChange={(v) => setDetailTimeRange(v as DetailTimeRange)}>
+                <SelectTrigger className="w-40 h-8 text-sm">
                   <Calendar className="w-3.5 h-3.5 mr-1.5 text-muted-foreground" />
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {TIME_RANGE_OPTIONS.map(opt => (
+                  {DETAIL_TIME_RANGE_OPTIONS.map(opt => (
                     <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
                   ))}
                 </SelectContent>
