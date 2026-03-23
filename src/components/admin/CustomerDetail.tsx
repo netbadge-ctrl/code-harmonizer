@@ -986,7 +986,7 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                       onClick={() => handleSort('ttftP98')}
                     >
                       <div className="flex items-center justify-end gap-1">
-                        P98 TTFT
+                        TTFT&lt;20s
                         {sortColumn === 'ttftP98' ? (
                           sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
                         ) : <ArrowUpDown className="w-3 h-3 opacity-50" />}
@@ -1076,7 +1076,7 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                     <TableRow key={item.model}>
                       <TableCell className="font-medium">{item.model}</TableCell>
                       <TableCell className="text-right">{item.ttftAvg} 秒</TableCell>
-                      <TableCell className="text-right">{item.ttftP98} 秒</TableCell>
+                      <TableCell className="text-right">{(item.ttftP98 * 100).toFixed(1)}%</TableCell>
                       <TableCell className="text-right">{item.tpotAvg} tokens/s</TableCell>
                       <TableCell className="text-right">{formatTokens(item.peakTPM)}</TableCell>
                       <TableCell className="text-right">{formatTokens(item.avgTPMDaily)}</TableCell>
