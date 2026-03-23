@@ -40,6 +40,8 @@ interface TopUser {
   tokens: number;
   requests: number;
   lastActiveAt: string;
+  successRate?: number;
+  topModel?: string;
 }
 
 interface ActiveUserListProps {
