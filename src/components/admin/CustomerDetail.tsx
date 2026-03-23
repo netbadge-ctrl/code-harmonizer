@@ -391,6 +391,7 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
         case 'ttftP98': aVal = a.ttftP98; bVal = b.ttftP98; break;
         case 'tpotAvg': aVal = a.tpotAvg; bVal = b.tpotAvg; break;
         case 'requests': aVal = a.requests; bVal = b.requests; break;
+        case 'successRate': aVal = a.successRate; bVal = b.successRate; break;
         case 'errorCount': aVal = a.errorCount; bVal = b.errorCount; break;
         default: aVal = a.tokens; bVal = b.tokens;
       }
