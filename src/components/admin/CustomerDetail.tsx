@@ -298,7 +298,7 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
         avgTPMDaily,
         avgTPMBusiness,
         ttftAvg: +(Math.random() * 0.4 + 0.2).toFixed(2),
-        ttftP98: +(Math.random() * 0.8 + 0.5).toFixed(2),
+        ttftP98: +(Math.random() * 0.15 + 0.82).toFixed(4),
         tpotAvg: +(Math.random() * 20 + 25).toFixed(1),
         errorCount: Math.floor(Math.random() * 50 + 10),
         successRate: +(99 - Math.random() * 1.5).toFixed(1),
