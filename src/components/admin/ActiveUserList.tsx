@@ -175,7 +175,7 @@ function generateUserStats(user: TopUser, timeRange: TimeRange | DetailTimeRange
   const successRate = +(98 + Math.random() * 1.8).toFixed(1);
   const avgLatency = +(Math.random() * 1.5 + 0.8).toFixed(2);
 
-  const trendDays = timeRange === '30d' ? 30 : timeRange === '7d' ? 7 : 7;
+  const trendDays = timeRange === '7d' ? 7 : 7;
   const trend = Array.from({ length: trendDays }, (_, i) => {
     const date = new Date();
     date.setDate(date.getDate() - (trendDays - 1 - i));
