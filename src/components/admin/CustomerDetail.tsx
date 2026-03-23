@@ -475,7 +475,7 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
   }
 
   return (
-    <Tabs defaultValue="usage" className="flex flex-col h-full">
+    <Tabs defaultValue="usage" value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full">
       {/* 非固定头部 - 随页面滚动 */}
       <div className="bg-background border-b -mx-6 px-6 pt-2 pb-0">
         {/* 返回按钮和标题 */}
