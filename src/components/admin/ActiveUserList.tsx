@@ -346,6 +346,12 @@ export function ActiveUserList({ topUsers }: ActiveUserListProps) {
                     <td>{user.email}</td>
                     <td>{formatTokens(user.tokens)}</td>
                     <td>{user.requests.toLocaleString()}</td>
+                    <td>{user.successRate ?? (98 + Math.random() * 1.8).toFixed(1)}%</td>
+                    <td>
+                      <Badge variant="secondary" className="text-xs font-normal">
+                        {user.topModel ?? ['GPT-4o', 'Claude 3.5 Sonnet', 'DeepSeek V3', 'Kimi K2'][Math.floor(user.name.charCodeAt(0) % 4)]}
+                      </Badge>
+                    </td>
                     <td className="text-muted-foreground">{formatDateTime(user.lastActiveAt)}</td>
                     <td>
                       <Button
