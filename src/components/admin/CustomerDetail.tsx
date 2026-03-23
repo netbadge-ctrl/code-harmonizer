@@ -408,6 +408,11 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
     });
   }, [modelFilter, sortColumn, sortDirection]);
 
+  // 模型指标tab的数据（按metricsModelFilter筛选）
+  const metricsModelUsageData = useMemo(() => {
+    return generateModelUsageData().filter(m => m.model === metricsModelFilter);
+  }, [metricsModelFilter]);
+
   const dailyTrendData = useMemo(() => generateDailyTrendData(), []);
   const errorTrendData = useMemo(() => generateErrorTrendData(), []);
   const errorDetails = useMemo(() => generateErrorDetails(modelFilter), [modelFilter]);
