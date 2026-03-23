@@ -1169,48 +1169,6 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
             </CardContent>
           </Card>
 
-          {/* 千Token平均时长趋势 - 全宽 */}
-          <Card className="enterprise-card">
-            <CardHeader>
-              <CardTitle className="text-base">千Token平均时长趋势 (分钟级)</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={latencyPerKTokenMinute}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis dataKey="time" tick={{ fontSize: 12 }} />
-                    <YAxis tick={{ fontSize: 12 }} unit="s" />
-                    <Tooltip formatter={(value: number) => `${value}s`} />
-                    <Line 
-                      type="monotone" 
-                      dataKey="inputLatency" 
-                      stroke="hsl(213, 94%, 50%)" 
-                      strokeWidth={2}
-                      name="输入时长"
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey="outputLatency" 
-                      stroke="hsl(142, 76%, 36%)" 
-                      strokeWidth={2}
-                      name="输出时长"
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="flex items-center justify-center gap-4 mt-2 text-xs">
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-0.5" style={{ backgroundColor: 'hsl(213, 94%, 50%)' }} />
-                  <span>输入时长</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-0.5" style={{ backgroundColor: 'hsl(142, 76%, 36%)' }} />
-                  <span>输出时长</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
 
           {/* 错误分析 - 统一模块 */}
           <div ref={errorAnalysisRef}>
