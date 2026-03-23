@@ -210,6 +210,10 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
   // 错误详情弹窗
   const [selectedError, setSelectedError] = useState<any | null>(null);
   const [errorDetailDialogOpen, setErrorDetailDialogOpen] = useState(false);
+
+  // 模型错误代码分布弹窗
+  const [modelErrorDialogOpen, setModelErrorDialogOpen] = useState(false);
+  const [modelErrorTarget, setModelErrorTarget] = useState<{ model: string; errorCount: number } | null>(null);
   
 
   // 可见模型配置状态
