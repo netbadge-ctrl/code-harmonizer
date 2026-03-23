@@ -1060,7 +1060,19 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                       <TableCell className="text-right">{item.ttftP98} 秒</TableCell>
                       <TableCell className="text-right">{item.tpotAvg} t/s</TableCell>
                       <TableCell className="text-right">{item.successfulRequests.toLocaleString()}/{item.requests.toLocaleString()}</TableCell>
-                      <TableCell className="text-right text-destructive">{item.errorCount}</TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-auto p-0 text-destructive hover:text-destructive hover:underline font-medium"
+                          onClick={() => {
+                            setModelErrorTarget({ model: item.model, errorCount: item.errorCount });
+                            setModelErrorDialogOpen(true);
+                          }}
+                        >
+                          {item.errorCount}
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
