@@ -506,176 +506,138 @@ export function ActiveUserList({ topUsers }: ActiveUserListProps) {
                     </CardContent>
                   </Card>
 
-                  {/* 模型使用分布 */}
-                  <Card className="enterprise-card">
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm">模型使用分布</CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-0">
-                      <table className="data-table">
-                        <thead>
-                          <tr>
-                            <th>模型</th>
-                            <th>Token 消耗</th>
-                            <th>请求次数</th>
-                            <th>占比</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {userStats.modelDistribution.map((item) => (
-                            <tr key={item.model}>
-                              <td className="font-medium">{item.model}</td>
-                              <td>{formatTokens(item.tokens)}</td>
-                              <td>{item.requests}</td>
-                              <td>
-                                <div className="flex items-center gap-2">
-                                  <div className="w-16 h-1.5 bg-muted rounded-full overflow-hidden">
-                                    <div
-                                      className="h-full bg-primary rounded-full"
-                                      style={{ width: `${selectedUser.tokens > 0 ? (item.tokens / selectedUser.tokens * 100) : 0}%` }}
-                                    />
+                  {/* 调用明细 */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-sm font-medium flex items-center gap-1.5">
+                        <FileText className="w-4 h-4" />
+                        调用明细
+                      </h4>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Select value={callModelFilter} onValueChange={setCallModelFilter}>
+                        <SelectTrigger className="w-44 h-8 text-sm">
+                          <SelectValue placeholder="全部模型" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">全部模型</SelectItem>
+                          {availableModels.map(m => (
+                            <SelectItem key={m} value={m}>{m}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Select value={callStatusFilter} onValueChange={setCallStatusFilter}>
+                        <SelectTrigger className="w-32 h-8 text-sm">
+                          <SelectValue placeholder="全部状态" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">全部状态</SelectItem>
+                          {availableStatusCodes.map(code => (
+                            <SelectItem key={code} value={code}>{code}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <span className="text-xs text-muted-foreground ml-auto">
+                        共 {filteredCallDetails.length} 条记录
+                      </span>
+                    </div>
+
+                    <Card className="enterprise-card">
+                      <CardContent className="p-0">
+                        <table className="data-table">
+                          <thead>
+                            <tr>
+                              <th>时间</th>
+                              <th>模型</th>
+                              <th>客户端</th>
+                              <th>输入 Token</th>
+                              <th>输出 Token</th>
+                              <th>总 Token</th>
+                              <th>耗时</th>
+                              <th>状态码</th>
+                              <th>操作</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {filteredCallDetails
+                              .slice((callPage - 1) * callPageSize, callPage * callPageSize)
+                              .map((call) => (
+                              <tr key={call.id}>
+                                <td className="text-muted-foreground whitespace-nowrap">
+                                  {formatDateTime(call.timestamp)}
+                                </td>
+                                <td className="font-medium">{call.model}</td>
+                                <td>
+                                  <div className="flex items-center gap-1.5">
+                                    <Monitor className="w-3.5 h-3.5 text-muted-foreground" />
+                                    <span className="text-sm">{call.client}</span>
                                   </div>
-                                  <span className="text-xs text-muted-foreground">
-                                    {selectedUser.tokens > 0 ? (item.tokens / selectedUser.tokens * 100).toFixed(1) : 0}%
-                                  </span>
-                                </div>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </CardContent>
-                  </Card>
-                </div>
-              )}
-
-              {detailTab === 'calls' && (
-                <div className="space-y-3">
-                  {/* 筛选栏 */}
-                  <div className="flex items-center gap-3">
-                    <Select value={callModelFilter} onValueChange={setCallModelFilter}>
-                      <SelectTrigger className="w-44 h-8 text-sm">
-                        <SelectValue placeholder="全部模型" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">全部模型</SelectItem>
-                        {availableModels.map(m => (
-                          <SelectItem key={m} value={m}>{m}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Select value={callStatusFilter} onValueChange={setCallStatusFilter}>
-                      <SelectTrigger className="w-32 h-8 text-sm">
-                        <SelectValue placeholder="全部状态" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">全部状态</SelectItem>
-                        {availableStatusCodes.map(code => (
-                          <SelectItem key={code} value={code}>{code}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <span className="text-xs text-muted-foreground ml-auto">
-                      共 {filteredCallDetails.length} 条记录
-                    </span>
-                  </div>
-
-                  <Card className="enterprise-card">
-                    <CardContent className="p-0">
-                      <table className="data-table">
-                        <thead>
-                          <tr>
-                            <th>时间</th>
-                            <th>模型</th>
-                            <th>客户端</th>
-                            <th>输入 Token</th>
-                            <th>输出 Token</th>
-                            <th>总 Token</th>
-                            <th>耗时</th>
-                            <th>状态码</th>
-                            <th>操作</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {filteredCallDetails
-                            .slice((callPage - 1) * callPageSize, callPage * callPageSize)
-                            .map((call) => (
-                            <tr key={call.id}>
-                              <td className="text-muted-foreground whitespace-nowrap">
-                                {formatDateTime(call.timestamp)}
-                              </td>
-                              <td className="font-medium">{call.model}</td>
-                              <td>
-                                <div className="flex items-center gap-1.5">
-                                  <Monitor className="w-3.5 h-3.5 text-muted-foreground" />
-                                  <span className="text-sm">{call.client}</span>
-                                </div>
-                              </td>
-                              <td>{call.inputTokens.toLocaleString()}</td>
-                              <td>{call.outputTokens.toLocaleString()}</td>
-                              <td>{call.totalTokens.toLocaleString()}</td>
-                              <td>{call.latency}s</td>
-                              <td>
-                                <Badge variant="outline" className={cn("text-xs", getStatusCodeColor(call.statusCode))}>
-                                  {call.statusCode}
-                                </Badge>
-                              </td>
-                              <td>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-7 text-xs text-primary"
-                                  onClick={() => {
-                                    setSelectedCall(call);
-                                    setCallSheetOpen(true);
-                                  }}
-                                >
-                                  查看详情
-                                </Button>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-
-                      {filteredCallDetails.length > callPageSize && (
-                        <div className="p-3 border-t flex items-center justify-between">
-                          <span className="text-xs text-muted-foreground">
-                            第 {(callPage - 1) * callPageSize + 1}-{Math.min(callPage * callPageSize, filteredCallDetails.length)} 条
-                          </span>
-                          <Pagination>
-                            <PaginationContent>
-                              <PaginationItem>
-                                <PaginationPrevious
-                                  onClick={() => setCallPage(p => Math.max(1, p - 1))}
-                                  className={callPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
-                                />
-                              </PaginationItem>
-                              {Array.from({ length: Math.min(Math.ceil(filteredCallDetails.length / callPageSize), 5) }, (_, i) => (
-                                <PaginationItem key={i}>
-                                  <PaginationLink
-                                    onClick={() => setCallPage(i + 1)}
-                                    isActive={callPage === i + 1}
-                                    className="cursor-pointer"
+                                </td>
+                                <td>{call.inputTokens.toLocaleString()}</td>
+                                <td>{call.outputTokens.toLocaleString()}</td>
+                                <td>{call.totalTokens.toLocaleString()}</td>
+                                <td>{call.latency}s</td>
+                                <td>
+                                  <Badge variant="outline" className={cn("text-xs", getStatusCodeColor(call.statusCode))}>
+                                    {call.statusCode}
+                                  </Badge>
+                                </td>
+                                <td>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-7 text-xs text-primary"
+                                    onClick={() => {
+                                      setSelectedCall(call);
+                                      setCallSheetOpen(true);
+                                    }}
                                   >
-                                    {i + 1}
-                                  </PaginationLink>
+                                    查看详情
+                                  </Button>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+
+                        {filteredCallDetails.length > callPageSize && (
+                          <div className="p-3 border-t flex items-center justify-between">
+                            <span className="text-xs text-muted-foreground">
+                              第 {(callPage - 1) * callPageSize + 1}-{Math.min(callPage * callPageSize, filteredCallDetails.length)} 条
+                            </span>
+                            <Pagination>
+                              <PaginationContent>
+                                <PaginationItem>
+                                  <PaginationPrevious
+                                    onClick={() => setCallPage(p => Math.max(1, p - 1))}
+                                    className={callPage === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                                  />
                                 </PaginationItem>
-                              ))}
-                              <PaginationItem>
-                                <PaginationNext
-                                  onClick={() => setCallPage(p => Math.min(Math.ceil(filteredCallDetails.length / callPageSize), p + 1))}
-                                  className={callPage === Math.ceil(filteredCallDetails.length / callPageSize) ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
-                                />
-                              </PaginationItem>
-                            </PaginationContent>
-                          </Pagination>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
+                                {Array.from({ length: Math.min(Math.ceil(filteredCallDetails.length / callPageSize), 5) }, (_, i) => (
+                                  <PaginationItem key={i}>
+                                    <PaginationLink
+                                      onClick={() => setCallPage(i + 1)}
+                                      isActive={callPage === i + 1}
+                                      className="cursor-pointer"
+                                    >
+                                      {i + 1}
+                                    </PaginationLink>
+                                  </PaginationItem>
+                                ))}
+                                <PaginationItem>
+                                  <PaginationNext
+                                    onClick={() => setCallPage(p => Math.min(Math.ceil(filteredCallDetails.length / callPageSize), p + 1))}
+                                    className={callPage === Math.ceil(filteredCallDetails.length / callPageSize) ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                                  />
+                                </PaginationItem>
+                              </PaginationContent>
+                            </Pagination>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </div>
                 </div>
-              )}
             </div>
           )}
         </DialogContent>
