@@ -1076,7 +1076,7 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                     <TableRow key={item.model}>
                       <TableCell className="font-medium">{item.model}</TableCell>
                       <TableCell className="text-right">{item.ttftAvg} 秒</TableCell>
-                      <TableCell className="text-right">{item.ttftP98} 秒</TableCell>
+                      <TableCell className="text-right">{(item.ttftP98 * 100).toFixed(1)}%</TableCell>
                       <TableCell className="text-right">{item.tpotAvg} tokens/s</TableCell>
                       <TableCell className="text-right">{formatTokens(item.peakTPM)}</TableCell>
                       <TableCell className="text-right">{formatTokens(item.avgTPMDaily)}</TableCell>
