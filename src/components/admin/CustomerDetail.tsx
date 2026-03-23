@@ -653,6 +653,7 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
           </div>
         </div>
       </div>
+      )}
 
       {/* 内容区域 */}
       <div className="flex-1 pt-6 space-y-4">
