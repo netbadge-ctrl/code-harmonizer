@@ -1188,219 +1188,253 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
             </CardContent>
           </Card>
 
-          {/* 错误分析区域 - 统计与趋势整合 */}
-          <Card className="enterprise-card">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-base">错误统计与趋势</CardTitle>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-muted-foreground">按错误代码查看：</span>
-                  <div className="flex flex-wrap gap-1">
-                    <Button
-                      variant={selectedErrorCode === null ? 'default' : 'outline'}
-                      size="sm"
-                      className="h-6 px-2 text-xs"
-                      onClick={() => setSelectedErrorCode(null)}
-                    >
-                      全部
-                    </Button>
-                    {errorTypes.map((et) => (
-                      <Button
-                        key={et.code}
-                        variant={selectedErrorCode === et.code ? 'default' : 'outline'}
-                        size="sm"
-                        className="h-6 px-2 text-xs gap-1"
-                        onClick={() => setSelectedErrorCode(
-                          selectedErrorCode === et.code ? null : et.code
-                        )}
-                      >
-                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: ERROR_COLORS[et.code] }} />
-                        {et.code}
-                      </Button>
-                    ))}
+          {/* 错误分析 - 统一模块 */}
+          <div ref={errorAnalysisRef}>
+            <Card className="enterprise-card">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between flex-wrap gap-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4 text-destructive" />
+                    错误分析
+                  </CardTitle>
+                  <div className="flex items-center gap-3 flex-wrap">
+                    {/* 模型筛选 */}
+                    {errorModelFilter && (
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs text-muted-foreground">模型：</span>
+                        <Badge variant="secondary" className="gap-1">
+                          {errorModelFilter}
+                          <button 
+                            onClick={() => setErrorModelFilter(null)} 
+                            className="ml-0.5 hover:text-destructive"
+                          >
+                            ×
+                          </button>
+                        </Badge>
+                      </div>
+                    )}
+                    {/* 错误代码筛选 */}
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs text-muted-foreground">错误代码：</span>
+                      <div className="flex flex-wrap gap-1">
+                        <Button
+                          variant={selectedErrorCode === null ? 'default' : 'outline'}
+                          size="sm"
+                          className="h-6 px-2 text-xs"
+                          onClick={() => { setSelectedErrorCode(null); setErrorPage(1); }}
+                        >
+                          全部
+                        </Button>
+                        {errorTypes.map((et) => (
+                          <Button
+                            key={et.code}
+                            variant={selectedErrorCode === et.code ? 'default' : 'outline'}
+                            size="sm"
+                            className="h-6 px-2 text-xs gap-1"
+                            onClick={() => {
+                              setSelectedErrorCode(selectedErrorCode === et.code ? null : et.code);
+                              setErrorPage(1);
+                            }}
+                          >
+                            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: ERROR_COLORS[et.code] }} />
+                            {et.code}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* 错误代码统计表 */}
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>错误代码</TableHead>
-                    <TableHead>错误类型</TableHead>
-                    <TableHead className="text-right">次数</TableHead>
-                    <TableHead className="text-right">占比</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {(selectedErrorCode
-                    ? errorByType.filter(e => e.code === selectedErrorCode)
-                    : errorByType
-                  ).map((item) => (
-                    <TableRow key={item.code}>
-                      <TableCell>
-                        <span className={cn(
-                          "px-2 py-0.5 rounded text-xs font-mono font-medium",
-                          item.code === '429' && "bg-yellow-500/10 text-yellow-600",
-                          item.code === '500' && "bg-destructive/10 text-destructive",
-                          item.code === '503' && "bg-orange-500/10 text-orange-600",
-                          item.code === '504' && "bg-purple-500/10 text-purple-600",
-                          item.code === '400' && "bg-blue-500/10 text-blue-600",
-                          item.code === '401' && "bg-red-500/10 text-red-600",
-                        )}>
-                          {item.code}
-                        </span>
-                      </TableCell>
-                      <TableCell>{item.name}</TableCell>
-                      <TableCell className="text-right font-medium">{item.count}</TableCell>
-                      <TableCell className="text-right text-muted-foreground">{item.percentage}%</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-
-              {/* 错误趋势图 */}
-              <div>
-                <h4 className="text-sm font-medium mb-3">错误趋势 (每小时)</h4>
-                <div className="h-64">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <ComposedChart data={errorTrendData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                      <XAxis dataKey="hour" tick={{ fontSize: 10 }} />
-                      <YAxis tick={{ fontSize: 12 }} />
-                      <Tooltip 
-                        content={({ active, payload, label }) => {
-                          if (active && payload && payload.length) {
-                            const total = payload.reduce((sum, entry) => {
-                              if (entry.dataKey !== 'trendLine') {
-                                return sum + (Number(entry.value) || 0);
-                              }
-                              return sum;
-                            }, 0);
-                            return (
-                              <div className="bg-background border rounded-lg p-3 shadow-lg">
-                                <p className="font-medium mb-2">{label}</p>
-                                {payload.filter(p => p.dataKey !== 'trendLine').map((entry: any) => (
-                                  <div key={entry.dataKey} className="flex items-center gap-2 text-sm">
-                                    <div className="w-3 h-3 rounded" style={{ backgroundColor: entry.color }} />
-                                    <span>{entry.dataKey} {errorTypes.find(e => e.code === entry.dataKey)?.name}：{entry.value}</span>
-                                  </div>
-                                ))}
-                                <div className="border-t mt-2 pt-2 font-medium text-sm">
-                                  总错误数：{total}
-                                </div>
-                              </div>
-                            );
-                          }
-                          return null;
-                        }}
-                      />
-                      {selectedErrorCode ? (
-                        <Bar dataKey={selectedErrorCode} fill={ERROR_COLORS[selectedErrorCode]} name={selectedErrorCode} />
-                      ) : (
-                        <>
-                          <Bar dataKey="429" stackId="errors" fill={ERROR_COLORS['429']} name="429" />
-                          <Bar dataKey="500" stackId="errors" fill={ERROR_COLORS['500']} name="500" />
-                          <Bar dataKey="503" stackId="errors" fill={ERROR_COLORS['503']} name="503" />
-                          <Bar dataKey="504" stackId="errors" fill={ERROR_COLORS['504']} name="504" />
-                          <Bar dataKey="400" stackId="errors" fill={ERROR_COLORS['400']} name="400" />
-                          <Bar dataKey="401" stackId="errors" fill={ERROR_COLORS['401']} name="401" />
-                        </>
-                      )}
-                    </ComposedChart>
-                  </ResponsiveContainer>
-                </div>
-                <div className="flex flex-wrap gap-3 mt-3 justify-center text-xs">
-                  {(selectedErrorCode ? errorTypes.filter(e => e.code === selectedErrorCode) : errorTypes).map((et) => (
-                    <div key={et.code} className="flex items-center gap-1">
-                      <div className="w-3 h-3 rounded" style={{ backgroundColor: ERROR_COLORS[et.code] }} />
-                      <span>{et.code} {et.name}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* 错误明细表格 - 去掉客户列 */}
-          <Card className="enterprise-card">
-            <CardHeader>
-              <CardTitle className="text-base">错误明细</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>模型</TableHead>
-                    <TableHead>错误代码</TableHead>
-                    <TableHead className="text-right">发生时间</TableHead>
-                    <TableHead className="text-center">操作</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {paginatedErrorDetails.data.map((item) => (
-                    <TableRow key={item.id}>
-                      <TableCell className="font-medium">{item.model}</TableCell>
-                      <TableCell>
-                        <span className={cn(
-                          "px-2 py-0.5 rounded text-xs font-mono font-medium",
-                          item.errorCode === '429' && "bg-yellow-500/10 text-yellow-600",
-                          item.errorCode === '500' && "bg-destructive/10 text-destructive",
-                          item.errorCode === '503' && "bg-orange-500/10 text-orange-600",
-                          item.errorCode === '504' && "bg-purple-500/10 text-purple-600",
-                          item.errorCode === '400' && "bg-blue-500/10 text-blue-600",
-                          item.errorCode === '401' && "bg-red-500/10 text-red-600",
-                        )}>
-                          {item.errorCode}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-right text-muted-foreground">{item.timestamp}</TableCell>
-                      <TableCell className="text-center">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleViewErrorDetail(item)}
-                          className="h-7 px-2"
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* 第一层：错误概览 - 统计条 + 趋势图并排 */}
+                <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+                  {/* 左侧：错误代码统计 */}
+                  <div className="lg:col-span-2">
+                    <h4 className="text-sm font-medium mb-3 text-muted-foreground">按错误代码分布</h4>
+                    <div className="space-y-2">
+                      {(selectedErrorCode
+                        ? errorByType.filter(e => e.code === selectedErrorCode)
+                        : errorByType
+                      ).map((item) => (
+                        <div 
+                          key={item.code} 
+                          className={cn(
+                            "flex items-center gap-3 p-2 rounded-md cursor-pointer transition-colors",
+                            selectedErrorCode === item.code ? "bg-muted" : "hover:bg-muted/50"
+                          )}
+                          onClick={() => {
+                            setSelectedErrorCode(selectedErrorCode === item.code ? null : item.code);
+                            setErrorPage(1);
+                          }}
                         >
-                          <Eye className="w-4 h-4 mr-1" />
-                          查看详情
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  {paginatedErrorDetails.totalPages > 1 && (
-                    <TableRow>
-                      <TableCell colSpan={4} className="py-2">
-                        <div className="flex items-center justify-center gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setErrorPage(p => Math.max(1, p - 1))}
-                            disabled={errorPage === 1}
-                          >
-                            <ChevronLeft className="h-4 w-4" />
-                          </Button>
-                          <span className="text-sm text-muted-foreground">
-                            第 {errorPage} / {paginatedErrorDetails.totalPages} 页
+                          <span className={cn(
+                            "px-2 py-0.5 rounded text-xs font-mono font-medium min-w-[40px] text-center",
+                            item.code === '429' && "bg-yellow-500/10 text-yellow-600",
+                            item.code === '500' && "bg-destructive/10 text-destructive",
+                            item.code === '503' && "bg-orange-500/10 text-orange-600",
+                            item.code === '504' && "bg-purple-500/10 text-purple-600",
+                            item.code === '400' && "bg-blue-500/10 text-blue-600",
+                            item.code === '401' && "bg-red-500/10 text-red-600",
+                          )}>
+                            {item.code}
                           </span>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setErrorPage(p => Math.min(paginatedErrorDetails.totalPages, p + 1))}
-                            disabled={errorPage === paginatedErrorDetails.totalPages}
-                          >
-                            <ChevronRight className="h-4 w-4" />
-                          </Button>
+                          <span className="text-sm flex-1 truncate">{item.name}</span>
+                          <span className="text-sm font-medium tabular-nums">{item.count}</span>
+                          <div className="w-16">
+                            <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                              <div 
+                                className="h-full rounded-full transition-all"
+                                style={{ 
+                                  width: `${item.percentage}%`,
+                                  backgroundColor: ERROR_COLORS[item.code]
+                                }}
+                              />
+                            </div>
+                          </div>
+                          <span className="text-xs text-muted-foreground w-10 text-right">{item.percentage}%</span>
                         </div>
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 右侧：错误趋势图 */}
+                  <div className="lg:col-span-3">
+                    <h4 className="text-sm font-medium mb-3 text-muted-foreground">错误趋势 (每小时)</h4>
+                    <div className="h-56">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <ComposedChart data={errorTrendData}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                          <XAxis dataKey="hour" tick={{ fontSize: 10 }} />
+                          <YAxis tick={{ fontSize: 12 }} />
+                          <Tooltip 
+                            content={({ active, payload, label }) => {
+                              if (active && payload && payload.length) {
+                                const total = payload.reduce((sum, entry) => {
+                                  if (entry.dataKey !== 'trendLine') {
+                                    return sum + (Number(entry.value) || 0);
+                                  }
+                                  return sum;
+                                }, 0);
+                                return (
+                                  <div className="bg-background border rounded-lg p-3 shadow-lg">
+                                    <p className="font-medium mb-2">{label}</p>
+                                    {payload.filter(p => p.dataKey !== 'trendLine').map((entry: any) => (
+                                      <div key={entry.dataKey} className="flex items-center gap-2 text-sm">
+                                        <div className="w-3 h-3 rounded" style={{ backgroundColor: entry.color }} />
+                                        <span>{entry.dataKey} {errorTypes.find(e => e.code === entry.dataKey)?.name}：{entry.value}</span>
+                                      </div>
+                                    ))}
+                                    <div className="border-t mt-2 pt-2 font-medium text-sm">
+                                      总错误数：{total}
+                                    </div>
+                                  </div>
+                                );
+                              }
+                              return null;
+                            }}
+                          />
+                          {selectedErrorCode ? (
+                            <Bar dataKey={selectedErrorCode} fill={ERROR_COLORS[selectedErrorCode]} name={selectedErrorCode} />
+                          ) : (
+                            <>
+                              <Bar dataKey="429" stackId="errors" fill={ERROR_COLORS['429']} name="429" />
+                              <Bar dataKey="500" stackId="errors" fill={ERROR_COLORS['500']} name="500" />
+                              <Bar dataKey="503" stackId="errors" fill={ERROR_COLORS['503']} name="503" />
+                              <Bar dataKey="504" stackId="errors" fill={ERROR_COLORS['504']} name="504" />
+                              <Bar dataKey="400" stackId="errors" fill={ERROR_COLORS['400']} name="400" />
+                              <Bar dataKey="401" stackId="errors" fill={ERROR_COLORS['401']} name="401" />
+                            </>
+                          )}
+                        </ComposedChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 分隔线 */}
+                <div className="border-t" />
+
+                {/* 第二层：错误明细 */}
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="text-sm font-medium text-muted-foreground">错误明细</h4>
+                    <span className="text-xs text-muted-foreground">
+                      共 {filteredErrorDetails.length} 条记录
+                    </span>
+                  </div>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>模型</TableHead>
+                        <TableHead>错误代码</TableHead>
+                        <TableHead className="text-right">发生时间</TableHead>
+                        <TableHead className="text-center">操作</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {paginatedErrorDetails.data.map((item) => (
+                        <TableRow key={item.id}>
+                          <TableCell className="font-medium">{item.model}</TableCell>
+                          <TableCell>
+                            <span className={cn(
+                              "px-2 py-0.5 rounded text-xs font-mono font-medium",
+                              item.errorCode === '429' && "bg-yellow-500/10 text-yellow-600",
+                              item.errorCode === '500' && "bg-destructive/10 text-destructive",
+                              item.errorCode === '503' && "bg-orange-500/10 text-orange-600",
+                              item.errorCode === '504' && "bg-purple-500/10 text-purple-600",
+                              item.errorCode === '400' && "bg-blue-500/10 text-blue-600",
+                              item.errorCode === '401' && "bg-red-500/10 text-red-600",
+                            )}>
+                              {item.errorCode}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-right text-muted-foreground">{item.timestamp}</TableCell>
+                          <TableCell className="text-center">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleViewErrorDetail(item)}
+                              className="h-7 px-2"
+                            >
+                              <Eye className="w-4 h-4 mr-1" />
+                              详情
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                      {paginatedErrorDetails.totalPages > 1 && (
+                        <TableRow>
+                          <TableCell colSpan={4} className="py-2">
+                            <div className="flex items-center justify-center gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setErrorPage(p => Math.max(1, p - 1))}
+                                disabled={errorPage === 1}
+                              >
+                                <ChevronLeft className="h-4 w-4" />
+                              </Button>
+                              <span className="text-sm text-muted-foreground">
+                                第 {errorPage} / {paginatedErrorDetails.totalPages} 页
+                              </span>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setErrorPage(p => Math.min(paginatedErrorDetails.totalPages, p + 1))}
+                                disabled={errorPage === paginatedErrorDetails.totalPages}
+                              >
+                                <ChevronRight className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
 
         <TabsContent value="users" className="space-y-4">
           <ActiveUserList topUsers={customer.topUsers} />
