@@ -475,41 +475,49 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
   }
 
   return (
-    <div className="space-y-6">
-      {/* 返回按钮和标题 */}
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="sm" onClick={onBack} className="gap-2">
-          <ArrowLeft className="w-4 h-4" />
-          返回
-        </Button>
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-primary/10">
-            <Building2 className="w-6 h-6 text-primary" />
+    <div className="flex flex-col h-full">
+      {/* 固定头部区域 */}
+      <div className="sticky top-0 z-10 bg-background border-b pb-0 -mx-6 px-6 pt-2">
+        {/* 返回按钮和标题 */}
+        <div className="flex items-center gap-4 mb-3">
+          <Button variant="ghost" size="sm" onClick={onBack} className="gap-2">
+            <ArrowLeft className="w-4 h-4" />
+            返回
+          </Button>
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-primary/10">
+              <Building2 className="w-6 h-6 text-primary" />
+            </div>
+            <div>
+              <h1 className="text-xl font-semibold text-foreground">{customer.companyName}</h1>
+              <p className="text-sm text-muted-foreground">{customer.customerCode}</p>
+            </div>
+            <span className={cn(
+              "status-badge ml-2",
+              customer.subscription.status === 'active' ? 'status-badge-success' :
+              customer.subscription.status === 'expired' ? 'status-badge-error' :
+              'status-badge-neutral'
+            )}>
+              {statusLabels[customer.subscription.status]}
+            </span>
           </div>
-          <div>
-            <h1 className="text-xl font-semibold text-foreground">{customer.companyName}</h1>
-            <p className="text-sm text-muted-foreground">{customer.customerCode}</p>
-          </div>
-          <span className={cn(
-            "status-badge ml-2",
-            customer.subscription.status === 'active' ? 'status-badge-success' :
-            customer.subscription.status === 'expired' ? 'status-badge-error' :
-            'status-badge-neutral'
-          )}>
-            {statusLabels[customer.subscription.status]}
-          </span>
         </div>
+
+        {/* Tabs 标签 */}
+        <Tabs defaultValue="usage" className="space-y-0">
+          <TabsList>
+            <TabsTrigger value="usage">使用统计</TabsTrigger>
+            <TabsTrigger value="overview">配置信息</TabsTrigger>
+            <TabsTrigger value="users">活跃用户</TabsTrigger>
+            <TabsTrigger value="logs">操作日志</TabsTrigger>
+            <TabsTrigger value="cloud">云服务信息</TabsTrigger>
+          </TabsList>
+        </Tabs>
       </div>
 
-      {/* 详细信息 Tabs */}
-      <Tabs defaultValue="usage" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="usage">使用统计</TabsTrigger>
-          <TabsTrigger value="overview">配置信息</TabsTrigger>
-          <TabsTrigger value="users">活跃用户</TabsTrigger>
-          <TabsTrigger value="logs">操作日志</TabsTrigger>
-          <TabsTrigger value="cloud">云服务信息</TabsTrigger>
-        </TabsList>
+      {/* 可滚动内容区域 */}
+      <div className="flex-1 overflow-y-auto pt-6">
+        <Tabs defaultValue="usage" className="space-y-4">
 
         <TabsContent value="overview" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
