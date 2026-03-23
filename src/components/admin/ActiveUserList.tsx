@@ -220,7 +220,7 @@ export function ActiveUserList({ topUsers }: ActiveUserListProps) {
   const [selectedUser, setSelectedUser] = useState<TopUser | null>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [detailTab, setDetailTab] = useState<'stats' | 'calls'>('stats');
-  const [detailTimeRange, setDetailTimeRange] = useState<TimeRange>('7d');
+  const [detailTimeRange, setDetailTimeRange] = useState<DetailTimeRange>('7d');
   const [callPage, setCallPage] = useState(1);
   const [callModelFilter, setCallModelFilter] = useState<string>('all');
   const [callStatusFilter, setCallStatusFilter] = useState<string>('all');
