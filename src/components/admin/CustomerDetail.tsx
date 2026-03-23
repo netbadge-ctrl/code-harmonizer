@@ -1017,6 +1017,12 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
             </Card>
           </div>
 
+  // 模型指标tab的数据（按metricsModelFilter筛选）
+  const metricsModelUsageData = useMemo(() => {
+    const data = generateModelUsageData().filter(m => m.model === metricsModelFilter);
+    return data;
+  }, [metricsModelFilter]);
+
 
           {/* Token 消耗趋势 - 全宽 */}
           <Card className="enterprise-card">
