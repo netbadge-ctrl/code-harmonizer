@@ -203,8 +203,8 @@ function generateUserStats(user: TopUser, timeRange: TimeRange) {
   return { avgDailyTokens, avgDailyRequests, successRate, avgLatency, trend, modelDistribution };
 }
 
-function getTimeRangeLabel(range: TimeRange): string {
-  return TIME_RANGE_OPTIONS.find(o => o.value === range)?.label ?? '';
+function getTimeRangeLabel(range: TimeRange | DetailTimeRange): string {
+  return [...TIME_RANGE_OPTIONS, ...DETAIL_TIME_RANGE_OPTIONS].find(o => o.value === range)?.label ?? '';
 }
 
 function getStatusCodeColor(code: number): string {
