@@ -211,9 +211,8 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
   const [selectedError, setSelectedError] = useState<any | null>(null);
   const [errorDetailDialogOpen, setErrorDetailDialogOpen] = useState(false);
 
-  // 模型错误代码分布弹窗
-  const [modelErrorDialogOpen, setModelErrorDialogOpen] = useState(false);
-  const [modelErrorTarget, setModelErrorTarget] = useState<{ model: string; errorCount: number } | null>(null);
+  // 错误分析 - 模型筛选（从模型性能表点击错误数时设置）
+  const [errorModelFilter, setErrorModelFilter] = useState<string | null>(null);
   
 
   // 可见模型配置状态
