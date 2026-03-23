@@ -511,6 +511,144 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
           <TabsTrigger value="logs">操作日志</TabsTrigger>
           <TabsTrigger value="cloud">云服务信息</TabsTrigger>
         </TabsList>
+
+        {/* 筛选栏 - 固定在头部 */}
+        <div className="flex items-center gap-4 overflow-x-auto py-2.5">
+          {/* 时间范围 */}
+          <div className="flex items-center gap-2 flex-nowrap">
+            <span className="text-sm text-muted-foreground whitespace-nowrap">查询时间：</span>
+            <div className="flex items-center gap-2 flex-nowrap">
+              <Button
+                variant={timeRangePreset === '15min' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => handlePresetChange('15min')}
+                className="whitespace-nowrap"
+              >
+                最近15分钟
+              </Button>
+              <Button
+                variant={timeRangePreset === '4hours' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => handlePresetChange('4hours')}
+                className="whitespace-nowrap"
+              >
+                最近4小时
+              </Button>
+              <Button
+                variant={timeRangePreset === '24hours' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => handlePresetChange('24hours')}
+                className="whitespace-nowrap"
+              >
+                最近24小时
+              </Button>
+              <Button
+                variant={timeRangePreset === '7days' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => handlePresetChange('7days')}
+                className="whitespace-nowrap"
+              >
+                最近7天
+              </Button>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={timeRangePreset === 'custom' ? 'default' : 'outline'}
+                    size="sm"
+                    className="min-w-[200px] justify-start whitespace-nowrap"
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {timeRangePreset === 'custom' ? (
+                      <>
+                        {format(dateRange.from, 'yyyy/MM/dd', { locale: zhCN })} - {format(dateRange.to, 'yyyy/MM/dd', { locale: zhCN })}
+                      </>
+                    ) : (
+                      '自定义日期'
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="range"
+                    selected={{ from: dateRange.from, to: dateRange.to }}
+                    onSelect={(range) => {
+                      if (range?.from && range?.to) {
+                        setDateRange({ from: range.from, to: range.to });
+                        setTimeRangePreset('custom');
+                      } else if (range?.from) {
+                        setDateRange({ from: range.from, to: range.from });
+                        setTimeRangePreset('custom');
+                      }
+                    }}
+                    numberOfMonths={2}
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+          </div>
+          
+          {/* 模型筛选 */}
+          <div className="flex items-center gap-2 flex-nowrap">
+            <span className="text-sm text-muted-foreground whitespace-nowrap">模型：</span>
+            <Popover open={modelPopoverOpen} onOpenChange={setModelPopoverOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={modelPopoverOpen}
+                  className="w-[180px] justify-between"
+                >
+                  {modelFilter === 'all' ? '全部模型' : modelFilter}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[200px] p-0">
+                <Command>
+                  <CommandInput placeholder="搜索模型..." />
+                  <CommandList>
+                    <CommandEmpty>未找到模型</CommandEmpty>
+                    <CommandGroup>
+                      <CommandItem
+                        value="all"
+                        onSelect={() => {
+                          setModelFilter('all');
+                          setModelPopoverOpen(false);
+                        }}
+                      >
+                        <Check
+                          className={cn(
+                            "mr-2 h-4 w-4",
+                            modelFilter === 'all' ? "opacity-100" : "opacity-0"
+                          )}
+                        />
+                        全部模型
+                      </CommandItem>
+                      {availableModels.map((model) => (
+                        <CommandItem
+                          key={model}
+                          value={model}
+                          onSelect={() => {
+                            setModelFilter(model);
+                            setModelPopoverOpen(false);
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              "mr-2 h-4 w-4",
+                              modelFilter === model ? "opacity-100" : "opacity-0"
+                            )}
+                          />
+                          {model}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+          </div>
+        </div>
       </div>
 
       {/* 内容区域 */}
