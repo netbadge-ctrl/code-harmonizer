@@ -213,7 +213,7 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
 
   // 错误分析 - 模型筛选（从模型性能表点击错误数时设置）
   const [errorModelFilter, setErrorModelFilter] = useState<string | null>(null);
-  
+  const [activeTab, setActiveTab] = useState('usage');
 
   // 可见模型配置状态
   const [customerModelConfig, setCustomerModelConfig] = useState<Record<string, boolean>>(() => {
