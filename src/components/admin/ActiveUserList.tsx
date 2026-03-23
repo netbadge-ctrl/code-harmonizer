@@ -48,15 +48,14 @@ interface ActiveUserListProps {
   topUsers: TopUser[];
 }
 
-type TimeRange = '1h' | '6h' | '24h' | '7d' | '30d';
+type TimeRange = '15m' | '4h' | '24h' | '7d';
 type DetailTimeRange = '15m' | '4h' | '24h' | '7d';
 
 const TIME_RANGE_OPTIONS: { value: TimeRange; label: string }[] = [
-  { value: '1h', label: '近 1 小时' },
-  { value: '6h', label: '近 6 小时' },
-  { value: '24h', label: '近 24 小时' },
+  { value: '15m', label: '最近 15 分钟' },
+  { value: '4h', label: '最近 4 小时' },
+  { value: '24h', label: '最近 24 小时' },
   { value: '7d', label: '近 7 天' },
-  { value: '30d', label: '近 30 天' },
 ];
 
 const DETAIL_TIME_RANGE_OPTIONS: { value: DetailTimeRange; label: string }[] = [
@@ -87,12 +86,9 @@ function formatDateTime(dateString: string): string {
 function getTimeRangeDays(range: TimeRange | DetailTimeRange): number {
   switch (range) {
     case '15m': return 15 / 1440;
-    case '1h': return 1 / 24;
     case '4h': return 4 / 24;
-    case '6h': return 0.25;
     case '24h': return 1;
     case '7d': return 7;
-    case '30d': return 30;
   }
 }
 
@@ -179,7 +175,7 @@ function generateUserStats(user: TopUser, timeRange: TimeRange | DetailTimeRange
   const successRate = +(98 + Math.random() * 1.8).toFixed(1);
   const avgLatency = +(Math.random() * 1.5 + 0.8).toFixed(2);
 
-  const trendDays = timeRange === '30d' ? 30 : timeRange === '7d' ? 7 : 7;
+  const trendDays = timeRange === '7d' ? 7 : 7;
   const trend = Array.from({ length: trendDays }, (_, i) => {
     const date = new Date();
     date.setDate(date.getDate() - (trendDays - 1 - i));
