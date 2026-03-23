@@ -1714,7 +1714,7 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
         </DialogContent>
       </Dialog>
 
-    </div>
+    </Tabs>
   );
 }
 
