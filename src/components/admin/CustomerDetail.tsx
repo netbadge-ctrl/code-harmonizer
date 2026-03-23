@@ -1652,6 +1652,74 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* 模型错误代码分布弹窗 */}
+      <Dialog open={modelErrorDialogOpen} onOpenChange={setModelErrorDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-destructive" />
+              {modelErrorTarget?.model} — 错误代码分布
+            </DialogTitle>
+          </DialogHeader>
+          {modelErrorTarget && (() => {
+            const totalErrors = modelErrorTarget.errorCount;
+            const errorDistribution = errorTypes.map(et => {
+              const count = Math.max(0, Math.floor(totalErrors * (Math.random() * 0.4 + 0.02)));
+              return { ...et, count };
+            });
+            // Normalize to match total
+            const rawTotal = errorDistribution.reduce((s, e) => s + e.count, 0);
+            if (rawTotal > 0) {
+              const scale = totalErrors / rawTotal;
+              errorDistribution.forEach(e => { e.count = Math.round(e.count * scale); });
+            }
+            const adjustedTotal = errorDistribution.reduce((s, e) => s + e.count, 0);
+
+            return (
+              <div className="space-y-3">
+                <div className="text-sm text-muted-foreground">
+                  总错误数：<span className="font-medium text-foreground">{totalErrors}</span>
+                </div>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>错误代码</TableHead>
+                      <TableHead>错误类型</TableHead>
+                      <TableHead className="text-right">次数</TableHead>
+                      <TableHead className="text-right">占比</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {errorDistribution.filter(e => e.count > 0).sort((a, b) => b.count - a.count).map((item) => (
+                      <TableRow key={item.code}>
+                        <TableCell>
+                          <span className={cn(
+                            "px-2 py-0.5 rounded text-xs font-mono font-medium",
+                            item.code === '429' && "bg-yellow-500/10 text-yellow-600",
+                            item.code === '500' && "bg-destructive/10 text-destructive",
+                            item.code === '503' && "bg-orange-500/10 text-orange-600",
+                            item.code === '504' && "bg-purple-500/10 text-purple-600",
+                            item.code === '400' && "bg-blue-500/10 text-blue-600",
+                            item.code === '401' && "bg-red-500/10 text-red-600",
+                          )}>
+                            {item.code}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-sm">{item.name}</TableCell>
+                        <TableCell className="text-right font-medium">{item.count}</TableCell>
+                        <TableCell className="text-right text-muted-foreground">
+                          {adjustedTotal > 0 ? ((item.count / adjustedTotal) * 100).toFixed(1) : 0}%
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
