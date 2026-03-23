@@ -433,13 +433,13 @@ export function ActiveUserList({ topUsers }: ActiveUserListProps) {
                 {selectedUser?.name}
                 <span className="text-sm font-normal text-muted-foreground">({selectedUser?.email})</span>
               </DialogTitle>
-              <Select value={detailTimeRange} onValueChange={(v) => setDetailTimeRange(v as TimeRange)}>
-                <SelectTrigger className="w-36 h-8 text-sm">
+              <Select value={detailTimeRange} onValueChange={(v) => setDetailTimeRange(v as DetailTimeRange)}>
+                <SelectTrigger className="w-40 h-8 text-sm">
                   <Calendar className="w-3.5 h-3.5 mr-1.5 text-muted-foreground" />
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {TIME_RANGE_OPTIONS.map(opt => (
+                  {DETAIL_TIME_RANGE_OPTIONS.map(opt => (
                     <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
                   ))}
                 </SelectContent>
