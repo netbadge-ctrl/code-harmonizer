@@ -476,8 +476,8 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
 
   return (
     <Tabs defaultValue="usage" className="flex flex-col h-full">
-      {/* 固定头部区域 */}
-      <div className="sticky top-12 z-10 bg-background border-b -mx-6 px-6 pt-2 pb-0">
+      {/* 非固定头部 - 随页面滚动 */}
+      <div className="bg-background border-b -mx-6 px-6 pt-2 pb-0">
         {/* 返回按钮和标题 */}
         <div className="flex items-center gap-4 mb-3">
           <Button variant="ghost" size="sm" onClick={onBack} className="gap-2">
@@ -511,8 +511,10 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
           <TabsTrigger value="logs">操作日志</TabsTrigger>
           <TabsTrigger value="cloud">云服务信息</TabsTrigger>
         </TabsList>
+      </div>
 
-        {/* 筛选栏 - 固定在头部 */}
+      {/* 筛选栏 - 吸顶固定 */}
+      <div className="sticky top-12 z-10 bg-background border-b -mx-6 px-6">
         <div className="flex items-center gap-4 overflow-x-auto py-2.5">
           {/* 时间范围 */}
           <div className="flex items-center gap-2 flex-nowrap">
