@@ -535,7 +535,7 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
         <TabsList>
           <TabsTrigger value="usage">使用统计</TabsTrigger>
           <TabsTrigger value="modelMetrics">模型指标</TabsTrigger>
-          <TabsTrigger value="overview">配置信息</TabsTrigger>
+          <TabsTrigger value="overview">用户信息</TabsTrigger>
           <TabsTrigger value="users">活跃用户</TabsTrigger>
           <TabsTrigger value="logs">操作日志</TabsTrigger>
           <TabsTrigger value="cloud">云服务信息</TabsTrigger>
