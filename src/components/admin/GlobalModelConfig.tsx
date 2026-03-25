@@ -25,6 +25,8 @@ interface GlobalModel {
   lastCalledAt: string | null;
   customerLastCalled: Record<string, string | null>;
   defaultForCustomer: boolean;
+  rpmConfig: number;
+  tpmConfig: number;
 }
 const allGlobalModels: GlobalModel[] = [
   // 文本模型
