@@ -1496,6 +1496,12 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                     <TableHead className="text-right cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => handleSort('avgTPMBusiness')}>
                       <div className="flex items-center justify-end gap-1">忙时TPM {sortColumn === 'avgTPMBusiness' ? (sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />) : <ArrowUpDown className="w-3 h-3 opacity-50" />}</div>
                     </TableHead>
+                    <TableHead className="text-right cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => handleSort('rpmConfig')}>
+                      <div className="flex items-center justify-end gap-1">RPM（配置） {sortColumn === 'rpmConfig' ? (sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />) : <ArrowUpDown className="w-3 h-3 opacity-50" />}</div>
+                    </TableHead>
+                    <TableHead className="text-right cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => handleSort('tpmConfig')}>
+                      <div className="flex items-center justify-end gap-1">TPM（配置） {sortColumn === 'tpmConfig' ? (sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />) : <ArrowUpDown className="w-3 h-3 opacity-50" />}</div>
+                    </TableHead>
                     <TableHead className="text-right cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => handleSort('successRate')}>
                       <div className="flex items-center justify-end gap-1">请求成功率 {sortColumn === 'successRate' ? (sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />) : <ArrowUpDown className="w-3 h-3 opacity-50" />}</div>
                     </TableHead>
