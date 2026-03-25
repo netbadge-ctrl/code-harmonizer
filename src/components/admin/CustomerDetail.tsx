@@ -290,8 +290,10 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
       const peakTPM = Math.floor(Math.random() * 150000) + 80000;
       const avgTPMDaily = Math.floor(peakTPM * (0.5 + Math.random() * 0.2));
       const avgTPMBusiness = Math.floor(peakTPM * (0.7 + Math.random() * 0.15));
-      const rpmConfig = Math.floor(Math.random() * 800) + 200;
-      const tpmConfig = Math.floor(Math.random() * 200000) + 50000;
+      const rpmOptions = [500, 1000, 1500, 2000, 3000, 5000];
+      const tpmOptions = [500000, 1000000, 2000000, 5000000];
+      const rpmConfig = rpmOptions[Math.floor(Math.random() * rpmOptions.length)];
+      const tpmConfig = tpmOptions[Math.floor(Math.random() * tpmOptions.length)];
       
       return {
         model,
