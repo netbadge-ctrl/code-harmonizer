@@ -158,6 +158,8 @@ export function GlobalModelConfig() {
             <div className="w-[180px] shrink-0">模型名称</div>
             <div className="w-[80px] shrink-0">类型</div>
             <div className="flex-1 min-w-0">描述</div>
+            <div className="w-[100px] shrink-0 text-right">RPM（配置）</div>
+            <div className="w-[100px] shrink-0 text-right">TPM（配置）</div>
             <div className="w-[140px] shrink-0">最后调用时间</div>
             <div className="w-[120px] shrink-0">模型可见用户</div>
             <div className="w-[110px] shrink-0 text-right">客户默认可见</div>
