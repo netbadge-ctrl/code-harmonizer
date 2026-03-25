@@ -303,6 +303,8 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
         peakTPM,
         avgTPMDaily,
         avgTPMBusiness,
+        rpmConfig,
+        tpmConfig,
         ttftAvg: +(Math.random() * 0.4 + 0.2).toFixed(2),
         ttftP98: +(Math.random() * 0.15 + 0.82).toFixed(4),
         tpotAvg: +(Math.random() * 20 + 25).toFixed(1),
