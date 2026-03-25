@@ -1186,6 +1186,8 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                       <TableCell className="text-right">{formatTokens(item.peakTPM)}</TableCell>
                       <TableCell className="text-right">{formatTokens(item.avgTPMDaily)}</TableCell>
                       <TableCell className="text-right">{formatTokens(item.avgTPMBusiness)}</TableCell>
+                      <TableCell className="text-right">{item.rpmConfig.toLocaleString()}</TableCell>
+                      <TableCell className="text-right">{formatTokens(item.tpmConfig)}</TableCell>
                       <TableCell className="text-right">{item.successRate.toFixed(2)}%</TableCell>
                       <TableCell className="text-right">
                         {formatTokens(item.tokens)}
