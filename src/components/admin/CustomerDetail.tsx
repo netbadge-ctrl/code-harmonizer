@@ -290,6 +290,8 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
       const peakTPM = Math.floor(Math.random() * 150000) + 80000;
       const avgTPMDaily = Math.floor(peakTPM * (0.5 + Math.random() * 0.2));
       const avgTPMBusiness = Math.floor(peakTPM * (0.7 + Math.random() * 0.15));
+      const rpmConfig = Math.floor(Math.random() * 800) + 200;
+      const tpmConfig = Math.floor(Math.random() * 200000) + 50000;
       
       return {
         model,
@@ -301,6 +303,8 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
         peakTPM,
         avgTPMDaily,
         avgTPMBusiness,
+        rpmConfig,
+        tpmConfig,
         ttftAvg: +(Math.random() * 0.4 + 0.2).toFixed(2),
         ttftP98: +(Math.random() * 0.15 + 0.82).toFixed(4),
         tpotAvg: +(Math.random() * 20 + 25).toFixed(1),
@@ -397,6 +401,8 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
         case 'requests': aVal = a.requests; bVal = b.requests; break;
         case 'successRate': aVal = a.successRate; bVal = b.successRate; break;
         case 'errorCount': aVal = a.errorCount; bVal = b.errorCount; break;
+        case 'rpmConfig': aVal = a.rpmConfig; bVal = b.rpmConfig; break;
+        case 'tpmConfig': aVal = a.tpmConfig; bVal = b.tpmConfig; break;
         default: aVal = a.tokens; bVal = b.tokens;
       }
       if (typeof aVal === 'string') {
@@ -1153,6 +1159,12 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                     <TableHead className="text-right cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => handleSort('avgTPMBusiness')}>
                       <div className="flex items-center justify-end gap-1">忙时TPM {sortColumn === 'avgTPMBusiness' ? (sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />) : <ArrowUpDown className="w-3 h-3 opacity-50" />}</div>
                     </TableHead>
+                    <TableHead className="text-right cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => handleSort('rpmConfig')}>
+                      <div className="flex items-center justify-end gap-1">RPM（配置） {sortColumn === 'rpmConfig' ? (sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />) : <ArrowUpDown className="w-3 h-3 opacity-50" />}</div>
+                    </TableHead>
+                    <TableHead className="text-right cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => handleSort('tpmConfig')}>
+                      <div className="flex items-center justify-end gap-1">TPM（配置） {sortColumn === 'tpmConfig' ? (sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />) : <ArrowUpDown className="w-3 h-3 opacity-50" />}</div>
+                    </TableHead>
                     <TableHead className="text-right cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => handleSort('successRate')}>
                       <div className="flex items-center justify-end gap-1">请求成功率 {sortColumn === 'successRate' ? (sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />) : <ArrowUpDown className="w-3 h-3 opacity-50" />}</div>
                     </TableHead>
@@ -1174,6 +1186,8 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                       <TableCell className="text-right">{formatTokens(item.peakTPM)}</TableCell>
                       <TableCell className="text-right">{formatTokens(item.avgTPMDaily)}</TableCell>
                       <TableCell className="text-right">{formatTokens(item.avgTPMBusiness)}</TableCell>
+                      <TableCell className="text-right">{item.rpmConfig.toLocaleString()}</TableCell>
+                      <TableCell className="text-right">{formatTokens(item.tpmConfig)}</TableCell>
                       <TableCell className="text-right">{item.successRate.toFixed(2)}%</TableCell>
                       <TableCell className="text-right">
                         {formatTokens(item.tokens)}
@@ -1482,6 +1496,12 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                     <TableHead className="text-right cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => handleSort('avgTPMBusiness')}>
                       <div className="flex items-center justify-end gap-1">忙时TPM {sortColumn === 'avgTPMBusiness' ? (sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />) : <ArrowUpDown className="w-3 h-3 opacity-50" />}</div>
                     </TableHead>
+                    <TableHead className="text-right cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => handleSort('rpmConfig')}>
+                      <div className="flex items-center justify-end gap-1">RPM（配置） {sortColumn === 'rpmConfig' ? (sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />) : <ArrowUpDown className="w-3 h-3 opacity-50" />}</div>
+                    </TableHead>
+                    <TableHead className="text-right cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => handleSort('tpmConfig')}>
+                      <div className="flex items-center justify-end gap-1">TPM（配置） {sortColumn === 'tpmConfig' ? (sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />) : <ArrowUpDown className="w-3 h-3 opacity-50" />}</div>
+                    </TableHead>
                     <TableHead className="text-right cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => handleSort('successRate')}>
                       <div className="flex items-center justify-end gap-1">请求成功率 {sortColumn === 'successRate' ? (sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />) : <ArrowUpDown className="w-3 h-3 opacity-50" />}</div>
                     </TableHead>
@@ -1503,6 +1523,8 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                       <TableCell className="text-right">{formatTokens(item.peakTPM)}</TableCell>
                       <TableCell className="text-right">{formatTokens(item.avgTPMDaily)}</TableCell>
                       <TableCell className="text-right">{formatTokens(item.avgTPMBusiness)}</TableCell>
+                      <TableCell className="text-right">{item.rpmConfig.toLocaleString()}</TableCell>
+                      <TableCell className="text-right">{formatTokens(item.tpmConfig)}</TableCell>
                       <TableCell className="text-right">{item.successRate.toFixed(2)}%</TableCell>
                       <TableCell className="text-right">
                         {formatTokens(item.tokens)}
