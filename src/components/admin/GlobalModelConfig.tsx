@@ -185,6 +185,16 @@ export function GlobalModelConfig() {
                     <p className="text-xs text-muted-foreground truncate">{model.description}</p>
                   </div>
 
+                  {/* RPM Config */}
+                  <div className="w-[100px] shrink-0 text-right text-xs text-muted-foreground">
+                    {model.rpmConfig.toLocaleString()}
+                  </div>
+
+                  {/* TPM Config */}
+                  <div className="w-[100px] shrink-0 text-right text-xs text-muted-foreground">
+                    {model.tpmConfig >= 1000000 ? `${(model.tpmConfig / 1000000).toFixed(0)}M` : model.tpmConfig >= 1000 ? `${(model.tpmConfig / 1000).toFixed(0)}K` : model.tpmConfig.toLocaleString()}
+                  </div>
+
                   {/* Last called */}
                   <div className="flex items-center gap-1.5 text-xs text-muted-foreground shrink-0 w-[140px]">
                     <Clock className="w-3.5 h-3.5" />
