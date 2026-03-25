@@ -535,7 +535,7 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
         <TabsList>
           <TabsTrigger value="usage">使用统计</TabsTrigger>
           <TabsTrigger value="modelMetrics">模型指标</TabsTrigger>
-          <TabsTrigger value="overview">配置信息</TabsTrigger>
+          <TabsTrigger value="overview">用户信息</TabsTrigger>
           <TabsTrigger value="users">活跃用户</TabsTrigger>
           <TabsTrigger value="logs">操作日志</TabsTrigger>
           <TabsTrigger value="cloud">云服务信息</TabsTrigger>
@@ -732,6 +732,46 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
       <div className="flex-1 pt-6 space-y-4">
 
         <TabsContent value="overview" className="space-y-4">
+          {/* 商务信息 */}
+          <Card className="enterprise-card">
+            <CardHeader>
+              <CardTitle className="text-base flex items-center gap-2">
+                <Users className="w-4 h-4" />
+                商务信息
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="space-y-1">
+                  <span className="text-sm text-muted-foreground">销售姓名</span>
+                  <p className="text-sm font-medium">{customer.contactName}</p>
+                </div>
+                <div className="space-y-1">
+                  <span className="text-sm text-muted-foreground">试用日期</span>
+                  <p className="text-sm font-medium">{formatDate(customer.subscription.startDate)} ~ {formatDate(customer.subscription.expiresAt)}</p>
+                </div>
+                <div className="space-y-1">
+                  <span className="text-sm text-muted-foreground">Token 代金券剩余金额</span>
+                  <p className="text-sm font-medium">
+                    ¥{((customer.usage.totalTokens - customer.usage.monthlyTokens) * 0.00001).toFixed(2)}
+                    <span className="text-xs text-muted-foreground ml-1">(有效期至 {formatDate(customer.subscription.expiresAt)})</span>
+                  </p>
+                </div>
+                <div className="space-y-1">
+                  <span className="text-sm text-muted-foreground">用户控制台</span>
+                  <Button
+                    variant="link"
+                    size="sm"
+                    className="h-auto p-0 text-sm"
+                    onClick={() => window.open(`https://console.example.com/customer/${customer.id}`, '_blank')}
+                  >
+                    跳转用户控制台 <ExternalLink className="w-3 h-3 ml-1" />
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* 订阅信息 */}
             <Card className="enterprise-card">
