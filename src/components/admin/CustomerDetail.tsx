@@ -401,6 +401,8 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
         case 'requests': aVal = a.requests; bVal = b.requests; break;
         case 'successRate': aVal = a.successRate; bVal = b.successRate; break;
         case 'errorCount': aVal = a.errorCount; bVal = b.errorCount; break;
+        case 'rpmConfig': aVal = a.rpmConfig; bVal = b.rpmConfig; break;
+        case 'tpmConfig': aVal = a.tpmConfig; bVal = b.tpmConfig; break;
         default: aVal = a.tokens; bVal = b.tokens;
       }
       if (typeof aVal === 'string') {
