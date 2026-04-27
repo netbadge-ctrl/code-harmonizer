@@ -926,7 +926,8 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
 
           {/* 模型配置弹窗 */}
           <Dialog open={modelConfigDialogOpen} onOpenChange={setModelConfigDialogOpen}>
-            <DialogContent className="max-w-5xl max-h-[80vh] overflow-hidden flex flex-col">
+            <DialogContent className="max-w-[1280px] w-[95vw] max-h-[85vh] overflow-hidden flex flex-col p-0">
+              <div className="px-6 pt-6 flex-shrink-0">
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2 text-base">
                   <Cpu className="w-4 h-4" />
@@ -958,8 +959,9 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                   <option value="vision">视觉理解</option>
                 </select>
               </div>
+              </div>
               {/* 模型列表 */}
-              <div className="flex-1 overflow-y-auto">
+              <div className="flex-1 overflow-y-auto px-6">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -1136,6 +1138,20 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                     })()}
                   </TableBody>
                 </Table>
+              </div>
+              {/* 底部固定操作栏 */}
+              <div className="flex items-center justify-end gap-2 px-6 py-4 border-t bg-background flex-shrink-0">
+                <Button variant="outline" onClick={() => setModelConfigDialogOpen(false)}>
+                  取消
+                </Button>
+                <Button
+                  onClick={() => {
+                    toast({ title: '保存成功', description: '模型配置已更新' });
+                    setModelConfigDialogOpen(false);
+                  }}
+                >
+                  保存
+                </Button>
               </div>
             </DialogContent>
           </Dialog>
