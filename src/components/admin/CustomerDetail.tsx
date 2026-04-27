@@ -1130,21 +1130,6 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                                 <span className="text-xs text-muted-foreground">—</span>
                               )}
                             </TableCell>
-                            <TableCell className="text-right">
-                              <Switch
-                                checked={isVisible}
-                                disabled={isDefault}
-                                onCheckedChange={(checked) => {
-                                  if (!isDefault) {
-                                    if (!checked && isEnabled) {
-                                      setConfirmDisableModel({ id: model.id, name: model.name });
-                                    } else {
-                                      setCustomerModelConfig(prev => ({ ...prev, [model.id]: checked }));
-                                    }
-                                  }
-                                }}
-                              />
-                            </TableCell>
                           </TableRow>
                         );
                       });
