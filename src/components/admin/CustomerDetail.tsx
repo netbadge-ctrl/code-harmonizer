@@ -1017,12 +1017,20 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                                 {model.type === 'text' ? '文本模型' : '视觉理解'}
                               </Badge>
                             </TableCell>
-                            <TableCell>
-                              {isEnabled ? (
-                                <Badge variant="outline" className="text-[10px] border-blue-300 text-blue-600 bg-blue-50">已开通</Badge>
-                              ) : (
-                                <Badge variant="outline" className="text-[10px] border-muted-foreground/30 text-muted-foreground">未开通</Badge>
-                              )}
+                            <TableCell className="text-center">
+                              <Switch
+                                checked={isVisible}
+                                disabled={isDefault}
+                                onCheckedChange={(checked) => {
+                                  if (!isDefault) {
+                                    if (!checked && isEnabled) {
+                                      setConfirmDisableModel({ id: model.id, name: model.name });
+                                    } else {
+                                      setCustomerModelConfig(prev => ({ ...prev, [model.id]: checked }));
+                                    }
+                                  }
+                                }}
+                              />
                             </TableCell>
                             <TableCell>
                               {isVisible ? (
