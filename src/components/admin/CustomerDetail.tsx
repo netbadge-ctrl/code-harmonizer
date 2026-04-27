@@ -876,14 +876,6 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                     )}
                   </div>
                 </div>
-                {/* 模型切换 */}
-                <div className="flex justify-between items-center">
-                  <div className="space-y-0.5">
-                    <span className="text-sm font-medium">模型切换</span>
-                    <p className="text-xs text-muted-foreground">允许用户在模型异常时手动切换至备用模型</p>
-                  </div>
-                  <Switch defaultChecked />
-                </div>
                 {/* 产品原型 */}
                 <div className="flex justify-between items-center">
                   <div className="space-y-0.5">
