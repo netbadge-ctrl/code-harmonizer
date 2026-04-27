@@ -829,12 +829,12 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
               </CardContent>
             </Card>
 
-            {/* 账号配置 */}
+            {/* 配置 */}
             <Card className="enterprise-card">
               <CardHeader>
                 <CardTitle className="text-base flex items-center gap-2">
                   <Settings className="w-4 h-4" />
-                  账号配置
+                  配置
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
