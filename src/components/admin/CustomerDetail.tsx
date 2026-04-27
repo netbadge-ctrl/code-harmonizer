@@ -950,10 +950,13 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="w-[200px]">模型名称</TableHead>
-                      <TableHead className="w-[100px]">模型类型</TableHead>
-                      <TableHead className="w-[100px]">开通状态</TableHead>
-                      <TableHead className="w-[80px] text-right">可见</TableHead>
+                      <TableHead className="w-[180px]">模型名称</TableHead>
+                      <TableHead className="w-[90px]">模型类型</TableHead>
+                      <TableHead className="w-[90px]">开通状态</TableHead>
+                      <TableHead className="w-[170px]">RPM 配置（已用 / 总额）</TableHead>
+                      <TableHead className="w-[180px]">TPM 配置（已用 / 总额）</TableHead>
+                      <TableHead className="w-[90px] text-center">产品原型</TableHead>
+                      <TableHead className="w-[70px] text-right">可见</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -969,10 +972,17 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                         if (typeOrder !== 0) return typeOrder;
                         return a.name.localeCompare(b.name);
                       });
+                      const formatTPM = (v: number) =>
+                        v >= 1_000_000 ? `${(v / 1_000_000).toFixed(v % 1_000_000 === 0 ? 0 : 1)}M`
+                        : v >= 1_000 ? `${(v / 1_000).toFixed(0)}K`
+                        : `${v}`;
                       return sorted.map(model => {
                         const isEnabled = customerSelfEnabledModelIds.includes(model.id);
                         const isDefault = defaultEnabledModelIds.includes(model.id);
                         const isVisible = isDefault || (customerModelConfig[model.id] || false);
+                        const rpmPct = model.rpmTotal > 0 ? Math.min(100, (model.rpmUsed / model.rpmTotal) * 100) : 0;
+                        const tpmPct = model.tpmTotal > 0 ? Math.min(100, (model.tpmUsed / model.tpmTotal) * 100) : 0;
+                        const prototypeOn = prototypeFeatureConfig[model.id] || false;
                         return (
                           <TableRow key={model.id}>
                             <TableCell>
@@ -994,6 +1004,52 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                               ) : (
                                 <Badge variant="outline" className="text-[10px] border-muted-foreground/30 text-muted-foreground">未开通</Badge>
                               )}
+                            </TableCell>
+                            <TableCell>
+                              <div className="space-y-1">
+                                <div className="flex items-baseline justify-between text-xs">
+                                  <span className="font-mono text-foreground">
+                                    {model.rpmUsed.toLocaleString()} / {model.rpmTotal.toLocaleString()}
+                                  </span>
+                                  <span className="text-muted-foreground">{rpmPct.toFixed(0)}%</span>
+                                </div>
+                                <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                                  <div
+                                    className={cn(
+                                      "h-full rounded-full transition-all",
+                                      rpmPct >= 90 ? "bg-destructive" : rpmPct >= 70 ? "bg-amber-500" : "bg-primary"
+                                    )}
+                                    style={{ width: `${rpmPct}%` }}
+                                  />
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="space-y-1">
+                                <div className="flex items-baseline justify-between text-xs">
+                                  <span className="font-mono text-foreground">
+                                    {formatTPM(model.tpmUsed)} / {formatTPM(model.tpmTotal)}
+                                  </span>
+                                  <span className="text-muted-foreground">{tpmPct.toFixed(0)}%</span>
+                                </div>
+                                <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                                  <div
+                                    className={cn(
+                                      "h-full rounded-full transition-all",
+                                      tpmPct >= 90 ? "bg-destructive" : tpmPct >= 70 ? "bg-amber-500" : "bg-primary"
+                                    )}
+                                    style={{ width: `${tpmPct}%` }}
+                                  />
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <Switch
+                                checked={prototypeOn}
+                                onCheckedChange={(checked) => {
+                                  setPrototypeFeatureConfig(prev => ({ ...prev, [model.id]: checked }));
+                                }}
+                              />
                             </TableCell>
                             <TableCell className="text-right">
                               <Switch
