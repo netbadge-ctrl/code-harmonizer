@@ -911,13 +911,13 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
             </Card>
           </div>
 
-          {/* 可见模型配置弹窗 */}
+          {/* 模型配置弹窗 */}
           <Dialog open={modelConfigDialogOpen} onOpenChange={setModelConfigDialogOpen}>
-            <DialogContent className="max-w-3xl max-h-[80vh] overflow-hidden flex flex-col">
+            <DialogContent className="max-w-5xl max-h-[80vh] overflow-hidden flex flex-col">
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2 text-base">
                   <Cpu className="w-4 h-4" />
-                  可见模型配置
+                  模型配置
                   <span className="text-muted-foreground font-normal">— {customer.companyName}</span>
                   <Badge variant="secondary" className="ml-1">
                     {Object.values(customerModelConfig).filter(Boolean).length}/{globalEnabledModels.length}
