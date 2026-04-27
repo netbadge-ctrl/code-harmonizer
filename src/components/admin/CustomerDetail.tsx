@@ -103,24 +103,25 @@ const errorTypes = [
 ];
 
 // 全局可见模型列表（从模型配置中获取已启用的模型）
+// rpmTotal/tpmTotal 为系统配置的阈值；rpmUsed/tpmUsed 为当前已占用值
 const globalEnabledModels = [
-  { id: 'gpt4-turbo', name: 'GPT-4 Turbo', type: 'text' as const, typeLabel: '文本模型' },
-  { id: 'gpt4o', name: 'GPT-4o', type: 'text' as const, typeLabel: '文本模型' },
-  { id: 'gpt4o-mini', name: 'GPT-4o Mini', type: 'text' as const, typeLabel: '文本模型' },
-  { id: 'claude35-sonnet', name: 'Claude 3.5 Sonnet', type: 'text' as const, typeLabel: '文本模型' },
-  { id: 'claude3-opus', name: 'Claude 3 Opus', type: 'text' as const, typeLabel: '文本模型' },
-  { id: 'claude3-haiku', name: 'Claude 3 Haiku', type: 'text' as const, typeLabel: '文本模型' },
-  { id: 'gemini-pro', name: 'Gemini Pro', type: 'text' as const, typeLabel: '文本模型' },
-  { id: 'ernie4', name: 'ERNIE-4.0', type: 'text' as const, typeLabel: '文本模型' },
-  { id: 'qwen-max', name: 'Qwen-Max', type: 'text' as const, typeLabel: '文本模型' },
-  { id: 'qwen-turbo', name: 'Qwen-Turbo', type: 'text' as const, typeLabel: '文本模型' },
-  { id: 'deepseek-v3', name: 'DeepSeek V3', type: 'text' as const, typeLabel: '文本模型' },
-  { id: 'kimi-k2', name: 'Kimi K2', type: 'text' as const, typeLabel: '文本模型' },
-  { id: 'kimi-25', name: 'KIMI 2.5', type: 'text' as const, typeLabel: '文本模型' },
-  { id: 'glm-47', name: 'GLM-4.7', type: 'text' as const, typeLabel: '文本模型' },
-  { id: 'glm-5', name: 'GLM-5', type: 'text' as const, typeLabel: '文本模型' },
-  { id: 'gpt4-vision', name: 'GPT-4 Vision', type: 'vision' as const, typeLabel: '视觉理解' },
-  { id: 'gemini-vision', name: 'Gemini Pro Vision', type: 'vision' as const, typeLabel: '视觉理解' },
+  { id: 'gpt4-turbo', name: 'GPT-4 Turbo', type: 'text' as const, typeLabel: '文本模型', rpmTotal: 2000, rpmUsed: 1240, tpmTotal: 2000000, tpmUsed: 1320000 },
+  { id: 'gpt4o', name: 'GPT-4o', type: 'text' as const, typeLabel: '文本模型', rpmTotal: 3000, rpmUsed: 2105, tpmTotal: 5000000, tpmUsed: 3420000 },
+  { id: 'gpt4o-mini', name: 'GPT-4o Mini', type: 'text' as const, typeLabel: '文本模型', rpmTotal: 5000, rpmUsed: 980, tpmTotal: 2000000, tpmUsed: 540000 },
+  { id: 'claude35-sonnet', name: 'Claude 3.5 Sonnet', type: 'text' as const, typeLabel: '文本模型', rpmTotal: 2000, rpmUsed: 1680, tpmTotal: 2000000, tpmUsed: 1750000 },
+  { id: 'claude3-opus', name: 'Claude 3 Opus', type: 'text' as const, typeLabel: '文本模型', rpmTotal: 1000, rpmUsed: 320, tpmTotal: 1000000, tpmUsed: 280000 },
+  { id: 'claude3-haiku', name: 'Claude 3 Haiku', type: 'text' as const, typeLabel: '文本模型', rpmTotal: 3000, rpmUsed: 1450, tpmTotal: 2000000, tpmUsed: 920000 },
+  { id: 'gemini-pro', name: 'Gemini Pro', type: 'text' as const, typeLabel: '文本模型', rpmTotal: 2000, rpmUsed: 760, tpmTotal: 1000000, tpmUsed: 410000 },
+  { id: 'ernie4', name: 'ERNIE-4.0', type: 'text' as const, typeLabel: '文本模型', rpmTotal: 1500, rpmUsed: 0, tpmTotal: 1000000, tpmUsed: 0 },
+  { id: 'qwen-max', name: 'Qwen-Max', type: 'text' as const, typeLabel: '文本模型', rpmTotal: 1500, rpmUsed: 240, tpmTotal: 1000000, tpmUsed: 180000 },
+  { id: 'qwen-turbo', name: 'Qwen-Turbo', type: 'text' as const, typeLabel: '文本模型', rpmTotal: 3000, rpmUsed: 0, tpmTotal: 2000000, tpmUsed: 0 },
+  { id: 'deepseek-v3', name: 'DeepSeek V3', type: 'text' as const, typeLabel: '文本模型', rpmTotal: 2000, rpmUsed: 1320, tpmTotal: 2000000, tpmUsed: 1480000 },
+  { id: 'kimi-k2', name: 'Kimi K2', type: 'text' as const, typeLabel: '文本模型', rpmTotal: 1500, rpmUsed: 0, tpmTotal: 1000000, tpmUsed: 0 },
+  { id: 'kimi-25', name: 'KIMI 2.5', type: 'text' as const, typeLabel: '文本模型', rpmTotal: 3000, rpmUsed: 2780, tpmTotal: 5000000, tpmUsed: 4120000 },
+  { id: 'glm-47', name: 'GLM-4.7', type: 'text' as const, typeLabel: '文本模型', rpmTotal: 2000, rpmUsed: 1560, tpmTotal: 2000000, tpmUsed: 1680000 },
+  { id: 'glm-5', name: 'GLM-5', type: 'text' as const, typeLabel: '文本模型', rpmTotal: 2000, rpmUsed: 890, tpmTotal: 2000000, tpmUsed: 740000 },
+  { id: 'gpt4-vision', name: 'GPT-4 Vision', type: 'vision' as const, typeLabel: '视觉理解', rpmTotal: 1000, rpmUsed: 220, tpmTotal: 500000, tpmUsed: 140000 },
+  { id: 'gemini-vision', name: 'Gemini Pro Vision', type: 'vision' as const, typeLabel: '视觉理解', rpmTotal: 1000, rpmUsed: 180, tpmTotal: 500000, tpmUsed: 90000 },
 ];
 
 // 默认开启的模型ID
