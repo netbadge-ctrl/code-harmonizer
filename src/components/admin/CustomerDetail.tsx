@@ -1013,42 +1013,80 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                               )}
                             </TableCell>
                             <TableCell>
-                              <div className="space-y-1">
-                                <div className="flex items-baseline justify-between text-xs">
-                                  <span className="font-mono text-foreground">
-                                    {model.rpmUsed.toLocaleString()} / {model.rpmTotal.toLocaleString()}
-                                  </span>
-                                  <span className="text-muted-foreground">{rpmPct.toFixed(0)}%</span>
+                              {isVisible ? (
+                                <div className="space-y-1.5">
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-xs font-mono text-foreground tabular-nums w-14 text-right">
+                                      {model.rpmUsed.toLocaleString()}
+                                    </span>
+                                    <span className="text-xs text-muted-foreground">/</span>
+                                    <Input
+                                      type="number"
+                                      min={0}
+                                      step={100}
+                                      value={rpmTotal}
+                                      onChange={(e) => {
+                                        const v = Number(e.target.value) || 0;
+                                        setModelRateLimits(prev => ({
+                                          ...prev,
+                                          [model.id]: { ...(prev[model.id] || { rpmTotal, tpmTotal }), rpmTotal: v },
+                                        }));
+                                      }}
+                                      className="h-7 px-2 text-xs font-mono w-24"
+                                    />
+                                    <span className="text-xs text-muted-foreground w-10 text-right">{rpmPct.toFixed(0)}%</span>
+                                  </div>
+                                  <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                                    <div
+                                      className={cn(
+                                        "h-full rounded-full transition-all",
+                                        rpmPct >= 90 ? "bg-destructive" : rpmPct >= 70 ? "bg-amber-500" : "bg-primary"
+                                      )}
+                                      style={{ width: `${rpmPct}%` }}
+                                    />
+                                  </div>
                                 </div>
-                                <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
-                                  <div
-                                    className={cn(
-                                      "h-full rounded-full transition-all",
-                                      rpmPct >= 90 ? "bg-destructive" : rpmPct >= 70 ? "bg-amber-500" : "bg-primary"
-                                    )}
-                                    style={{ width: `${rpmPct}%` }}
-                                  />
-                                </div>
-                              </div>
+                              ) : (
+                                <span className="text-xs text-muted-foreground">—</span>
+                              )}
                             </TableCell>
                             <TableCell>
-                              <div className="space-y-1">
-                                <div className="flex items-baseline justify-between text-xs">
-                                  <span className="font-mono text-foreground">
-                                    {formatTPM(model.tpmUsed)} / {formatTPM(model.tpmTotal)}
-                                  </span>
-                                  <span className="text-muted-foreground">{tpmPct.toFixed(0)}%</span>
+                              {isVisible ? (
+                                <div className="space-y-1.5">
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="text-xs font-mono text-foreground tabular-nums w-16 text-right">
+                                      {formatTPM(model.tpmUsed)}
+                                    </span>
+                                    <span className="text-xs text-muted-foreground">/</span>
+                                    <Input
+                                      type="number"
+                                      min={0}
+                                      step={100000}
+                                      value={tpmTotal}
+                                      onChange={(e) => {
+                                        const v = Number(e.target.value) || 0;
+                                        setModelRateLimits(prev => ({
+                                          ...prev,
+                                          [model.id]: { ...(prev[model.id] || { rpmTotal, tpmTotal }), tpmTotal: v },
+                                        }));
+                                      }}
+                                      className="h-7 px-2 text-xs font-mono w-28"
+                                    />
+                                    <span className="text-xs text-muted-foreground w-10 text-right">{tpmPct.toFixed(0)}%</span>
+                                  </div>
+                                  <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                                    <div
+                                      className={cn(
+                                        "h-full rounded-full transition-all",
+                                        tpmPct >= 90 ? "bg-destructive" : tpmPct >= 70 ? "bg-amber-500" : "bg-primary"
+                                      )}
+                                      style={{ width: `${tpmPct}%` }}
+                                    />
+                                  </div>
                                 </div>
-                                <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
-                                  <div
-                                    className={cn(
-                                      "h-full rounded-full transition-all",
-                                      tpmPct >= 90 ? "bg-destructive" : tpmPct >= 70 ? "bg-amber-500" : "bg-primary"
-                                    )}
-                                    style={{ width: `${tpmPct}%` }}
-                                  />
-                                </div>
-                              </div>
+                              ) : (
+                                <span className="text-xs text-muted-foreground">—</span>
+                              )}
                             </TableCell>
                             <TableCell className="text-right">
                               <Switch
