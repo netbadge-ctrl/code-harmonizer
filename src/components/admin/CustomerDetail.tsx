@@ -992,10 +992,16 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                         const isEnabled = customerSelfEnabledModelIds.includes(model.id);
                         const isDefault = defaultEnabledModelIds.includes(model.id);
                         const isVisible = isDefault || (customerModelConfig[model.id] || false);
-                        const rpmTotal = modelRateLimits[model.id]?.rpmTotal ?? model.rpmTotal;
-                        const tpmTotal = modelRateLimits[model.id]?.tpmTotal ?? model.tpmTotal;
-                        const rpmPct = rpmTotal > 0 ? Math.min(100, (model.rpmUsed / rpmTotal) * 100) : 0;
-                        const tpmPct = tpmTotal > 0 ? Math.min(100, (model.tpmUsed / tpmTotal) * 100) : 0;
+                        const customerRpm = modelRateLimits[model.id]?.customerRpm ?? 0;
+                        const customerTpm = modelRateLimits[model.id]?.customerTpm ?? 0;
+                        const totalRpm = model.rpmTotal;       // 系统总 RPM
+                        const allocatedRpm = model.rpmUsed;    // 已分配 RPM（已配置给所有客户的总和）
+                        const totalTpm = model.tpmTotal;       // 系统总 TPM
+                        const allocatedTpm = model.tpmUsed;    // 已分配 TPM
+                        const rpmPct = totalRpm > 0 ? Math.min(100, (allocatedRpm / totalRpm) * 100) : 0;
+                        const tpmPct = totalTpm > 0 ? Math.min(100, (allocatedTpm / totalTpm) * 100) : 0;
+                        const rpmOver = customerRpm > Math.max(0, totalRpm - allocatedRpm);
+                        const tpmOver = customerTpm > Math.max(0, totalTpm - allocatedTpm);
                         
                         return (
                           <TableRow key={model.id}>
@@ -1022,26 +1028,37 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                             <TableCell>
                               {isVisible ? (
                                 <div className="space-y-1.5">
-                                  <div className="flex items-center gap-1.5">
-                                    <span className="text-xs font-mono text-foreground tabular-nums w-14 text-right">
-                                      {model.rpmUsed.toLocaleString()}
-                                    </span>
-                                    <span className="text-xs text-muted-foreground">/</span>
-                                    <Input
-                                      type="number"
-                                      min={0}
-                                      step={100}
-                                      value={rpmTotal}
-                                      onChange={(e) => {
-                                        const v = Number(e.target.value) || 0;
-                                        setModelRateLimits(prev => ({
-                                          ...prev,
-                                          [model.id]: { ...(prev[model.id] || { rpmTotal, tpmTotal }), rpmTotal: v },
-                                        }));
-                                      }}
-                                      className="h-7 px-2 text-xs font-mono w-24"
-                                    />
-                                    <span className="text-xs text-muted-foreground w-10 text-right">{rpmPct.toFixed(0)}%</span>
+                                  <div className="flex items-center gap-2 text-xs">
+                                    <div className="flex flex-col items-end">
+                                      <span className="text-[10px] text-muted-foreground leading-none">总</span>
+                                      <span className="font-mono tabular-nums text-foreground">{totalRpm.toLocaleString()}</span>
+                                    </div>
+                                    <span className="text-muted-foreground">/</span>
+                                    <div className="flex flex-col items-end">
+                                      <span className="text-[10px] text-muted-foreground leading-none">已配置</span>
+                                      <span className="font-mono tabular-nums text-foreground">{allocatedRpm.toLocaleString()}</span>
+                                    </div>
+                                    <span className="text-muted-foreground">/</span>
+                                    <div className="flex flex-col items-end">
+                                      <span className="text-[10px] text-muted-foreground leading-none">本次</span>
+                                      <Input
+                                        type="number"
+                                        min={0}
+                                        step={100}
+                                        value={customerRpm}
+                                        onChange={(e) => {
+                                          const v = Number(e.target.value) || 0;
+                                          setModelRateLimits(prev => ({
+                                            ...prev,
+                                            [model.id]: { customerTpm, ...(prev[model.id] || {}), customerRpm: v },
+                                          }));
+                                        }}
+                                        className={cn(
+                                          "h-7 px-2 text-xs font-mono w-24",
+                                          rpmOver && "border-destructive text-destructive"
+                                        )}
+                                      />
+                                    </div>
                                   </div>
                                   <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
                                     <div
@@ -1060,26 +1077,37 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                             <TableCell>
                               {isVisible ? (
                                 <div className="space-y-1.5">
-                                  <div className="flex items-center gap-1.5">
-                                    <span className="text-xs font-mono text-foreground tabular-nums w-16 text-right">
-                                      {formatTPM(model.tpmUsed)}
-                                    </span>
-                                    <span className="text-xs text-muted-foreground">/</span>
-                                    <Input
-                                      type="number"
-                                      min={0}
-                                      step={100000}
-                                      value={tpmTotal}
-                                      onChange={(e) => {
-                                        const v = Number(e.target.value) || 0;
-                                        setModelRateLimits(prev => ({
-                                          ...prev,
-                                          [model.id]: { ...(prev[model.id] || { rpmTotal, tpmTotal }), tpmTotal: v },
-                                        }));
-                                      }}
-                                      className="h-7 px-2 text-xs font-mono w-28"
-                                    />
-                                    <span className="text-xs text-muted-foreground w-10 text-right">{tpmPct.toFixed(0)}%</span>
+                                  <div className="flex items-center gap-2 text-xs">
+                                    <div className="flex flex-col items-end">
+                                      <span className="text-[10px] text-muted-foreground leading-none">总</span>
+                                      <span className="font-mono tabular-nums text-foreground">{formatTPM(totalTpm)}</span>
+                                    </div>
+                                    <span className="text-muted-foreground">/</span>
+                                    <div className="flex flex-col items-end">
+                                      <span className="text-[10px] text-muted-foreground leading-none">已配置</span>
+                                      <span className="font-mono tabular-nums text-foreground">{formatTPM(allocatedTpm)}</span>
+                                    </div>
+                                    <span className="text-muted-foreground">/</span>
+                                    <div className="flex flex-col items-end">
+                                      <span className="text-[10px] text-muted-foreground leading-none">本次</span>
+                                      <Input
+                                        type="number"
+                                        min={0}
+                                        step={100000}
+                                        value={customerTpm}
+                                        onChange={(e) => {
+                                          const v = Number(e.target.value) || 0;
+                                          setModelRateLimits(prev => ({
+                                            ...prev,
+                                            [model.id]: { customerRpm, ...(prev[model.id] || {}), customerTpm: v },
+                                          }));
+                                        }}
+                                        className={cn(
+                                          "h-7 px-2 text-xs font-mono w-28",
+                                          tpmOver && "border-destructive text-destructive"
+                                        )}
+                                      />
+                                    </div>
                                   </div>
                                   <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
                                     <div
