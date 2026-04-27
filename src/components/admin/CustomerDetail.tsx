@@ -235,6 +235,15 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
   // 产品原型功能开关
   const [prototypeFeatureEnabled, setPrototypeFeatureEnabled] = useState(false);
 
+  // 每个模型的 RPM/TPM 总额配置（可编辑）
+  const [modelRateLimits, setModelRateLimits] = useState<Record<string, { rpmTotal: number; tpmTotal: number }>>(() => {
+    const config: Record<string, { rpmTotal: number; tpmTotal: number }> = {};
+    globalEnabledModels.forEach(m => {
+      config[m.id] = { rpmTotal: m.rpmTotal, tpmTotal: m.tpmTotal };
+    });
+    return config;
+  });
+
   // 关闭已开通模型可见性的二次确认
   const [confirmDisableModel, setConfirmDisableModel] = useState<{ id: string; name: string } | null>(null);
 
