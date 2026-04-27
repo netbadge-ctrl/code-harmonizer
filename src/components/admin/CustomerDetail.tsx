@@ -235,11 +235,18 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
   // 产品原型功能开关
   const [prototypeFeatureEnabled, setPrototypeFeatureEnabled] = useState(false);
 
-  // 每个模型的 RPM/TPM 总额配置（可编辑）
-  const [modelRateLimits, setModelRateLimits] = useState<Record<string, { rpmTotal: number; tpmTotal: number }>>(() => {
-    const config: Record<string, { rpmTotal: number; tpmTotal: number }> = {};
+  // 当前客户为每个模型配置的 RPM/TPM 值（可编辑）
+  // 模型自带的 rpmTotal/tpmTotal 表示系统总额度；rpmUsed/tpmUsed 表示已分配给其他客户的总和
+  const [modelRateLimits, setModelRateLimits] = useState<Record<string, { customerRpm: number; customerTpm: number }>>(() => {
+    const config: Record<string, { customerRpm: number; customerTpm: number }> = {};
     globalEnabledModels.forEach(m => {
-      config[m.id] = { rpmTotal: m.rpmTotal, tpmTotal: m.tpmTotal };
+      // 默认按系统剩余的 1/10 作为推荐配置
+      const remainingRpm = Math.max(0, m.rpmTotal - m.rpmUsed);
+      const remainingTpm = Math.max(0, m.tpmTotal - m.tpmUsed);
+      config[m.id] = {
+        customerRpm: Math.floor(remainingRpm / 10 / 100) * 100,
+        customerTpm: Math.floor(remainingTpm / 10 / 1000) * 1000,
+      };
     });
     return config;
   });
