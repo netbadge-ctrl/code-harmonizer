@@ -1036,14 +1036,6 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                                 </div>
                               </div>
                             </TableCell>
-                            <TableCell className="text-center">
-                              <Switch
-                                checked={prototypeOn}
-                                onCheckedChange={(checked) => {
-                                  setPrototypeFeatureConfig(prev => ({ ...prev, [model.id]: checked }));
-                                }}
-                              />
-                            </TableCell>
                             <TableCell className="text-right">
                               <Switch
                                 checked={isVisible}
