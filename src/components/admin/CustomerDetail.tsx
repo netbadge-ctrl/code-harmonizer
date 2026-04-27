@@ -103,24 +103,25 @@ const errorTypes = [
 ];
 
 // 全局可见模型列表（从模型配置中获取已启用的模型）
+// rpmTotal/tpmTotal 为系统配置的阈值；rpmUsed/tpmUsed 为当前已占用值
 const globalEnabledModels = [
-  { id: 'gpt4-turbo', name: 'GPT-4 Turbo', type: 'text' as const, typeLabel: '文本模型' },
-  { id: 'gpt4o', name: 'GPT-4o', type: 'text' as const, typeLabel: '文本模型' },
-  { id: 'gpt4o-mini', name: 'GPT-4o Mini', type: 'text' as const, typeLabel: '文本模型' },
-  { id: 'claude35-sonnet', name: 'Claude 3.5 Sonnet', type: 'text' as const, typeLabel: '文本模型' },
-  { id: 'claude3-opus', name: 'Claude 3 Opus', type: 'text' as const, typeLabel: '文本模型' },
-  { id: 'claude3-haiku', name: 'Claude 3 Haiku', type: 'text' as const, typeLabel: '文本模型' },
-  { id: 'gemini-pro', name: 'Gemini Pro', type: 'text' as const, typeLabel: '文本模型' },
-  { id: 'ernie4', name: 'ERNIE-4.0', type: 'text' as const, typeLabel: '文本模型' },
-  { id: 'qwen-max', name: 'Qwen-Max', type: 'text' as const, typeLabel: '文本模型' },
-  { id: 'qwen-turbo', name: 'Qwen-Turbo', type: 'text' as const, typeLabel: '文本模型' },
-  { id: 'deepseek-v3', name: 'DeepSeek V3', type: 'text' as const, typeLabel: '文本模型' },
-  { id: 'kimi-k2', name: 'Kimi K2', type: 'text' as const, typeLabel: '文本模型' },
-  { id: 'kimi-25', name: 'KIMI 2.5', type: 'text' as const, typeLabel: '文本模型' },
-  { id: 'glm-47', name: 'GLM-4.7', type: 'text' as const, typeLabel: '文本模型' },
-  { id: 'glm-5', name: 'GLM-5', type: 'text' as const, typeLabel: '文本模型' },
-  { id: 'gpt4-vision', name: 'GPT-4 Vision', type: 'vision' as const, typeLabel: '视觉理解' },
-  { id: 'gemini-vision', name: 'Gemini Pro Vision', type: 'vision' as const, typeLabel: '视觉理解' },
+  { id: 'gpt4-turbo', name: 'GPT-4 Turbo', type: 'text' as const, typeLabel: '文本模型', rpmTotal: 2000, rpmUsed: 1240, tpmTotal: 2000000, tpmUsed: 1320000 },
+  { id: 'gpt4o', name: 'GPT-4o', type: 'text' as const, typeLabel: '文本模型', rpmTotal: 3000, rpmUsed: 2105, tpmTotal: 5000000, tpmUsed: 3420000 },
+  { id: 'gpt4o-mini', name: 'GPT-4o Mini', type: 'text' as const, typeLabel: '文本模型', rpmTotal: 5000, rpmUsed: 980, tpmTotal: 2000000, tpmUsed: 540000 },
+  { id: 'claude35-sonnet', name: 'Claude 3.5 Sonnet', type: 'text' as const, typeLabel: '文本模型', rpmTotal: 2000, rpmUsed: 1680, tpmTotal: 2000000, tpmUsed: 1750000 },
+  { id: 'claude3-opus', name: 'Claude 3 Opus', type: 'text' as const, typeLabel: '文本模型', rpmTotal: 1000, rpmUsed: 320, tpmTotal: 1000000, tpmUsed: 280000 },
+  { id: 'claude3-haiku', name: 'Claude 3 Haiku', type: 'text' as const, typeLabel: '文本模型', rpmTotal: 3000, rpmUsed: 1450, tpmTotal: 2000000, tpmUsed: 920000 },
+  { id: 'gemini-pro', name: 'Gemini Pro', type: 'text' as const, typeLabel: '文本模型', rpmTotal: 2000, rpmUsed: 760, tpmTotal: 1000000, tpmUsed: 410000 },
+  { id: 'ernie4', name: 'ERNIE-4.0', type: 'text' as const, typeLabel: '文本模型', rpmTotal: 1500, rpmUsed: 0, tpmTotal: 1000000, tpmUsed: 0 },
+  { id: 'qwen-max', name: 'Qwen-Max', type: 'text' as const, typeLabel: '文本模型', rpmTotal: 1500, rpmUsed: 240, tpmTotal: 1000000, tpmUsed: 180000 },
+  { id: 'qwen-turbo', name: 'Qwen-Turbo', type: 'text' as const, typeLabel: '文本模型', rpmTotal: 3000, rpmUsed: 0, tpmTotal: 2000000, tpmUsed: 0 },
+  { id: 'deepseek-v3', name: 'DeepSeek V3', type: 'text' as const, typeLabel: '文本模型', rpmTotal: 2000, rpmUsed: 1320, tpmTotal: 2000000, tpmUsed: 1480000 },
+  { id: 'kimi-k2', name: 'Kimi K2', type: 'text' as const, typeLabel: '文本模型', rpmTotal: 1500, rpmUsed: 0, tpmTotal: 1000000, tpmUsed: 0 },
+  { id: 'kimi-25', name: 'KIMI 2.5', type: 'text' as const, typeLabel: '文本模型', rpmTotal: 3000, rpmUsed: 2780, tpmTotal: 5000000, tpmUsed: 4120000 },
+  { id: 'glm-47', name: 'GLM-4.7', type: 'text' as const, typeLabel: '文本模型', rpmTotal: 2000, rpmUsed: 1560, tpmTotal: 2000000, tpmUsed: 1680000 },
+  { id: 'glm-5', name: 'GLM-5', type: 'text' as const, typeLabel: '文本模型', rpmTotal: 2000, rpmUsed: 890, tpmTotal: 2000000, tpmUsed: 740000 },
+  { id: 'gpt4-vision', name: 'GPT-4 Vision', type: 'vision' as const, typeLabel: '视觉理解', rpmTotal: 1000, rpmUsed: 220, tpmTotal: 500000, tpmUsed: 140000 },
+  { id: 'gemini-vision', name: 'Gemini Pro Vision', type: 'vision' as const, typeLabel: '视觉理解', rpmTotal: 1000, rpmUsed: 180, tpmTotal: 500000, tpmUsed: 90000 },
 ];
 
 // 默认开启的模型ID
@@ -230,6 +231,15 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
   const [modelConfigDialogOpen, setModelConfigDialogOpen] = useState(false);
   const [modelConfigSearch, setModelConfigSearch] = useState('');
   const [modelConfigTypeFilter, setModelConfigTypeFilter] = useState<string>('all');
+
+  // 产品原型功能开关（按模型）
+  const [prototypeFeatureConfig, setPrototypeFeatureConfig] = useState<Record<string, boolean>>(() => {
+    const config: Record<string, boolean> = {};
+    globalEnabledModels.forEach(m => {
+      config[m.id] = false;
+    });
+    return config;
+  });
 
   // 关闭已开通模型可见性的二次确认
   const [confirmDisableModel, setConfirmDisableModel] = useState<{ id: string; name: string } | null>(null);
@@ -819,12 +829,12 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
               </CardContent>
             </Card>
 
-            {/* 账号配置 */}
+            {/* 配置 */}
             <Card className="enterprise-card">
               <CardHeader>
                 <CardTitle className="text-base flex items-center gap-2">
                   <Settings className="w-4 h-4" />
-                  账号配置
+                  配置
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -880,9 +890,9 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                   </div>
                   <Switch defaultChecked />
                 </div>
-                {/* 可见模型 */}
+                {/* 模型配置 */}
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">可见模型</span>
+                  <span className="text-sm text-muted-foreground">模型配置</span>
                   <div className="flex items-center gap-2">
                     <span className="text-sm">
                       {Object.values(customerModelConfig).filter(Boolean).length} / {globalEnabledModels.length} 个
@@ -901,13 +911,13 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
             </Card>
           </div>
 
-          {/* 可见模型配置弹窗 */}
+          {/* 模型配置弹窗 */}
           <Dialog open={modelConfigDialogOpen} onOpenChange={setModelConfigDialogOpen}>
-            <DialogContent className="max-w-3xl max-h-[80vh] overflow-hidden flex flex-col">
+            <DialogContent className="max-w-5xl max-h-[80vh] overflow-hidden flex flex-col">
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2 text-base">
                   <Cpu className="w-4 h-4" />
-                  可见模型配置
+                  模型配置
                   <span className="text-muted-foreground font-normal">— {customer.companyName}</span>
                   <Badge variant="secondary" className="ml-1">
                     {Object.values(customerModelConfig).filter(Boolean).length}/{globalEnabledModels.length}
@@ -940,10 +950,13 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="w-[200px]">模型名称</TableHead>
-                      <TableHead className="w-[100px]">模型类型</TableHead>
-                      <TableHead className="w-[100px]">开通状态</TableHead>
-                      <TableHead className="w-[80px] text-right">可见</TableHead>
+                      <TableHead className="w-[180px]">模型名称</TableHead>
+                      <TableHead className="w-[90px]">模型类型</TableHead>
+                      <TableHead className="w-[90px]">开通状态</TableHead>
+                      <TableHead className="w-[170px]">RPM 配置（已用 / 总额）</TableHead>
+                      <TableHead className="w-[180px]">TPM 配置（已用 / 总额）</TableHead>
+                      <TableHead className="w-[90px] text-center">产品原型</TableHead>
+                      <TableHead className="w-[70px] text-right">可见</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -959,10 +972,17 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                         if (typeOrder !== 0) return typeOrder;
                         return a.name.localeCompare(b.name);
                       });
+                      const formatTPM = (v: number) =>
+                        v >= 1_000_000 ? `${(v / 1_000_000).toFixed(v % 1_000_000 === 0 ? 0 : 1)}M`
+                        : v >= 1_000 ? `${(v / 1_000).toFixed(0)}K`
+                        : `${v}`;
                       return sorted.map(model => {
                         const isEnabled = customerSelfEnabledModelIds.includes(model.id);
                         const isDefault = defaultEnabledModelIds.includes(model.id);
                         const isVisible = isDefault || (customerModelConfig[model.id] || false);
+                        const rpmPct = model.rpmTotal > 0 ? Math.min(100, (model.rpmUsed / model.rpmTotal) * 100) : 0;
+                        const tpmPct = model.tpmTotal > 0 ? Math.min(100, (model.tpmUsed / model.tpmTotal) * 100) : 0;
+                        const prototypeOn = prototypeFeatureConfig[model.id] || false;
                         return (
                           <TableRow key={model.id}>
                             <TableCell>
@@ -984,6 +1004,52 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                               ) : (
                                 <Badge variant="outline" className="text-[10px] border-muted-foreground/30 text-muted-foreground">未开通</Badge>
                               )}
+                            </TableCell>
+                            <TableCell>
+                              <div className="space-y-1">
+                                <div className="flex items-baseline justify-between text-xs">
+                                  <span className="font-mono text-foreground">
+                                    {model.rpmUsed.toLocaleString()} / {model.rpmTotal.toLocaleString()}
+                                  </span>
+                                  <span className="text-muted-foreground">{rpmPct.toFixed(0)}%</span>
+                                </div>
+                                <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                                  <div
+                                    className={cn(
+                                      "h-full rounded-full transition-all",
+                                      rpmPct >= 90 ? "bg-destructive" : rpmPct >= 70 ? "bg-amber-500" : "bg-primary"
+                                    )}
+                                    style={{ width: `${rpmPct}%` }}
+                                  />
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="space-y-1">
+                                <div className="flex items-baseline justify-between text-xs">
+                                  <span className="font-mono text-foreground">
+                                    {formatTPM(model.tpmUsed)} / {formatTPM(model.tpmTotal)}
+                                  </span>
+                                  <span className="text-muted-foreground">{tpmPct.toFixed(0)}%</span>
+                                </div>
+                                <div className="h-1.5 w-full rounded-full bg-muted overflow-hidden">
+                                  <div
+                                    className={cn(
+                                      "h-full rounded-full transition-all",
+                                      tpmPct >= 90 ? "bg-destructive" : tpmPct >= 70 ? "bg-amber-500" : "bg-primary"
+                                    )}
+                                    style={{ width: `${tpmPct}%` }}
+                                  />
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <Switch
+                                checked={prototypeOn}
+                                onCheckedChange={(checked) => {
+                                  setPrototypeFeatureConfig(prev => ({ ...prev, [model.id]: checked }));
+                                }}
+                              />
                             </TableCell>
                             <TableCell className="text-right">
                               <Switch
