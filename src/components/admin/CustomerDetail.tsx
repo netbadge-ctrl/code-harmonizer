@@ -985,8 +985,10 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                         const isEnabled = customerSelfEnabledModelIds.includes(model.id);
                         const isDefault = defaultEnabledModelIds.includes(model.id);
                         const isVisible = isDefault || (customerModelConfig[model.id] || false);
-                        const rpmPct = model.rpmTotal > 0 ? Math.min(100, (model.rpmUsed / model.rpmTotal) * 100) : 0;
-                        const tpmPct = model.tpmTotal > 0 ? Math.min(100, (model.tpmUsed / model.tpmTotal) * 100) : 0;
+                        const rpmTotal = modelRateLimits[model.id]?.rpmTotal ?? model.rpmTotal;
+                        const tpmTotal = modelRateLimits[model.id]?.tpmTotal ?? model.tpmTotal;
+                        const rpmPct = rpmTotal > 0 ? Math.min(100, (model.rpmUsed / rpmTotal) * 100) : 0;
+                        const tpmPct = tpmTotal > 0 ? Math.min(100, (model.tpmUsed / tpmTotal) * 100) : 0;
                         
                         return (
                           <TableRow key={model.id}>
