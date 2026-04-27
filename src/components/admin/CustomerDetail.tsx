@@ -959,8 +959,8 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                       <TableHead className="w-[180px]">模型名称</TableHead>
                       <TableHead className="w-[90px]">模型类型</TableHead>
                       <TableHead className="w-[90px]">开通状态</TableHead>
-                      <TableHead className="w-[170px]">RPM 配置（已用 / 总额）</TableHead>
-                      <TableHead className="w-[180px]">TPM 配置（已用 / 总额）</TableHead>
+                      <TableHead className="w-[200px]">RPM（已用 / 配置）</TableHead>
+                      <TableHead className="w-[220px]">TPM（已用 / 配置）</TableHead>
                       <TableHead className="w-[70px] text-right">可见</TableHead>
                     </TableRow>
                   </TableHeader>
