@@ -959,8 +959,9 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                   <option value="vision">视觉理解</option>
                 </select>
               </div>
+              </div>
               {/* 模型列表 */}
-              <div className="flex-1 overflow-y-auto">
+              <div className="flex-1 overflow-y-auto px-6">
                 <Table>
                   <TableHeader>
                     <TableRow>
