@@ -1139,6 +1139,20 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                   </TableBody>
                 </Table>
               </div>
+              {/* 底部固定操作栏 */}
+              <div className="flex items-center justify-end gap-2 px-6 py-4 border-t bg-background flex-shrink-0">
+                <Button variant="outline" onClick={() => setModelConfigDialogOpen(false)}>
+                  取消
+                </Button>
+                <Button
+                  onClick={() => {
+                    toast({ title: '保存成功', description: '模型配置已更新' });
+                    setModelConfigDialogOpen(false);
+                  }}
+                >
+                  保存
+                </Button>
+              </div>
             </DialogContent>
           </Dialog>
 
