@@ -884,6 +884,17 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                   </div>
                   <Switch defaultChecked />
                 </div>
+                {/* 产品原型 */}
+                <div className="flex justify-between items-center">
+                  <div className="space-y-0.5">
+                    <span className="text-sm font-medium">产品原型</span>
+                    <p className="text-xs text-muted-foreground">开启后允许用户使用产品原型功能</p>
+                  </div>
+                  <Switch
+                    checked={prototypeFeatureEnabled}
+                    onCheckedChange={setPrototypeFeatureEnabled}
+                  />
+                </div>
                 {/* 模型配置 */}
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-muted-foreground">模型配置</span>
