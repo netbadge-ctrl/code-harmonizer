@@ -232,14 +232,8 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
   const [modelConfigSearch, setModelConfigSearch] = useState('');
   const [modelConfigTypeFilter, setModelConfigTypeFilter] = useState<string>('all');
 
-  // 产品原型功能开关（按模型）
-  const [prototypeFeatureConfig, setPrototypeFeatureConfig] = useState<Record<string, boolean>>(() => {
-    const config: Record<string, boolean> = {};
-    globalEnabledModels.forEach(m => {
-      config[m.id] = false;
-    });
-    return config;
-  });
+  // 产品原型功能开关
+  const [prototypeFeatureEnabled, setPrototypeFeatureEnabled] = useState(false);
 
   // 关闭已开通模型可见性的二次确认
   const [confirmDisableModel, setConfirmDisableModel] = useState<{ id: string; name: string } | null>(null);
@@ -890,6 +884,17 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                   </div>
                   <Switch defaultChecked />
                 </div>
+                {/* 产品原型 */}
+                <div className="flex justify-between items-center">
+                  <div className="space-y-0.5">
+                    <span className="text-sm font-medium">产品原型</span>
+                    <p className="text-xs text-muted-foreground">开启后允许用户使用产品原型功能</p>
+                  </div>
+                  <Switch
+                    checked={prototypeFeatureEnabled}
+                    onCheckedChange={setPrototypeFeatureEnabled}
+                  />
+                </div>
                 {/* 模型配置 */}
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-muted-foreground">模型配置</span>
@@ -955,7 +960,6 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                       <TableHead className="w-[90px]">开通状态</TableHead>
                       <TableHead className="w-[170px]">RPM 配置（已用 / 总额）</TableHead>
                       <TableHead className="w-[180px]">TPM 配置（已用 / 总额）</TableHead>
-                      <TableHead className="w-[90px] text-center">产品原型</TableHead>
                       <TableHead className="w-[70px] text-right">可见</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -982,7 +986,7 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                         const isVisible = isDefault || (customerModelConfig[model.id] || false);
                         const rpmPct = model.rpmTotal > 0 ? Math.min(100, (model.rpmUsed / model.rpmTotal) * 100) : 0;
                         const tpmPct = model.tpmTotal > 0 ? Math.min(100, (model.tpmUsed / model.tpmTotal) * 100) : 0;
-                        const prototypeOn = prototypeFeatureConfig[model.id] || false;
+                        
                         return (
                           <TableRow key={model.id}>
                             <TableCell>
@@ -1042,14 +1046,6 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                                   />
                                 </div>
                               </div>
-                            </TableCell>
-                            <TableCell className="text-center">
-                              <Switch
-                                checked={prototypeOn}
-                                onCheckedChange={(checked) => {
-                                  setPrototypeFeatureConfig(prev => ({ ...prev, [model.id]: checked }));
-                                }}
-                              />
                             </TableCell>
                             <TableCell className="text-right">
                               <Switch
