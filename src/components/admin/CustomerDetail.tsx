@@ -1047,7 +1047,7 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                                     </div>
                                     <span className="text-muted-foreground">/</span>
                                     <div className="flex flex-col items-end">
-                                      <span className="text-[10px] text-muted-foreground leading-none">本次</span>
+                                      <span className="text-[10px] text-muted-foreground leading-none">客户</span>
                                       <Input
                                         type="number"
                                         min={0}
@@ -1096,7 +1096,7 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                                     </div>
                                     <span className="text-muted-foreground">/</span>
                                     <div className="flex flex-col items-end">
-                                      <span className="text-[10px] text-muted-foreground leading-none">本次</span>
+                                      <span className="text-[10px] text-muted-foreground leading-none">客户</span>
                                       <Input
                                         type="number"
                                         min={0}
