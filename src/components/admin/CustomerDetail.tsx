@@ -926,7 +926,8 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
 
           {/* 模型配置弹窗 */}
           <Dialog open={modelConfigDialogOpen} onOpenChange={setModelConfigDialogOpen}>
-            <DialogContent className="max-w-5xl max-h-[80vh] overflow-hidden flex flex-col">
+            <DialogContent className="max-w-[1280px] w-[95vw] max-h-[85vh] overflow-hidden flex flex-col p-0">
+              <div className="px-6 pt-6 flex-shrink-0">
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2 text-base">
                   <Cpu className="w-4 h-4" />
