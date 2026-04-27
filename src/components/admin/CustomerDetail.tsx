@@ -232,6 +232,15 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
   const [modelConfigSearch, setModelConfigSearch] = useState('');
   const [modelConfigTypeFilter, setModelConfigTypeFilter] = useState<string>('all');
 
+  // 产品原型功能开关（按模型）
+  const [prototypeFeatureConfig, setPrototypeFeatureConfig] = useState<Record<string, boolean>>(() => {
+    const config: Record<string, boolean> = {};
+    globalEnabledModels.forEach(m => {
+      config[m.id] = false;
+    });
+    return config;
+  });
+
   // 关闭已开通模型可见性的二次确认
   const [confirmDisableModel, setConfirmDisableModel] = useState<{ id: string; name: string } | null>(null);
 
