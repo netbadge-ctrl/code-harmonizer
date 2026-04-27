@@ -890,9 +890,9 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                   </div>
                   <Switch defaultChecked />
                 </div>
-                {/* 可见模型 */}
+                {/* 模型配置 */}
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">可见模型</span>
+                  <span className="text-sm text-muted-foreground">模型配置</span>
                   <div className="flex items-center gap-2">
                     <span className="text-sm">
                       {Object.values(customerModelConfig).filter(Boolean).length} / {globalEnabledModels.length} 个
