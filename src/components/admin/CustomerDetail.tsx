@@ -965,10 +965,9 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                     <TableRow>
                       <TableHead className="w-[180px]">模型名称</TableHead>
                       <TableHead className="w-[90px]">模型类型</TableHead>
-                      <TableHead className="w-[90px]">开通状态</TableHead>
-                      <TableHead className="w-[260px]">RPM 配置（总 / 已配置 / 本次配置）</TableHead>
-                      <TableHead className="w-[280px]">TPM 配置（总 / 已配置 / 本次配置）</TableHead>
-                      <TableHead className="w-[70px] text-right">可见</TableHead>
+                      <TableHead className="w-[70px] text-center">可见</TableHead>
+                      <TableHead className="w-[260px]">RPM 配置（总 / 已配置 / 客户配置）</TableHead>
+                      <TableHead className="w-[280px]">TPM 配置（总 / 已配置 / 客户配置）</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -1018,12 +1017,20 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                                 {model.type === 'text' ? '文本模型' : '视觉理解'}
                               </Badge>
                             </TableCell>
-                            <TableCell>
-                              {isEnabled ? (
-                                <Badge variant="outline" className="text-[10px] border-blue-300 text-blue-600 bg-blue-50">已开通</Badge>
-                              ) : (
-                                <Badge variant="outline" className="text-[10px] border-muted-foreground/30 text-muted-foreground">未开通</Badge>
-                              )}
+                            <TableCell className="text-center">
+                              <Switch
+                                checked={isVisible}
+                                disabled={isDefault}
+                                onCheckedChange={(checked) => {
+                                  if (!isDefault) {
+                                    if (!checked && isEnabled) {
+                                      setConfirmDisableModel({ id: model.id, name: model.name });
+                                    } else {
+                                      setCustomerModelConfig(prev => ({ ...prev, [model.id]: checked }));
+                                    }
+                                  }
+                                }}
+                              />
                             </TableCell>
                             <TableCell>
                               {isVisible ? (
@@ -1040,7 +1047,7 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                                     </div>
                                     <span className="text-muted-foreground">/</span>
                                     <div className="flex flex-col items-end">
-                                      <span className="text-[10px] text-muted-foreground leading-none">本次</span>
+                                      <span className="text-[10px] text-muted-foreground leading-none">客户</span>
                                       <Input
                                         type="number"
                                         min={0}
@@ -1089,7 +1096,7 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                                     </div>
                                     <span className="text-muted-foreground">/</span>
                                     <div className="flex flex-col items-end">
-                                      <span className="text-[10px] text-muted-foreground leading-none">本次</span>
+                                      <span className="text-[10px] text-muted-foreground leading-none">客户</span>
                                       <Input
                                         type="number"
                                         min={0}
@@ -1122,21 +1129,6 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                               ) : (
                                 <span className="text-xs text-muted-foreground">—</span>
                               )}
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <Switch
-                                checked={isVisible}
-                                disabled={isDefault}
-                                onCheckedChange={(checked) => {
-                                  if (!isDefault) {
-                                    if (!checked && isEnabled) {
-                                      setConfirmDisableModel({ id: model.id, name: model.name });
-                                    } else {
-                                      setCustomerModelConfig(prev => ({ ...prev, [model.id]: checked }));
-                                    }
-                                  }
-                                }}
-                              />
                             </TableCell>
                           </TableRow>
                         );
