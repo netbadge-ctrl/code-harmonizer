@@ -975,7 +975,7 @@ export function CustomerDetail({ customerId, onBack }: CustomerDetailProps) {
                         const isVisible = isDefault || (customerModelConfig[model.id] || false);
                         const rpmPct = model.rpmTotal > 0 ? Math.min(100, (model.rpmUsed / model.rpmTotal) * 100) : 0;
                         const tpmPct = model.tpmTotal > 0 ? Math.min(100, (model.tpmUsed / model.tpmTotal) * 100) : 0;
-                        const prototypeOn = prototypeFeatureConfig[model.id] || false;
+                        
                         return (
                           <TableRow key={model.id}>
                             <TableCell>
